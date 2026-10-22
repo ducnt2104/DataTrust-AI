@@ -34,6 +34,16 @@ app.include_router(analytics.router)
 app.include_router(export_import.router)
 app.include_router(ai.router)
 
+@app.get("/", tags=["System"])
+@app.head("/", tags=["System"])
+def root():
+    return {
+        "service": "DataTrust AI API",
+        "status": "online",
+        "version": "1.0.0",
+        "docs_url": "/docs"
+    }
+
 @app.get("/api/health", tags=["System"])
 @app.get("/api/status", tags=["System"])
 @app.get("/health", tags=["System"])
