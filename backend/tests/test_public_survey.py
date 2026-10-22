@@ -1,22 +1,8 @@
-import os
 import pytest
 from datetime import datetime, timezone, timedelta
 from fastapi.testclient import TestClient
 
-os.environ["DATABASE_PATH"] = "backend/data/test_datatrust.db"
-
 from app.main import app
-from app.database import init_db
-
-@pytest.fixture(autouse=True)
-def setup_test_db():
-    if os.path.exists("backend/data/test_datatrust.db"):
-        try:
-            os.remove("backend/data/test_datatrust.db")
-        except Exception:
-            pass
-    init_db("backend/data/test_datatrust.db")
-    yield
 
 client = TestClient(app)
 

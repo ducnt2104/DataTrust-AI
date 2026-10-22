@@ -23,7 +23,7 @@ class QualityEngine:
     }
 
     @staticmethod
-    def normalize_value(val: Any) -> str:
+    def normalize_value(val: Any, q_type: str = "") -> str:
         """Chuẩn hóa giá trị trả lời để so sánh vector"""
         if val is None:
             return ""
@@ -32,7 +32,11 @@ class QualityEngine:
         if isinstance(val, (int, float)):
             return str(val)
         if isinstance(val, list):
-            # Với multiple choice hoặc ranking, sắp xếp để so sánh tập hợp
+            if q_type == "ranking":
+                # Đối với câu hỏi xếp hạng, thứ tự là thông tin quyết định
+                cleaned = [str(x).strip().lower() for x in val if x is not None]
+                return ">".join(cleaned)
+            # Với multiple choice, sắp xếp để so sánh tập hợp
             cleaned = sorted([str(x).strip().lower() for x in val if x is not None])
             return "|".join(cleaned)
         if isinstance(val, dict):
@@ -63,18 +67,18 @@ class QualityEngine:
         highest_similarity = 0.0
 
         # Lọc danh sách câu hỏi đóng để so sánh vector
-        closed_q_ids = [
-            q["id"] for q in questions
+        closed_q_items = [
+            q for q in questions
             if q.get("question_type") not in ("long_text", "short_text")
         ]
         
         # 1. LAYER B: So sánh trùng lặp và gần trùng lặp (Hamming distance)
-        if closed_q_ids and prior_responses:
-            new_vector = [cls.normalize_value(new_answers.get(qid)) for qid in closed_q_ids]
+        if closed_q_items and prior_responses:
+            new_vector = [cls.normalize_value(new_answers.get(q["id"]), q.get("question_type", "")) for q in closed_q_items]
             
             for prior in prior_responses:
                 prior_answers = prior.get("answers", {})
-                prior_vector = [cls.normalize_value(prior_answers.get(qid)) for qid in closed_q_ids]
+                prior_vector = [cls.normalize_value(prior_answers.get(q["id"]), q.get("question_type", "")) for q in closed_q_items]
                 
                 # Tính khoảng cách Hamming
                 matches = sum(1 for a, b in zip(new_vector, prior_vector) if a == b and a != "")
@@ -112,16 +116,20 @@ class QualityEngine:
                 })
 
         # 2. LAYER C: Mẫu đáp án bất thường (Straightlining & Shannon Entropy)
-        scale_q_ids = [
-            q["id"] for q in questions
-            if q.get("question_type") in ("linear_scale", "likert", "matrix")
-        ]
-        
-        scale_answers = [
-            cls.normalize_value(new_answers.get(qid))
-            for qid in scale_q_ids
-            if new_answers.get(qid) is not None and cls.normalize_value(new_answers.get(qid)) != ""
-        ]
+        scale_answers = []
+        for q in questions:
+            qid = q["id"]
+            qtype = q.get("question_type")
+            if qtype in ("linear_scale", "likert"):
+                val = new_answers.get(qid)
+                if val is not None and str(val).strip() != "":
+                    scale_answers.append(str(val).strip())
+            elif qtype == "matrix":
+                val = new_answers.get(qid)
+                if isinstance(val, dict):
+                    for row_col in val.values():
+                        if row_col is not None and str(row_col).strip() != "":
+                            scale_answers.append(str(row_col).strip())
 
         if len(scale_answers) >= 4:
             # Kiểm tra Straightlining (chọn cùng 1 phương án liên tiếp)
@@ -254,7 +262,11 @@ class QualityEngine:
         active_weights["dup"] = cls.DEFAULT_WEIGHTS["dup"]
         total_w += cls.DEFAULT_WEIGHTS["dup"]
 
-        if scale_q_ids:
+        has_scale_questions = any(
+            q.get("question_type") in ("linear_scale", "likert", "matrix")
+            for q in questions
+        )
+        if has_scale_questions:
             active_weights["pat"] = cls.DEFAULT_WEIGHTS["pat"]
             total_w += cls.DEFAULT_WEIGHTS["pat"]
 

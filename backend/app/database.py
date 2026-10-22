@@ -1,11 +1,13 @@
+import os
 import sqlite3
 from contextlib import contextmanager
 from typing import Generator
 from app.config import DATABASE_PATH
 
-def init_db(db_path: str = DATABASE_PATH):
+def init_db(db_path: str = None):
     """Khởi tạo cơ sở dữ liệu và các bảng thực thể nếu chưa tồn tại"""
-    conn = sqlite3.connect(db_path)
+    target_path = db_path if db_path is not None else os.getenv("DATABASE_PATH", DATABASE_PATH)
+    conn = sqlite3.connect(target_path)
     conn.execute("PRAGMA foreign_keys = ON;")
     conn.execute("PRAGMA journal_mode = WAL;")
     conn.execute("PRAGMA synchronous = NORMAL;")
@@ -95,15 +97,17 @@ def init_db(db_path: str = DATABASE_PATH):
         """)
     conn.close()
 
-def get_connection(db_path: str = DATABASE_PATH) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path, timeout=30.0)
+def get_connection(db_path: str = None) -> sqlite3.Connection:
+    target_path = db_path if db_path is not None else os.getenv("DATABASE_PATH", DATABASE_PATH)
+    conn = sqlite3.connect(target_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
 @contextmanager
-def get_db(db_path: str = DATABASE_PATH) -> Generator[sqlite3.Connection, None, None]:
-    conn = get_connection(db_path)
+def get_db(db_path: str = None) -> Generator[sqlite3.Connection, None, None]:
+    target_path = db_path if db_path is not None else os.getenv("DATABASE_PATH", DATABASE_PATH)
+    conn = get_connection(target_path)
     try:
         yield conn
         conn.commit()

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronUp, ChevronDown, Move } from 'lucide-react';
 import { Question } from '../types/survey';
 
 interface Props {
@@ -26,6 +27,7 @@ export const QuestionRenderer: React.FC<Props> = ({
 
   const qType = question.question_type;
   const options = question.options || [];
+  const optionList: { id: string; label: string }[] = Array.isArray(question.options) ? question.options : [];
 
   return (
     <div className={`p-6 rounded-2xl bg-white border transition-all duration-200 ${
@@ -76,7 +78,7 @@ export const QuestionRenderer: React.FC<Props> = ({
         {/* Single Choice (Radio) */}
         {qType === 'single_choice' && (
           <div className="space-y-2">
-            {options.map((opt) => {
+            {optionList.map((opt) => {
               const isSelected = value === opt.id || value === opt.label;
               return (
                 <label
@@ -105,7 +107,7 @@ export const QuestionRenderer: React.FC<Props> = ({
         {/* Multiple Choice (Checkboxes) */}
         {qType === 'multiple_choice' && (
           <div className="space-y-2">
-            {options.map((opt) => {
+            {optionList.map((opt) => {
               const currentList: string[] = Array.isArray(value) ? value : [];
               const isSelected = currentList.includes(opt.id) || currentList.includes(opt.label);
               return (
@@ -146,7 +148,7 @@ export const QuestionRenderer: React.FC<Props> = ({
             className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all text-sm disabled:bg-slate-50 disabled:text-slate-500"
           >
             <option value="">-- Chọn phương án --</option>
-            {options.map((opt) => (
+            {optionList.map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {opt.label}
               </option>
@@ -193,7 +195,7 @@ export const QuestionRenderer: React.FC<Props> = ({
               { id: '3', label: '3 - Trung lập / Bình thường' },
               { id: '4', label: '4 - Đồng ý' },
               { id: '5', label: '5 - Hoàn toàn đồng ý' }
-            ]).map((opt) => {
+            ]).map((opt: any) => {
               const isSelected = String(value) === String(opt.id) || String(value) === String(opt.label);
               return (
                 <label
@@ -266,6 +268,147 @@ export const QuestionRenderer: React.FC<Props> = ({
             })}
           </div>
         )}
+
+        {/* Matrix (Grid of Rows x Columns) */}
+        {qType === 'matrix' && (() => {
+          const matrixRows: { id: string; label: string }[] = Array.isArray(options?.rows)
+            ? options.rows
+            : [
+                { id: 'r1', label: 'Tiêu chí 1' },
+                { id: 'r2', label: 'Tiêu chí 2' },
+                { id: 'r3', label: 'Tiêu chí 3' }
+              ];
+          const matrixCols: { id: string; label: string }[] = Array.isArray(options?.columns)
+            ? options.columns
+            : [
+                { id: 'c1', label: 'Kém' },
+                { id: 'c2', label: 'Bình thường' },
+                { id: 'c3', label: 'Tốt' }
+              ];
+          const currentMatrixVal: Record<string, string> = (value && typeof value === 'object') ? value : {};
+
+          return (
+            <div className="overflow-x-auto pt-2">
+              <table className="w-full text-left text-sm border-collapse border border-slate-200 rounded-xl overflow-hidden">
+                <thead className="bg-slate-50 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4 border border-slate-200">Tiêu chí / Khía cạnh</th>
+                    {matrixCols.map((col) => (
+                      <th key={col.id} className="py-3 px-4 border border-slate-200 text-center">
+                        {col.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {matrixRows.map((row) => (
+                    <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-4 font-medium text-slate-800 border border-slate-200">
+                        {row.label}
+                      </td>
+                      {matrixCols.map((col) => {
+                        const isChecked = currentMatrixVal[row.id] === col.id;
+                        return (
+                          <td
+                            key={col.id}
+                            onClick={() => {
+                              if (!disabled) {
+                                handleChange({ ...currentMatrixVal, [row.id]: col.id });
+                              }
+                            }}
+                            className={`py-3.5 px-4 text-center border border-slate-200 cursor-pointer transition-colors ${
+                              isChecked ? 'bg-indigo-50/50' : 'hover:bg-slate-100/50'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={`matrix_${question.id}_${row.id}`}
+                              disabled={disabled}
+                              checked={isChecked}
+                              onChange={() => {
+                                handleChange({ ...currentMatrixVal, [row.id]: col.id });
+                              }}
+                              className="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
+
+        {/* Ranking (Interactive ordered list) */}
+        {qType === 'ranking' && (() => {
+          const items: { id: string; label: string }[] = Array.isArray(options) ? options : [];
+          // value is ordered array of item ids: string[]
+          const orderedIds: string[] = Array.isArray(value) && value.length === items.length
+            ? value
+            : items.map((it) => it.id);
+          const itemMap = new Map(items.map((it) => [it.id, it.label]));
+
+          const handleMove = (index: number, direction: 'up' | 'down') => {
+            if (disabled) return;
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= orderedIds.length) return;
+            const newList = [...orderedIds];
+            const temp = newList[index];
+            newList[index] = newList[targetIndex];
+            newList[targetIndex] = temp;
+            handleChange(newList);
+          };
+
+          return (
+            <div className="space-y-2 pt-2">
+              <span className="text-xs text-slate-400 block mb-1">
+                Sử dụng các mũi tên để thay đổi thứ tự ưu tiên (Vị trí 1 là ưu tiên cao nhất)
+              </span>
+              <div className="space-y-2">
+                {orderedIds.map((itemId, idx) => (
+                  <div
+                    key={itemId}
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition-all text-sm shadow-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0">
+                        #{idx + 1}
+                      </span>
+                      <span className="font-medium text-slate-800">
+                        {itemMap.get(itemId) || itemId}
+                      </span>
+                    </div>
+
+                    {!disabled && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMove(idx, 'up')}
+                          className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 disabled:opacity-20"
+                          title="Chuyển lên"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === orderedIds.length - 1}
+                          onClick={() => handleMove(idx, 'down')}
+                          className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 disabled:opacity-20"
+                          title="Chuyển xuống"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Validation Error */}

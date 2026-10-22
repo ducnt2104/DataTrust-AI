@@ -31,6 +31,8 @@ const QUESTION_TYPES: { type: QuestionType; label: string; desc: string }[] = [
   { type: 'single_choice', label: 'Trắc nghiệm (1 đáp án)', desc: 'Chọn 1 phương án duy nhất' },
   { type: 'multiple_choice', label: 'Nhiều lựa chọn', desc: 'Chọn một hoặc nhiều phương án' },
   { type: 'likert', label: 'Thang đo Likert', desc: '5 mức độ: Hoàn toàn không đồng ý -> Đồng ý' },
+  { type: 'matrix', label: 'Ma trận nhiều hàng & cột', desc: 'Đánh giá nhiều tiêu chí trên cùng thang đo' },
+  { type: 'ranking', label: 'Xếp hạng thứ tự ưu tiên', desc: 'Sắp xếp các mục theo độ ưu tiên' },
   { type: 'linear_scale', label: 'Thang điểm tuyến tính', desc: 'Đánh giá điểm số từ 1 đến 10' },
   { type: 'short_text', label: 'Trả lời ngắn', desc: 'Nhập họ tên, email hoặc từ khóa' },
   { type: 'long_text', label: 'Trả lời dài (Văn bản)', desc: 'Đóng góp ý kiến tự do, nhận xét' },
@@ -181,6 +183,25 @@ export const SurveyBuilderPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
         { id: '4', label: '4 - Hài lòng' },
         { id: '5', label: '5 - Rất hài lòng' }
       ];
+    } else if (type === 'matrix') {
+      defaultOptions = {
+        rows: [
+          { id: 'r1', label: 'Tiêu chí 1' },
+          { id: 'r2', label: 'Tiêu chí 2' },
+          { id: 'r3', label: 'Tiêu chí 3' }
+        ],
+        columns: [
+          { id: 'c1', label: 'Kém' },
+          { id: 'c2', label: 'Bình thường' },
+          { id: 'c3', label: 'Tốt' }
+        ]
+      } as any;
+    } else if (type === 'ranking') {
+      defaultOptions = [
+        { id: 'rank_1', label: 'Mục ưu tiên A' },
+        { id: 'rank_2', label: 'Mục ưu tiên B' },
+        { id: 'rank_3', label: 'Mục ưu tiên C' }
+      ];
     } else if (type === 'linear_scale') {
       defaultOptions = [
         { id: 'min', label: '1 (Thấp)' },
@@ -269,7 +290,7 @@ export const SurveyBuilderPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
 
   const deleteOption = (qIndex: number, optIndex: number) => {
     const q = survey.questions[qIndex];
-    const newOpts = (q.options || []).filter((_, i) => i !== optIndex);
+    const newOpts = (q.options || []).filter((_: any, i: number) => i !== optIndex);
     updateQuestion(qIndex, { options: newOpts });
   };
 
@@ -587,7 +608,7 @@ export const SurveyBuilderPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
                         Các phương án lựa chọn
                       </label>
                       <div className="space-y-2">
-                        {q.options?.map((opt, optIdx) => (
+                        {q.options?.map((opt: any, optIdx: number) => (
                           <div key={opt.id || optIdx} className="flex items-center gap-2">
                             <span className="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-400">
                               {optIdx + 1}
@@ -619,6 +640,155 @@ export const SurveyBuilderPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
                       </button>
                     </div>
                   )}
+
+                  {/* Ranking Options Editor */}
+                  {q.question_type === 'ranking' && (
+                    <div className="space-y-2 pt-2">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                        Các mục cần xếp hạng thứ tự ưu tiên
+                      </label>
+                      <div className="space-y-2">
+                        {Array.isArray(q.options) && q.options.map((opt: any, optIdx: number) => (
+                          <div key={opt.id || optIdx} className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 font-bold shrink-0">
+                              #{optIdx + 1}
+                            </span>
+                            <input
+                              type="text"
+                              value={opt.label}
+                              onChange={(e) => updateOptionLabel(qIndex, optIdx, e.target.value)}
+                              className="flex-1 text-sm px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-600 focus:outline-hidden"
+                            />
+                            {q.options.length > 2 && (
+                              <button
+                                onClick={() => deleteOption(qIndex, optIdx)}
+                                className="text-slate-400 hover:text-rose-600 p-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addOption(qIndex)}
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 pt-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Thêm mục xếp hạng</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Matrix Rows & Columns Editor */}
+                  {q.question_type === 'matrix' && (() => {
+                    const matrixOpts = (q.options && typeof q.options === 'object' && !Array.isArray(q.options))
+                      ? q.options
+                      : { rows: [{ id: 'r1', label: 'Tiêu chí 1' }, { id: 'r2', label: 'Tiêu chí 2' }], columns: [{ id: 'c1', label: 'Kém' }, { id: 'c2', label: 'Tốt' }] };
+                    const rows = matrixOpts.rows || [];
+                    const cols = matrixOpts.columns || [];
+
+                    const updateMatrix = (newRows: any[], newCols: any[]) => {
+                      updateQuestion(qIndex, { options: { rows: newRows, columns: newCols } });
+                    };
+
+                    return (
+                      <div className="space-y-4 pt-2">
+                        {/* Rows editor */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
+                            Các hàng (Tiêu chí / Khía cạnh đánh giá)
+                          </label>
+                          <div className="space-y-2">
+                            {rows.map((row: any, rIdx: number) => (
+                              <div key={row.id || rIdx} className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-slate-400 w-6">R{rIdx + 1}</span>
+                                <input
+                                  type="text"
+                                  value={row.label}
+                                  onChange={(e) => {
+                                    const nRows = [...rows];
+                                    nRows[rIdx] = { ...nRows[rIdx], label: e.target.value };
+                                    updateMatrix(nRows, cols);
+                                  }}
+                                  className="flex-1 text-sm px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-600 focus:outline-hidden"
+                                />
+                                {rows.length > 1 && (
+                                  <button
+                                    onClick={() => {
+                                      const nRows = rows.filter((_: any, i: number) => i !== rIdx);
+                                      updateMatrix(nRows, cols);
+                                    }}
+                                    className="text-slate-400 hover:text-rose-600 p-1"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nRows = [...rows, { id: `r_${Date.now().toString().slice(-4)}`, label: `Tiêu chí ${rows.length + 1}` }];
+                              updateMatrix(nRows, cols);
+                            }}
+                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 pt-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Thêm hàng</span>
+                          </button>
+                        </div>
+
+                        {/* Columns editor */}
+                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                          <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
+                            Các cột (Thang đo / Mức đánh giá)
+                          </label>
+                          <div className="space-y-2">
+                            {cols.map((col: any, cIdx: number) => (
+                              <div key={col.id || cIdx} className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-slate-400 w-6">C{cIdx + 1}</span>
+                                <input
+                                  type="text"
+                                  value={col.label}
+                                  onChange={(e) => {
+                                    const nCols = [...cols];
+                                    nCols[cIdx] = { ...nCols[cIdx], label: e.target.value };
+                                    updateMatrix(rows, nCols);
+                                  }}
+                                  className="flex-1 text-sm px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-600 focus:outline-hidden"
+                                />
+                                {cols.length > 2 && (
+                                  <button
+                                    onClick={() => {
+                                      const nCols = cols.filter((_: any, i: number) => i !== cIdx);
+                                      updateMatrix(rows, nCols);
+                                    }}
+                                    className="text-slate-400 hover:text-rose-600 p-1"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nCols = [...cols, { id: `c_${Date.now().toString().slice(-4)}`, label: `Mức ${cols.length + 1}` }];
+                              updateMatrix(rows, nCols);
+                            }}
+                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 pt-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Thêm cột</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Question Options Footer (Required toggle) */}
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">

@@ -113,6 +113,70 @@ def get_survey_analytics(survey_id: str):
                         num_counts[k] = num_counts.get(k, 0) + 1
                     opt_dist = num_counts
 
+            elif q_type == "matrix":
+                matrix_rows = options.get("rows", []) if isinstance(options, dict) else []
+                matrix_cols = options.get("columns", []) if isinstance(options, dict) else []
+                row_map = {
+                    (r.get("id") if isinstance(r, dict) else str(r)): (r.get("label") if isinstance(r, dict) else str(r))
+                    for r in matrix_rows
+                }
+                col_map = {
+                    (c.get("id") if isinstance(c, dict) else str(c)): (c.get("label") if isinstance(c, dict) else str(c))
+                    for c in matrix_cols
+                }
+                
+                # Matrix distribution: row_label -> { col_label -> count }
+                matrix_dist = {}
+                for r_label in row_map.values():
+                    matrix_dist[r_label] = {c_label: 0 for c_label in col_map.values()}
+                
+                for a in ans_rows:
+                    try:
+                        val_dict = json.loads(a["answer_value"])
+                        if isinstance(val_dict, dict):
+                            for r_id, c_id in val_dict.items():
+                                r_label = row_map.get(r_id, r_id)
+                                c_label = col_map.get(c_id, c_id)
+                                if r_label not in matrix_dist:
+                                    matrix_dist[r_label] = {}
+                                matrix_dist[r_label][c_label] = matrix_dist[r_label].get(c_label, 0) + 1
+                    except Exception:
+                        pass
+                stats_sum = {"matrix_distribution": matrix_dist}
+
+            elif q_type == "ranking":
+                item_map = {
+                    (opt.get("id") if isinstance(opt, dict) else str(opt)): (opt.get("label") if isinstance(opt, dict) else str(opt))
+                    for opt in (options if isinstance(options, list) else [])
+                }
+                rank_positions = {label: [] for label in item_map.values()}
+                
+                for a in ans_rows:
+                    try:
+                        ranked_list = json.loads(a["answer_value"])
+                        if isinstance(ranked_list, list):
+                            for pos, item_id in enumerate(ranked_list):
+                                label = item_map.get(item_id, item_id)
+                                if label not in rank_positions:
+                                    rank_positions[label] = []
+                                rank_positions[label].append(pos + 1)
+                    except Exception:
+                        pass
+                
+                # Tính thứ hạng trung bình (Rank 1 là cao nhất)
+                avg_ranks = {}
+                first_place_counts = {}
+                for label, positions in rank_positions.items():
+                    if positions:
+                        avg_ranks[label] = round(sum(positions) / len(positions), 2)
+                        first_place_counts[label] = positions.count(1)
+                    else:
+                        avg_ranks[label] = 0.0
+                        first_place_counts[label] = 0
+                
+                opt_dist = first_place_counts
+                stats_sum = {"ranking_averages": avg_ranks}
+
             elif q_type in ("long_text", "short_text"):
                 samples = []
                 for a in ans_rows:

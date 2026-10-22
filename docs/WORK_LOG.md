@@ -44,3 +44,16 @@
   4. Khởi chạy Frontend Vite dev daemon trên cổng 5173 (`http://127.0.0.1:5173`).
   5. Kiểm tra kết nối end-to-end với HTTP 200 OK trên cả 2 cổng.
   6. Hoàn thiện tài liệu nghiệm thu `docs/TEST_RESULTS.md` và `docs/IMPLEMENTATION_BACKLOG.md`.
+
+---
+
+## Checkpoint 5: Mở Rộng 12 Dạng Câu Hỏi, Khử Flaky DB Tests & Báo Cáo Nghiệm Thu
+- **Thời gian:** 2026-10-22 17:22 - 17:30
+- **Thực hiện:**
+  1. Hoàn thiện hỗ trợ toàn diện dạng câu hỏi `matrix` (ma trận lưới hàng x cột) và `ranking` (xếp hạng thứ tự ưu tiên) từ Builder, Public Renderer, Quality Engine (giải nén ma trận vào straightlining, bảo toàn vector thứ tự ranking) đến Analytics Dashboard (bảng phân bố tần suất 2 chiều và điểm thứ hạng trung bình).
+  2. Khắc phục triệt để lỗi TypeScript strict typing trong `QuestionRenderer.tsx` và `SurveyBuilderPage.tsx`. Biên dịch production Vite + TypeScript pass 100%.
+  3. Xây dựng bộ kiểm thử mới `test_all_12_question_types.py` kiểm định trọn vẹn 12 loại câu hỏi, chuẩn hóa vector ranking, straightlining trên matrix và analytics aggregation.
+  4. Chuẩn hóa môi trường test thông qua `backend/tests/conftest.py`, tự động cô lập và dọn dẹp CSDL test suite tạm thời, chấm dứt hoàn toàn xung đột khóa chính `questions.id`.
+  5. Toàn bộ 12 ca kiểm thử tự động trên Pytest vượt qua 100% (12/12 PASSED).
+  6. Tạo văn bản báo cáo chiến dịch `docs/CAMPAIGN_CHECKPOINT.md` ghi nhận toàn bộ tiến độ, ma trận tính năng, kết quả kiểm thử và bằng chứng cổng lắng nghe socket.
+  7. Xác minh cổng mạng: Backend `http://127.0.0.1:8000/api/health` trả về HTTP 200 `{ "status": "healthy" }`, Frontend `http://127.0.0.1:5173/` trả về HTTP 200.

@@ -32,17 +32,20 @@ Hệ quản trị CSDL: SQLite 3 (WAL Mode kích hoạt).
 platform win32 -- Python 3.15.0rc1, pytest-9.1.1, pluggy-1.6.0
 rootdir: C:\Users\ADMIN\Desktop\project 11\DataTrust-AI\DataTrust-AI - source code
 plugins: anyio-4.15.1, cov-7.1.0
-collected 9 items
+collected 12 items
 
-backend/tests/test_analytics_and_export.py::test_analytics_and_export_journey PASSED [ 11%]
-backend/tests/test_full_journey_e2e.py::test_full_12_step_e2e_journey PASSED [ 22%]
-backend/tests/test_public_survey.py::test_public_survey_lifecycle PASSED [ 33%]
-backend/tests/test_quality_engine.py::test_exact_duplicate_detection PASSED [ 44%]
-backend/tests/test_quality_engine.py::test_straightlining_detection PASSED [ 55%]
-backend/tests/test_quality_engine.py::test_speeding_detection PASSED     [ 66%]
-backend/tests/test_quality_engine.py::test_logic_contradiction_detection PASSED [ 77%]
-backend/tests/test_quality_engine.py::test_clean_response_low_risk PASSED [ 88%]
+backend/tests/test_all_12_question_types.py::test_quality_engine_ranking_normalization PASSED [  8%]
+backend/tests/test_all_12_question_types.py::test_quality_engine_matrix_straightlining PASSED [ 16%]
+backend/tests/test_all_12_question_types.py::test_all_12_question_types_survey_lifecycle PASSED [ 25%]
+backend/tests/test_analytics_and_export.py::test_analytics_and_export_journey PASSED [ 33%]
+backend/tests/test_full_journey_e2e.py::test_full_12_step_e2e_journey PASSED [ 41%]
+backend/tests/test_public_survey.py::test_public_survey_lifecycle PASSED [ 50%]
+backend/tests/test_quality_engine.py::test_exact_duplicate_detection PASSED [ 58%]
+backend/tests/test_quality_engine.py::test_straightlining_detection PASSED [ 66%]
+backend/tests/test_quality_engine.py::test_speeding_detection PASSED     [ 75%]
+backend/tests/test_quality_engine.py::test_logic_contradiction_detection PASSED [ 83%]
+backend/tests/test_quality_engine.py::test_clean_response_low_risk PASSED [ 91%]
 backend/tests/test_surveys_api.py::test_create_and_update_survey PASSED  [100%]
 
-======================== 9 passed, 1 warning in 1.59s =========================
+======================== 12 passed, 1 warning in 1.39s ========================
 ```

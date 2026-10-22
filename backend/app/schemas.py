@@ -18,8 +18,8 @@ class QuestionBase(BaseModel):
     title: str
     description: Optional[str] = ""
     is_required: bool = False
-    options: List[Dict[str, Any]] = []
-    logic_rules: List[Dict[str, Any]] = []
+    options: Any = Field(default_factory=list)
+    logic_rules: List[Dict[str, Any]] = Field(default_factory=list)
 
 class QuestionCreate(QuestionBase):
     id: Optional[str] = None
@@ -84,8 +84,8 @@ class PublicQuestionOut(BaseModel):
     title: str
     description: str
     is_required: bool
-    options: List[Dict[str, Any]]
-    logic_rules: List[Dict[str, Any]]
+    options: Any = Field(default_factory=list)
+    logic_rules: List[Dict[str, Any]] = Field(default_factory=list)
 
 class PublicSurveyOut(BaseModel):
     id: str

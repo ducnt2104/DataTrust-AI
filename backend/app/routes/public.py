@@ -101,10 +101,36 @@ def submit_response(slug_or_id: str, payload: ResponseSubmit):
             qid = q["id"]
             val = payload.answers.get(qid)
             is_req = bool(q["is_required"])
+            q_type = q.get("question_type")
+            opts = q.get("options", [])
             
             if is_req:
-                if val is None or (isinstance(val, str) and not val.strip()) or (isinstance(val, list) and len(val) == 0):
+                if val is None or (isinstance(val, str) and not val.strip()):
                     errors.append(f"Câu hỏi bắt buộc '{q['title']}' chưa có câu trả lời.")
+                elif isinstance(val, list) and len(val) == 0:
+                    errors.append(f"Câu hỏi bắt buộc '{q['title']}' chưa có phương án nào được chọn.")
+                elif q_type == "matrix":
+                    if not isinstance(val, dict):
+                        errors.append(f"Câu hỏi ma trận '{q['title']}' yêu cầu câu trả lời theo từng hàng.")
+                    else:
+                        # Kiểm tra xem tất cả các hàng đã được trả lời chưa
+                        matrix_rows = opts.get("rows", []) if isinstance(opts, dict) else []
+                        for r in matrix_rows:
+                            r_id = r.get("id") if isinstance(r, dict) else str(r)
+                            if not val.get(r_id):
+                                r_label = r.get("label", r_id) if isinstance(r, dict) else r_id
+                                errors.append(f"Câu hỏi ma trận '{q['title']}': Hàng '{r_label}' chưa có đánh giá.")
+                                break
+                elif q_type == "ranking":
+                    if not isinstance(val, list) or len(val) == 0:
+                        errors.append(f"Câu hỏi xếp hạng '{q['title']}' chưa được sắp xếp.")
+
+            # Kiểm tra kiểu số nếu có nhập
+            if q_type == "number" and val is not None and str(val).strip() != "":
+                try:
+                    float(val)
+                except (ValueError, TypeError):
+                    errors.append(f"Câu hỏi '{q['title']}' yêu cầu giá trị số hợp lệ.")
 
         if errors:
             raise HTTPException(status_code=422, detail={"validation_errors": errors})

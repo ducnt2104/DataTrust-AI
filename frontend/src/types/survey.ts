@@ -17,6 +17,11 @@ export interface QuestionOption {
   label: string;
 }
 
+export interface MatrixOptions {
+  rows: { id: string; label: string }[];
+  columns: { id: string; label: string }[];
+}
+
 export interface LogicRule {
   depends_on_question_id: string;
   operator: 'equals' | 'not_equals';
@@ -32,7 +37,7 @@ export interface Question {
   title: string;
   description?: string;
   is_required: boolean;
-  options: QuestionOption[];
+  options: QuestionOption[] | MatrixOptions | any;
   logic_rules: LogicRule[];
 }
 
@@ -128,10 +133,12 @@ export interface QuestionStats {
   total_answers: number;
   option_distribution?: Record<string, number> | null;
   stats_summary?: {
-    min: number;
-    max: number;
-    avg: number;
-    count: number;
+    min?: number;
+    max?: number;
+    avg?: number;
+    count?: number;
+    matrix_distribution?: Record<string, Record<string, number>>;
+    ranking_averages?: Record<string, number>;
   } | null;
   recent_text_samples?: string[] | null;
 }

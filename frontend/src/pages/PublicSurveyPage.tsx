@@ -82,7 +82,12 @@ export const PublicSurveyPage: React.FC<Props> = ({ slug, onNavigate }) => {
     for (const q of visibleQuestions) {
       if (q.is_required) {
         const val = answers[q.id];
-        if (
+        if (q.question_type === 'matrix') {
+          const matrixRows = Array.isArray(q.options?.rows) ? q.options.rows : [];
+          if (!val || typeof val !== 'object' || matrixRows.some((r: any) => !val[r.id])) {
+            errors[q.id] = 'Vui lòng hoàn thành đánh giá cho tất cả các hàng trong ma trận.';
+          }
+        } else if (
           val === undefined ||
           val === null ||
           (typeof val === 'string' && val.trim() === '') ||

@@ -1,23 +1,9 @@
-import os
 import json
 import pytest
 from datetime import datetime, timezone, timedelta
 from fastapi.testclient import TestClient
 
-os.environ["DATABASE_PATH"] = "backend/data/test_datatrust_e2e.db"
-
 from app.main import app
-from app.database import init_db
-
-@pytest.fixture(autouse=True)
-def setup_e2e_db():
-    if os.path.exists("backend/data/test_datatrust_e2e.db"):
-        try:
-            os.remove("backend/data/test_datatrust_e2e.db")
-        except Exception:
-            pass
-    init_db("backend/data/test_datatrust_e2e.db")
-    yield
 
 client = TestClient(app)
 

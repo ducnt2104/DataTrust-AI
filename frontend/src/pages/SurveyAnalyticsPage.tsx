@@ -204,7 +204,7 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
             )}
 
             {/* Numeric summary */}
-            {q.stats_summary && (
+            {q.stats_summary && q.stats_summary.min !== undefined && (
               <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl text-center text-xs">
                 <div>
                   <span className="text-slate-400 block">Thấp nhất (Min)</span>
@@ -217,6 +217,56 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
                 <div>
                   <span className="text-slate-400 block">Cao nhất (Max)</span>
                   <span className="font-bold text-slate-800 text-sm">{q.stats_summary.max}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Matrix summary */}
+            {q.stats_summary?.matrix_distribution && (
+              <div className="space-y-2 pt-1 overflow-x-auto">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                  Phân bố tần suất theo ma trận tiêu chí
+                </span>
+                <table className="w-full text-xs text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">
+                  <thead className="bg-slate-50 text-slate-600 font-semibold">
+                    <tr>
+                      <th className="py-2.5 px-3 border border-slate-200">Tiêu chí</th>
+                      {Object.keys(Object.values(q.stats_summary.matrix_distribution)[0] || {}).map((col) => (
+                        <th key={col} className="py-2.5 px-3 border border-slate-200 text-center">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {Object.entries(q.stats_summary.matrix_distribution).map(([rowLabel, colCounts]: [string, any]) => (
+                      <tr key={rowLabel} className="hover:bg-slate-50/50">
+                        <td className="py-2.5 px-3 font-medium text-slate-800 border border-slate-200">{rowLabel}</td>
+                        {Object.entries(colCounts).map(([cLabel, count]: [string, any]) => (
+                          <td key={cLabel} className="py-2.5 px-3 text-center border border-slate-200 font-semibold text-indigo-700">
+                            {count}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Ranking summary */}
+            {q.stats_summary?.ranking_averages && (
+              <div className="space-y-2 pt-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                  Thứ hạng trung bình các mục ưu tiên (Số càng nhỏ biểu thị mức ưu tiên càng cao)
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {Object.entries(q.stats_summary.ranking_averages).map(([itemLabel, avgRank]: [string, any]) => (
+                    <div key={itemLabel} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                      <span className="font-medium text-slate-800">{itemLabel}</span>
+                      <span className="font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
+                        Hạng TB: {avgRank}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
