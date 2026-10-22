@@ -104,6 +104,21 @@ def test_analytics_and_export_journey():
     export_csv = client.get(f"/api/surveys/{survey_id}/export?scope=verified_clean&format=csv")
     assert export_csv.status_code == 200
     assert "text/csv" in export_csv.headers["content-type"]
+
+    # 7.1. Kiểm tra Nhập dữ liệu CSV (CSV Import)
+    csv_payload = "Hãng xe bạn quan tâm?,Ngân sách dự kiến (triệu VNĐ)?\nVinFast,750\nTesla,1100\n"
+    import_res = client.post(
+        f"/api/surveys/{survey_id}/import/csv",
+        files={"file": ("import_sample.csv", csv_payload.encode("utf-8"), "text/csv")}
+    )
+    assert import_res.status_code == 200
+    import_data = import_res.json()
+    assert import_data["imported_count"] == 2
+
+    # Xác nhận tổng số phản hồi sau import tăng lên 7
+    an_res7 = client.get(f"/api/surveys/{survey_id}/analytics")
+    assert an_res7.status_code == 200
+    assert an_res7.json()["total_responses"] == 7
     csv_text = export_csv.content.decode("utf-8-sig")
     assert "Response_ID" in csv_text
     assert "Hãng xe bạn quan tâm?" in csv_text
