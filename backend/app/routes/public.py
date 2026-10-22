@@ -1,0 +1,201 @@
+import json
+import uuid
+from datetime import datetime, timezone
+from typing import Dict, Any, List
+from fastapi import APIRouter, HTTPException
+from app.database import get_db
+from app.schemas import PublicSurveyOut, PublicQuestionOut, ResponseSubmit
+from app.engine.quality_engine import QualityEngine
+
+router = APIRouter(prefix="/api/public/surveys", tags=["Public Survey"])
+
+def parse_iso(dt_str: str) -> datetime:
+    try:
+        # Xử lý cả dạng kết thúc bằng Z hoặc +00:00
+        clean = dt_str.replace("Z", "+00:00")
+        return datetime.fromisoformat(clean)
+    except Exception:
+        return datetime.now(timezone.utc)
+
+@router.get("/{slug_or_id}", response_model=PublicSurveyOut)
+def get_public_survey(slug_or_id: str):
+    """Lấy dữ liệu khảo sát công khai cho người tham gia làm bài"""
+    with get_db() as conn:
+        s_row = conn.execute("""
+            SELECT * FROM surveys WHERE public_slug = ? OR id = ?
+        """, (slug_or_id, slug_or_id)).fetchone()
+
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        status = s_row["status"]
+        if status == "draft":
+            raise HTTPException(
+                status_code=403,
+                detail="Khảo sát này đang ở chế độ bản nháp và chưa được xuất bản. Vui lòng liên hệ người tạo khảo sát."
+            )
+        if status == "closed":
+            raise HTTPException(
+                status_code=410,
+                detail="Khảo sát này đã kết thúc và không còn chấp nhận phản hồi mới."
+            )
+        if status == "archived":
+            raise HTTPException(status_code=404, detail="Khảo sát đã được lưu trữ và không còn khả dụng.")
+
+        q_rows = conn.execute("""
+            SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC
+        """, (s_row["id"],)).fetchall()
+
+        questions = []
+        for q in q_rows:
+            questions.append(PublicQuestionOut(
+                id=q["id"],
+                order_index=q["order_index"],
+                question_type=q["question_type"],
+                title=q["title"],
+                description=q["description"] or "",
+                is_required=bool(q["is_required"]),
+                options=json.loads(q["options_json"] or "[]"),
+                logic_rules=json.loads(q["logic_rules_json"] or "[]")
+            ))
+
+        return PublicSurveyOut(
+            id=s_row["id"],
+            title=s_row["title"],
+            description=s_row["description"] or "",
+            instructions=s_row["instructions"] or "",
+            public_slug=s_row["public_slug"],
+            version=s_row["version"],
+            questions=questions
+        )
+
+@router.post("/{slug_or_id}/submit", status_code=201)
+def submit_response(slug_or_id: str, payload: ResponseSubmit):
+    """Tiếp nhận, kiểm tra hợp lệ, lưu phản hồi thật và thực thi Quality Engine"""
+    with get_db() as conn:
+        s_row = conn.execute("""
+            SELECT * FROM surveys WHERE public_slug = ? OR id = ?
+        """, (slug_or_id, slug_or_id)).fetchone()
+
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+        if s_row["status"] != "published":
+            raise HTTPException(status_code=400, detail="Khảo sát hiện không ở trạng thái nhận phản hồi.")
+
+        survey_id = s_row["id"]
+        survey_version = s_row["version"]
+
+        # Lấy danh sách câu hỏi
+        q_rows = conn.execute("""
+            SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC
+        """, (survey_id,)).fetchall()
+
+        questions = [dict(q) for q in q_rows]
+        for q in questions:
+            q["options"] = json.loads(q.get("options_json") or "[]")
+            q["logic_rules"] = json.loads(q.get("logic_rules_json") or "[]")
+
+        # Kiểm tra tính hợp lệ cơ bản (Validation Layer A)
+        errors = []
+        for q in questions:
+            qid = q["id"]
+            val = payload.answers.get(qid)
+            is_req = bool(q["is_required"])
+            
+            if is_req:
+                if val is None or (isinstance(val, str) and not val.strip()) or (isinstance(val, list) and len(val) == 0):
+                    errors.append(f"Câu hỏi bắt buộc '{q['title']}' chưa có câu trả lời.")
+
+        if errors:
+            raise HTTPException(status_code=422, detail={"validation_errors": errors})
+
+        # Tính thời gian làm bài (duration_seconds)
+        start_dt = parse_iso(payload.started_at)
+        submit_dt = parse_iso(payload.submitted_at)
+        duration = max(0.0, (submit_dt - start_dt).total_seconds())
+
+        response_id = str(uuid.uuid4())
+        submitted_at_iso = submit_dt.isoformat()
+        started_at_iso = start_dt.isoformat()
+
+        # 1. Lưu bản ghi response
+        conn.execute("""
+            INSERT INTO responses (
+                id, survey_id, survey_version, started_at, submitted_at,
+                duration_seconds, client_metadata_json, risk_score, risk_level,
+                analysis_status, review_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0.0, 'low', 'pending', 'unverified')
+        """, (
+            response_id, survey_id, survey_version, started_at_iso, submitted_at_iso,
+            duration, json.dumps(payload.client_metadata or {})
+        ))
+
+        # 2. Lưu từng câu trả lời vào response_answers
+        for qid, val in payload.answers.items():
+            ans_id = str(uuid.uuid4())
+            ans_str = json.dumps(val, ensure_ascii=False) if isinstance(val, (list, dict)) else str(val)
+            conn.execute("""
+                INSERT INTO response_answers (id, response_id, question_id, answer_value, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, (ans_id, response_id, qid, ans_str, submitted_at_iso))
+
+        # 3. Lấy các phản hồi trước đó để đối chiếu (Layer B & F)
+        prior_resp_rows = conn.execute("""
+            SELECT id FROM responses WHERE survey_id = ? AND id != ?
+        """, (survey_id, response_id)).fetchall()
+
+        prior_responses = []
+        for pr in prior_resp_rows:
+            pr_id = pr["id"]
+            ans_rows = conn.execute("""
+                SELECT question_id, answer_value FROM response_answers WHERE response_id = ?
+            """, (pr_id,)).fetchall()
+            
+            p_answers = {}
+            for a in ans_rows:
+                raw_val = a["answer_value"]
+                try:
+                    p_answers[a["question_id"]] = json.loads(raw_val)
+                except Exception:
+                    p_answers[a["question_id"]] = raw_val
+                    
+            prior_responses.append({"id": pr_id, "answers": p_answers})
+
+        # 4. Thực thi QualityEngine phân tích chất lượng
+        analysis = QualityEngine.analyze_response(
+            new_answers=payload.answers,
+            duration_seconds=duration,
+            questions=questions,
+            prior_responses=prior_responses
+        )
+
+        # 5. Lưu kết quả đánh giá chất lượng
+        assessment_id = str(uuid.uuid4())
+        conn.execute("""
+            INSERT INTO quality_assessments (
+                id, response_id, score_dup, score_pattern, score_logic, score_speed, score_text,
+                composite_score, flags_json, closest_match_response_id, highest_similarity, assessed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            assessment_id, response_id,
+            analysis["score_dup"], analysis["score_pattern"], analysis["score_logic"],
+            analysis["score_speed"], analysis["score_text"], analysis["composite_score"],
+            json.dumps(analysis["flags"], ensure_ascii=False),
+            analysis.get("closest_match_response_id"), analysis.get("highest_similarity", 0.0),
+            submitted_at_iso
+        ))
+
+        # 6. Cập nhật điểm rủi ro và trạng thái vào responses
+        conn.execute("""
+            UPDATE responses 
+            SET risk_score = ?, risk_level = ?, analysis_status = 'analyzed'
+            WHERE id = ?
+        """, (analysis["composite_score"], analysis["risk_level"], response_id))
+
+        return {
+            "response_id": response_id,
+            "message": "Phản hồi của bạn đã được ghi nhận thành công.",
+            "status": "recorded",
+            "risk_score": analysis["composite_score"],
+            "risk_level": analysis["risk_level"]
+        }
