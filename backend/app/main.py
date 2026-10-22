@@ -35,6 +35,8 @@ app.include_router(export_import.router)
 app.include_router(ai.router)
 
 @app.get("/api/health", tags=["System"])
+@app.get("/api/status", tags=["System"])
+@app.get("/health", tags=["System"])
 def health_check():
     return {
         "status": "healthy",
