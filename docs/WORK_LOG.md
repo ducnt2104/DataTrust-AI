@@ -127,3 +127,22 @@
      - Pytest: 12 test suites, 21 tests PASSED 100% trong 3.32s.
      - Frontend build: 1,980 modules transformed, 0 lỗi TypeScript strict trong 649ms.
      - Backend API trên cổng 8000 và Vite trên cổng 5173 hoạt động bình thường.
+
+---
+
+## Checkpoint 9: Kiểm Định Luật Benford Trên Số Liệu & Xuất Từ Điển Cú Pháp SPSS/R (Academic Codebook)
+- **Thời gian:** 2026-10-23 15:15 - 15:30
+- **Thực hiện:**
+  1. **Kiểm định thống kê Luật Benford (First-Digit Test) trên số liệu (`backend/app/engine/quality_engine.py`):**
+     - Xây dựng thuật toán kiểm định chữ số đầu tiên theo luật logarit tự nhiên $P(d) = \log_{10}(1 + 1/d)$ nhằm phát hiện số liệu bịa đặt/ngụy tạo trong các câu hỏi số (thu nhập, chi phí, khoảng cách...) theo nghiên cứu của Schräpler & Wagner (2012, AAPOR).
+     - Tính thống kê $\chi^2$ với 8 bậc tự do ($df=8$), đánh giá mức ý nghĩa $p < 0.05$ và $p < 0.01$.
+     - Tuyến API `GET /api/surveys/{id}/analytics/benford`.
+     - Thẻ trực quan hóa phân bố tần suất (`BenfordAnalysisCard.tsx`) tích hợp vào `SurveyAnalyticsPage.tsx`, đối chiếu trực quan cột phần trăm thực tế vs lý thuyết.
+  2. **Xuất Từ điển Dữ liệu & Cú pháp SPSS / R (`backend/app/routes/export_import.py`):**
+     - Tuyến API `GET /api/surveys/{id}/codebook?format=spss|json`: Tự động phân loại thang đo (Nominal, Ordinal, Scale), trích xuất danh sách biến `VAR001...`, nhãn câu hỏi `VARIABLE LABELS`, nhãn lựa chọn `VALUE LABELS` và quy tắc khuyết thiếu `MISSING VALUES ALL (999)`.
+     - Tích hợp khu vực tải file `.sps` và xem JSON Codebook trong `ExportImportPage.tsx`.
+  3. **Kiểm thử tự động:**
+     - Thêm 2 bài kiểm thử mới trong `backend/tests/test_benford_and_codebook.py` kiểm định tính đúng đắn của Benford trên tập số tự nhiên vs tập số bịa đặt, và kiểm tra tính hợp lệ của cú pháp SPSS.
+     - Toàn bộ 23/23 tests trong 13 test suites trên Pytest đạt 100% PASSED trong 3.81s.
+     - Biên dịch production Frontend `npm run build`: 1,981 modules transformed thành công với 0 lỗi trong 732ms.
+     - Xác minh trạng thái cổng mạng: Backend API Healthy, Frontend Dev Server phản hồi HTTP 200.

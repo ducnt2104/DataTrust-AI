@@ -1,8 +1,9 @@
 import json
-from typing import Dict, Any, List
-from fastapi import APIRouter, HTTPException
+from typing import Dict, Any, List, Optional
+from fastapi import APIRouter, HTTPException, Query
 from app.database import get_db
 from app.schemas import SurveyAnalyticsOut, QuestionStats
+from app.engine.quality_engine import QualityEngine
 
 router = APIRouter(prefix="/api/surveys/{survey_id}/analytics", tags=["Analytics"])
 
@@ -208,3 +209,45 @@ def get_survey_analytics(survey_id: str):
             review_distribution=review_dist,
             questions_analytics=questions_analytics
         )
+
+@router.get("/benford")
+def get_benford_analysis(survey_id: str, question_id: Optional[str] = Query(None)):
+    """
+    Phân tích định luật Benford (First-Digit Test) trên các câu hỏi kiểu số học
+    để phát hiện số liệu ngụy tạo / bịa đặt theo phương pháp Schräpler & Wagner (2012)
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        if question_id:
+            ans_rows = conn.execute("""
+                SELECT ra.answer_value 
+                FROM response_answers ra
+                JOIN responses r ON r.id = ra.response_id
+                WHERE ra.question_id = ? AND r.survey_id = ?
+            """, (question_id, survey_id)).fetchall()
+        else:
+            ans_rows = conn.execute("""
+                SELECT ra.answer_value 
+                FROM response_answers ra
+                JOIN responses r ON r.id = ra.response_id
+                JOIN questions q ON q.id = ra.question_id
+                WHERE r.survey_id = ? AND q.question_type = 'number'
+            """, (survey_id,)).fetchall()
+
+        raw_numbers = []
+        for r in ans_rows:
+            v = r["answer_value"]
+            if v is not None and v != "":
+                try:
+                    raw_numbers.append(float(v))
+                except Exception:
+                    pass
+
+        analysis = QualityEngine.compute_benford_analysis(raw_numbers)
+        analysis["survey_id"] = survey_id
+        analysis["question_id"] = question_id
+        return analysis
+

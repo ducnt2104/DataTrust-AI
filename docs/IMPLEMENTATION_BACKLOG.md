@@ -31,3 +31,15 @@ Trạng thái:
 - [x] **P0-16:** Nâng cấp Trung tâm Xuất & Nhập dữ liệu (`ExportImportPage.tsx`):
   - Hỗ trợ lọc phạm vi xuất theo kênh nguồn (Toàn bộ, Trực tuyến, Phiếu giấy, CSV).
   - Tích hợp thông tin giải thích quy trình bảo toàn tính toàn vẹn và tái kiểm định 7 tầng cho dữ liệu ngoại tuyến.
+- [x] **P0-17:** Xây dựng Mô-đun Báo cáo Kiểm định Chất lượng Độc lập & Pháp lý Nghị định 356/2025/NĐ-CP:
+  - API `GET /api/surveys/{id}/audit-report` tính toán Data Trust Index (DTI), ma trận 6 nhóm tín hiệu và sinh mã băm kiểm định SHA-256 (`DT-AUDIT-XXXX`).
+  - API `POST /api/surveys/{id}/privacy/anonymize` thực thi quyền ẩn danh hóa PII (xóa IP, User-Agent, che mờ text answers `[ANONYMIZED_PII]`) có ghi vết nhật ký kiểm toán.
+  - Giao diện in ấn và hiển thị chứng nhận chất lượng dữ liệu (`QualityAuditReportModal.tsx`).
+- [x] **P0-18:** Kiểm thử Chịu tải Cao & Thông lượng (High-Concurrency Stress Load Test):
+  - Kịch bản nộp 100 phản hồi liên tục trên SQLite WAL (`test_stress_load.py`): Đạt 100% thành công, thông lượng 77.1 req/s, độ trễ trung bình 12.98 ms, 0 database locks.
+- [x] **P0-19:** Kiểm định Thống kê Luật Benford trên Số liệu (Benford's Law First-Digit Analysis):
+  - Thuật toán trích xuất chữ số đầu tiên $d \in \{1..9\}$, tính kiểm định Chi-square ($df=8$) đối chiếu với phân bố $\log_{10}(1 + 1/d)$ theo nghiên cứu của Schräpler & Wagner (2012).
+  - Tuyến API `GET /api/surveys/{id}/analytics/benford` và Thẻ trực quan hóa phân bố tần suất (`BenfordAnalysisCard.tsx`) trên trang phân tích.
+- [x] **P0-20:** Xuất Từ điển Dữ liệu & Cú pháp SPSS / R (Academic Codebook Exporter):
+  - API `GET /api/surveys/{id}/codebook`: Tự động phân loại thang đo (Nominal, Ordinal, Scale), ánh xạ nhãn biến `VARIABLE LABELS`, nhãn phương án `VALUE LABELS` và giá trị khuyết thiếu.
+  - Tải file cú pháp `.sps` và xem JSON Data Dictionary trực tiếp trên `ExportImportPage.tsx`.

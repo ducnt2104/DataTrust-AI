@@ -14,6 +14,7 @@ import {
 import { api } from '../api/client';
 import { SurveyAnalytics } from '../types/survey';
 import { QualityAuditReportModal } from '../components/QualityAuditReportModal';
+import { BenfordAnalysisCard } from '../components/BenfordAnalysisCard';
 
 interface Props {
   surveyId: string;
@@ -175,6 +176,9 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           </div>
         </div>
       </div>
+
+      {/* Benford's Law First-Digit Statistical Analysis */}
+      <BenfordAnalysisCard surveyId={surveyId} />
 
       {/* Per-Question Analytics */}
       <div className="space-y-6">

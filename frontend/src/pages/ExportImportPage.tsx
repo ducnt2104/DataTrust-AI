@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   ArrowLeft, Download, Upload, FileText, CheckCircle2, ShieldCheck, 
-  Database, Globe, Layers, AlertCircle, Info 
+  Database, Globe, Layers, AlertCircle, Info, FileSpreadsheet, Code2
 } from 'lucide-react';
 
 interface Props {
@@ -251,6 +251,38 @@ export const ExportImportPage: React.FC<Props> = ({ surveyId, onNavigate }) => {
             <span>{importResult}</span>
           </div>
         )}
+      </div>
+
+      {/* Academic Codebook & Data Dictionary Section */}
+      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+          <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+          <h2 className="font-bold text-slate-900 text-base">
+            Từ điển Dữ liệu & Cú pháp SPSS / R (Academic Codebook)
+          </h2>
+        </div>
+
+        <p className="text-xs text-slate-600 leading-relaxed">
+          Tự động sinh nhãn biến (Variable Labels), nhãn phương án (Value Labels), định nghĩa giá trị khuyết thiếu (Missing Values) và phân loại thang đo (Nominal, Ordinal, Scale) chuẩn bị sẵn sàng cho các phần mềm phân tích thống kê chuyên dụng (SPSS, R, Stata, Python).
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/codebook?format=spss`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all border border-indigo-200/80"
+          >
+            <Code2 className="w-4 h-4" />
+            <span>Tải Cú pháp SPSS (.sps Syntax)</span>
+          </button>
+
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/codebook?format=json`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-slate-200"
+          >
+            <Download className="w-4 h-4" />
+            <span>Xem Từ điển Dữ liệu JSON</span>
+          </button>
+        </div>
       </div>
     </div>
   );

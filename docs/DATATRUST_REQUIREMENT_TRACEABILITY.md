@@ -29,6 +29,8 @@
 | **REQ-ETHIC-02** | Mục VI (Nguyên tắc 4) | Quyền ẩn danh hóa & xóa dữ liệu định danh (Right to Erasure / Automated Anonymization) | `backend/app/routes/audit_report.py`, `QualityAuditReportModal.tsx` | **VERIFIED** | Pytest `test_audit_report.py` | Xóa PII metadata, che mờ phản hồi văn bản mở, ghi vết audit log |
 | **REQ-REPORT-01** | Mục VI & Bước 5 | Báo cáo kiểm định chất lượng dữ liệu độc lập kèm mã băm SHA-256 chống giả mạo | `backend/app/routes/audit_report.py`, `QualityAuditReportModal.tsx` | **VERIFIED** | Pytest `test_audit_report.py` & In ấn PDF | Báo cáo chi tiết 6 nhóm tín hiệu, Data Trust Index, trích dẫn AAPOR & Pew |
 | **REQ-PERF-01** | Mục II.1 (Độ trễ) | Kiểm thử chịu tải cao & thông lượng Quality Engine trên SQLite WAL | `backend/tests/test_stress_load.py` | **VERIFIED** | Pytest `test_stress_load.py` | 100 phản hồi nộp dồn dập, độ trễ TB 12.98ms, thông lượng 77.1 req/s |
+| **REQ-STAT-01** | Mục VI (Tham khảo 6) | Kiểm định Luật Benford trên số liệu (First-Digit Test) & thống kê Chi-Square (Schräpler & Wagner 2012) | `backend/app/engine/quality_engine.py`, `backend/app/routes/analytics.py`, `BenfordAnalysisCard.tsx` | **VERIFIED** | Pytest `test_benford_and_codebook.py` | Phân tích phân bố chữ số 1-9, tính Chi-square df=8, phát hiện số liệu bịa đặt |
+| **REQ-EXP-02** | Mục VI (SPSS/R) | Xuất Từ điển dữ liệu (Codebook) & Cú pháp biến số SPSS (.sps) chuẩn bị chạy kiểm định học thuật | `backend/app/routes/export_import.py`, `ExportImportPage.tsx` | **VERIFIED** | Pytest `test_benford_and_codebook.py` | Sinh syntax `VARIABLE LABELS`, `VALUE LABELS`, thang đo Nominal/Ordinal/Scale |
 
 ---
 

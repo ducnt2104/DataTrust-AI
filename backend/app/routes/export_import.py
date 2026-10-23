@@ -187,3 +187,101 @@ async def import_csv_responses(survey_id: str, file: UploadFile = File(...)):
             imported_count += 1
 
     return {"message": f"Đã nhập thành công {imported_count} phản hồi từ tệp CSV.", "imported_count": imported_count}
+
+@router.get("/codebook")
+def get_survey_codebook(survey_id: str, format: str = Query("json", description="Định dạng: json hoặc spss")):
+    """
+    Sinh Từ điển Dữ liệu & Cú pháp SPSS / R (Academic Codebook / Data Dictionary)
+    Chuẩn bị dữ liệu cho phân tích định lượng trên SPSS, R, Python, Stata (Word dossier Mục VI)
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute("""
+            SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC
+        """, (survey_id,)).fetchall()
+
+        variables = []
+        spss_var_labels = []
+        spss_val_labels = []
+
+        for idx, q in enumerate(q_rows):
+            var_name = f"VAR{idx+1:03d}"
+            q_type = q["question_type"]
+            title = q["title"]
+            options = json.loads(q["options_json"] or "[]")
+
+            # Xác định thang đo (Measurement Level)
+            if q_type in ("single_choice", "dropdown"):
+                measure_level = "Nominal"
+            elif q_type in ("likert", "linear_scale", "rating", "ranking"):
+                measure_level = "Ordinal"
+            elif q_type == "number":
+                measure_level = "Scale"
+            elif q_type == "multiple_choice":
+                measure_level = "Multiple Response Set"
+            else:
+                measure_level = "Nominal / String"
+
+            val_map = {}
+            if isinstance(options, list) and options:
+                for opt_idx, opt in enumerate(options):
+                    if isinstance(opt, dict):
+                        val_map[str(opt_idx + 1)] = opt.get("label", opt.get("id", f"Opt {opt_idx+1}"))
+                    elif isinstance(opt, str):
+                        val_map[str(opt_idx + 1)] = opt
+
+            variables.append({
+                "variable_name": var_name,
+                "question_id": q["id"],
+                "variable_label": title,
+                "question_type": q_type,
+                "measurement_level": measure_level,
+                "is_required": bool(q["is_required"]),
+                "value_labels": val_map,
+                "missing_values": {"999": "System Missing / No Answer"}
+            })
+
+            escaped_title = title.replace('"', '""')
+            spss_var_labels.append(f'  {var_name} "{escaped_title}"')
+
+            if val_map:
+                lines = [f"  {var_name}"]
+                for k, v in val_map.items():
+                    escaped_v = str(v).replace('"', '""')
+                    lines.append(f'    {k} "{escaped_v}"')
+                spss_val_labels.append("\n".join(lines))
+
+        spss_syntax = f"""* DataTrust AI — Generated SPSS Syntax Data Dictionary.
+* Survey: {s_row['title']}.
+* Generated At: {datetime.now(timezone.utc).isoformat()}.
+
+VARIABLE LABELS
+{chr(10).join(spss_var_labels)}.
+
+"""
+        if spss_val_labels:
+            spss_syntax += f"""VALUE LABELS
+{chr(10).join(spss_val_labels)}.
+
+MISSING VALUES ALL (999).
+EXECUTE.
+"""
+
+        if format == "spss":
+            return Response(
+                content=spss_syntax,
+                media_type="text/plain; charset=utf-8",
+                headers={"Content-Disposition": f"attachment; filename=datatrust_codebook_{survey_id[:8]}.sps"}
+            )
+
+        return {
+            "survey_id": survey_id,
+            "survey_title": s_row["title"],
+            "total_variables": len(variables),
+            "variables": variables,
+            "spss_syntax": spss_syntax
+        }
+

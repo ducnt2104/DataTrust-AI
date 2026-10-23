@@ -46,6 +46,73 @@ class QualityEngine:
             return ";".join(items)
         return str(val).strip().lower()
 
+    @staticmethod
+    def compute_benford_analysis(numbers: List[Any]) -> Dict[str, Any]:
+        """
+        Kiểm định Luật Benford (Benford's Law First-Digit Test) trên các câu hỏi số học
+        để phát hiện số liệu ngụy tạo / bịa đặt bởi con người (Schräpler & Wagner 2012, AAPOR 2003).
+        """
+        digits = []
+        for n in numbers:
+            try:
+                val = abs(float(n))
+                if val > 0:
+                    # Lấy chữ số đầu tiên khác 0
+                    s = f"{val:.10e}"
+                    first_digit = int(s[0])
+                    if 1 <= first_digit <= 9:
+                        digits.append(first_digit)
+            except Exception:
+                continue
+
+        n_samples = len(digits)
+        is_sample_sufficient = n_samples >= 30
+
+        benford_probs = {d: math.log10(1.0 + 1.0 / d) for d in range(1, 10)}
+        counts = {d: digits.count(d) for d in range(1, 10)}
+        
+        distribution = []
+        chi_square = 0.0
+
+        for d in range(1, 10):
+            obs_cnt = counts[d]
+            obs_pct = round((obs_cnt / n_samples * 100), 2) if n_samples > 0 else 0.0
+            exp_pct = round(benford_probs[d] * 100, 2)
+            exp_cnt = n_samples * benford_probs[d]
+            
+            if exp_cnt > 0:
+                chi_square += ((obs_cnt - exp_cnt) ** 2) / exp_cnt
+
+            distribution.append({
+                "digit": d,
+                "observed_count": obs_cnt,
+                "observed_percentage": obs_pct,
+                "benford_percentage": exp_pct,
+                "difference": round(obs_pct - exp_pct, 2)
+            })
+
+        chi_square = round(chi_square, 2)
+        is_anomalous = False
+        significance_level = "Bình thường (Khớp quy luật tự nhiên)"
+        if is_sample_sufficient:
+            if chi_square >= 20.09:
+                is_anomalous = True
+                significance_level = "p < 0.01 (Độ lệch nghiêm trọng, nghi ngờ số liệu tự bịa đặt)"
+            elif chi_square >= 15.51:
+                is_anomalous = True
+                significance_level = "p < 0.05 (Độ lệch có ý nghĩa thống kê)"
+
+        return {
+            "total_numeric_samples": n_samples,
+            "is_sample_sufficient": is_sample_sufficient,
+            "notice": None if is_sample_sufficient else f"Cần tối thiểu N >= 30 mẫu số liệu để kiểm định Benford đạt ý nghĩa thống kê (hiện có N = {n_samples}).",
+            "chi_square_statistic": chi_square,
+            "degrees_of_freedom": 8,
+            "is_anomalous": is_anomalous,
+            "significance_level": significance_level,
+            "distribution": distribution
+        }
+
     @classmethod
     def analyze_response(
         cls,

@@ -219,5 +219,20 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse(res);
+  },
+
+  // --- Statistical & Academic Tools (Benford & Codebook) ---
+  async getBenfordAnalysis(surveyId: string, questionId?: string): Promise<any> {
+    const query = questionId ? `?question_id=${encodeURIComponent(questionId)}` : '';
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/benford${query}`);
+    return handleResponse(res);
+  },
+
+  async getSurveyCodebook(surveyId: string, format: 'json' | 'spss' = 'json'): Promise<any> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/codebook?format=${format}`);
+    if (format === 'spss') {
+      return res.text();
+    }
+    return handleResponse(res);
   }
 };

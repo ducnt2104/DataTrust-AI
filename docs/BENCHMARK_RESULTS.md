@@ -1,7 +1,7 @@
 # BÁO CÁO KẾT QUẢ THỰC NGHIỆM ĐÁNH GIÁ HỆ THỐNG DATATRUST AI
 **Phương pháp:** Controlled Benchmark Dataset (N = 150 phiếu)  
 **Tỷ lệ:** 70% Phiếu đối chứng trung thực (105 phiếu) & 30% Phiếu giả lập gian lận (45 phiếu)  
-**Thời gian xử lý trung bình:** 0.67 ms/phiếu  
+**Thời gian xử lý trung bình:** 0.74 ms/phiếu  
 
 ---
 
@@ -20,4 +20,4 @@
 ### KẾT LUẬN THỰC NGHIỆM:
 1. **Độ chuẩn xác (Precision):** Đạt **100.0%**, khẳng định hệ thống hầu như không phát sinh cảnh báo sai trên tập đối chứng điền thật.
 2. **Độ phủ phát hiện (Recall):** Đạt **100.0%**, phát hiện trọn vẹn các kịch bản sao chép tinh vi, tích thẳng hàng và vi phạm logic.
-3. **Hiệu năng vận hành:** Thời gian đánh giá trung bình **0.67 ms/phiếu**, hoàn toàn đáp ứng yêu cầu xử lý thời gian thực ngay trên thiết bị di động tầm trung.
+3. **Hiệu năng vận hành:** Thời gian đánh giá trung bình **0.74 ms/phiếu**, hoàn toàn đáp ứng yêu cầu xử lý thời gian thực ngay trên thiết bị di động tầm trung.
