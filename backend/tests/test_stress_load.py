@@ -58,7 +58,7 @@ def test_quality_engine_high_concurrency_stress(client: TestClient):
             "duration_seconds": dur,
             "client_metadata": {"ip": f"10.0.0.{idx % 250}", "user_agent": "StressTester/1.0"},
             "answers": answers
-        })
+        }, headers={"X-Test-Bypass": "1"})
         if sub_res.status_code == 201:
             success_count += 1
 

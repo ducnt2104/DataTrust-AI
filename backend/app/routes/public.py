@@ -2,10 +2,11 @@ import json
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from app.database import get_db
 from app.schemas import PublicSurveyOut, PublicQuestionOut, ResponseSubmit
 from app.engine.quality_engine import QualityEngine
+from app.middleware.rate_limiter import public_submission_limiter
 
 router = APIRouter(prefix="/api/public/surveys", tags=["Public Survey"])
 
@@ -70,8 +71,11 @@ def get_public_survey(slug_or_id: str):
         )
 
 @router.post("/{slug_or_id}/submit", status_code=201)
-def submit_response(slug_or_id: str, payload: ResponseSubmit):
+def submit_response(slug_or_id: str, payload: ResponseSubmit, request: Request):
     """Tiếp nhận, kiểm tra hợp lệ, lưu phản hồi thật và thực thi Quality Engine"""
+    # 0. Kiểm tra giới hạn tốc độ gửi phản hồi (Rate Limiting)
+    public_submission_limiter.check(request)
+
     with get_db() as conn:
         s_row = conn.execute("""
             SELECT * FROM surveys WHERE public_slug = ? OR id = ?
@@ -139,6 +143,47 @@ def submit_response(slug_or_id: str, payload: ResponseSubmit):
         start_dt = parse_iso(payload.started_at)
         submit_dt = parse_iso(payload.submitted_at)
         duration = max(0.0, (submit_dt - start_dt).total_seconds())
+
+        # 0.1. Bảo vệ chống nộp trùng lặp do vô tình double-click chuột từ cùng thiết bị trong vòng 3 giây
+        recent_rows = conn.execute("""
+            SELECT id, submitted_at, client_metadata_json FROM responses
+            WHERE survey_id = ? ORDER BY submitted_at DESC LIMIT 5
+        """, (survey_id,)).fetchall()
+
+        for rr in recent_rows:
+            try:
+                r_ts = parse_iso(rr["submitted_at"]).timestamp()
+                if abs(submit_dt.timestamp() - r_ts) <= 3.0:
+                    prev_meta_raw = rr["client_metadata_json"] or "{}"
+                    curr_meta_dict = payload.client_metadata or {}
+                    try:
+                        prev_meta_dict = json.loads(prev_meta_raw)
+                        # Nếu cả 2 đều có metadata thiết bị và khác nhau -> là 2 thiết bị khác nhau, không phải double-click
+                        if prev_meta_dict and curr_meta_dict and prev_meta_dict != curr_meta_dict:
+                            continue
+                    except Exception:
+                        pass
+
+                    ans_rows = conn.execute("""
+                        SELECT question_id, answer_value FROM response_answers WHERE response_id = ?
+                    """, (rr["id"],)).fetchall()
+                    existing_answers = {a["question_id"]: a["answer_value"] for a in ans_rows}
+
+                    is_exact_double_click = True
+                    for qid, val in payload.answers.items():
+                        v_str = json.dumps(val, ensure_ascii=False) if isinstance(val, (list, dict)) else str(val)
+                        if existing_answers.get(qid) != v_str:
+                            is_exact_double_click = False
+                            break
+                    if is_exact_double_click and len(payload.answers) == len(existing_answers):
+                        return {
+                            "response_id": rr["id"],
+                            "message": "Phản hồi đã được tiếp nhận thành công (Bảo vệ trùng lặp kích hoạt).",
+                            "risk_score": 0.0,
+                            "risk_level": "low"
+                        }
+            except Exception:
+                pass
 
         response_id = str(uuid.uuid4())
         submitted_at_iso = submit_dt.isoformat()

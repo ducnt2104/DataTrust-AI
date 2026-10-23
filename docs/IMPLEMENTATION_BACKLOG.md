@@ -43,3 +43,8 @@ Trạng thái:
 - [x] **P0-20:** Xuất Từ điển Dữ liệu & Cú pháp SPSS / R (Academic Codebook Exporter):
   - API `GET /api/surveys/{id}/codebook`: Tự động phân loại thang đo (Nominal, Ordinal, Scale), ánh xạ nhãn biến `VARIABLE LABELS`, nhãn phương án `VALUE LABELS` và giá trị khuyết thiếu.
   - Tải file cú pháp `.sps` và xem JSON Data Dictionary trực tiếp trên `ExportImportPage.tsx`.
+- [x] **P0-21:** Vòng đời nâng cao (Reopen & Duplicate) và Bảo vệ Flood / Double-click:
+  - Tuyến API `POST /api/surveys/{id}/reopen` và `POST /api/surveys/{id}/duplicate`.
+  - Bộ hạn chế tần suất trượt (Sliding-window Rate Limiter 40 req/phút) và bảo vệ click đúp trong 3 giây phân biệt theo thiết bị client (`client_metadata`).
+- [x] **P0-22:** Đặc tả Chính sách Quyền riêng tư & Tuân thủ Nghị định 356/2025/NĐ-CP:
+  - Xây dựng tài liệu `docs/PRIVACY_AND_SECURITY.md` chi tiết 4 nguyên tắc pháp lý: Tối thiểu hóa dữ liệu, Giả danh hóa UUID, Mã hóa HTTPS & SQLite WAL, Quyền xóa/ẩn danh dữ liệu PII và Bằng chứng mật mã học SHA-256 chống giả mạo.

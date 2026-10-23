@@ -222,6 +222,69 @@ def close_survey(survey_id: str):
 
     return get_survey(survey_id)
 
+@router.post("/{survey_id}/reopen", response_model=SurveyOut)
+def reopen_survey(survey_id: str):
+    """Mở lại cuộc khảo sát đã đóng để tiếp tục thu thập phản hồi"""
+    current_time = now_iso()
+    with get_db() as conn:
+        s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        conn.execute("""
+            UPDATE surveys SET status = 'published', closed_at = NULL, updated_at = ? WHERE id = ?
+        """, (current_time, survey_id))
+
+        conn.execute("""
+            INSERT INTO audit_logs (id, entity_type, entity_id, action, details_json, created_at)
+            VALUES (?, 'survey', ?, 'REOPEN', '{}', ?)
+        """, (str(uuid.uuid4()), survey_id, current_time))
+
+    return get_survey(survey_id)
+
+@router.post("/{survey_id}/duplicate", response_model=SurveyOut, status_code=201)
+def duplicate_survey(survey_id: str):
+    """Nhân bản toàn bộ cấu trúc khảo sát và danh sách câu hỏi sang một bản nháp mới"""
+    current_time = now_iso()
+    new_survey_id = str(uuid.uuid4())
+    
+    with get_db() as conn:
+        s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát gốc.")
+
+        new_title = f"Bản sao của {s_row['title']}"
+        new_slug = generate_slug(new_title)
+
+        conn.execute("""
+            INSERT INTO surveys (id, title, description, instructions, status, public_slug, version, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 'draft', ?, 1, ?, ?)
+        """, (new_survey_id, new_title, s_row["description"] or "", s_row["instructions"] or "", new_slug, current_time, current_time))
+
+        # Nhân bản danh sách câu hỏi
+        q_rows = conn.execute("""
+            SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC
+        """, (survey_id,)).fetchall()
+
+        for q in q_rows:
+            conn.execute("""
+                INSERT INTO questions (
+                    id, survey_id, order_index, question_type, title, description,
+                    is_required, options_json, logic_rules_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                str(uuid.uuid4()), new_survey_id, q["order_index"], q["question_type"],
+                q["title"], q["description"] or "", q["is_required"],
+                q["options_json"] or "[]", q["logic_rules_json"] or "[]", current_time
+            ))
+
+        conn.execute("""
+            INSERT INTO audit_logs (id, entity_type, entity_id, action, details_json, created_at)
+            VALUES (?, 'survey', ?, 'DUPLICATE', ?, ?)
+        """, (str(uuid.uuid4()), new_survey_id, json.dumps({"source_survey_id": survey_id}), current_time))
+
+    return get_survey(new_survey_id)
+
 @router.delete("/{survey_id}", status_code=204)
 def delete_survey(survey_id: str):
     with get_db() as conn:

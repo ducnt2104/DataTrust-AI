@@ -146,3 +146,24 @@
      - Toàn bộ 23/23 tests trong 13 test suites trên Pytest đạt 100% PASSED trong 3.81s.
      - Biên dịch production Frontend `npm run build`: 1,981 modules transformed thành công với 0 lỗi trong 732ms.
      - Xác minh trạng thái cổng mạng: Backend API Healthy, Frontend Dev Server phản hồi HTTP 200.
+
+
+---
+
+## Checkpoint 10: Tinh Chỉnh Cơ Chế Chống Click Đúp, Hoàn Thiện Bộ Tài Liệu Sản Xuất & Đạt 100% 25 Ca Kiểm Thử
+- **Thời gian:** 2026-10-23 15:35 - 15:50
+- **Thực hiện:**
+  1. **Chẩn đoán & Tinh chỉnh Cơ chế Chống Double-Click (`backend/app/routes/public.py`):**
+     - Vấn đề: Khi người dùng hoặc bot gửi cùng một nội dung từ hai thiết bị khác nhau (`Desktop Windows Chrome` vs `Mobile Safari`), cơ chế chống click đúp chuột trong 3 giây trước đây đã nhầm lẫn coi đó là hành vi double-click chuột thay vì một phản hồi trùng lặp có chủ đích (Fraud / Exact Duplicate).
+     - Khắc phục: Bổ sung điều kiện kiểm tra `client_metadata`. Nếu hai yêu cầu gửi đến có thông tin thiết bị/metadata khác nhau, hệ thống ghi nhận là hai phiên làm việc độc lập và chuyển tiếp qua Động cơ Kiểm định Chất lượng (Quality Engine Layer B). Nhờ đó, cờ `FLAG_EXACT_DUPLICATE` được kích hoạt chính xác với mức rủi ro cao (`risk_level: high`). Ngược lại, nếu cùng một thiết bị gửi lại nội dung y hệt trong vòng 3 giây, cơ chế bảo vệ double-click sẽ trả về `response_id` cũ với mã thành công.
+  2. **Kiểm thử tự động toàn diện:**
+     - Chạy lại toàn bộ 14 test suites với 25 bài test tự động: **25/25 PASSED (100%)** trong 6.72s.
+     - Kiểm thử E2E 12 bước (`test_full_journey_e2e.py`) chạy hoàn hảo không còn bất kỳ lỗi nào.
+  3. **Biên dịch Frontend:**
+     - `tsc -b && vite build`: Biên dịch thành công 1,981 modules không cảnh báo hoặc lỗi cú pháp trong 729ms.
+  4. **Soạn thảo & Cập nhật Tài liệu Kỹ thuật Chuẩn Sản Xuất:**
+     - `docs/PRIVACY_AND_SECURITY.md`: Đặc tả chi tiết 4 nguyên tắc cốt lõi theo Nghị định 356/2025/NĐ-CP và Luật Bảo vệ Dữ liệu Cá nhân 2025 (Tối thiểu hóa, Giả danh hóa UUID, Mã hóa HTTPS TLS 1.3 & SQLite WAL, Quyền xóa/ẩn danh dữ liệu `/privacy/anonymize`, Zero raw PII transmission, Bằng chứng mật mã học SHA-256).
+     - `docs/ARCHITECTURE.md`: Cập nhật hoàn chỉnh Kiến trúc Hai Luồng (Dual-Stream Architecture), Động cơ Kiểm định 7 tầng + Benford's Law + Sàng lọc điều tra viên.
+     - `docs/DEPLOYMENT.md`: Cung cấp cấu hình Systemd unit, Nginx reverse proxy với HTTPS và rate-limiting, kịch bản sao lưu tự động SQLite WAL không ngừng dịch vụ (`backup_sqlite.sh`).
+     - `docs/TEST_RESULTS.md`: Cập nhật bảng đối chiếu 25 ca kiểm thử đạt 100% với thời gian thực thi chi tiết.
+     - `docs/IMPLEMENTATION_BACKLOG.md`: Hoàn thành 100% các hạng mục từ P0-1 đến P0-20.
