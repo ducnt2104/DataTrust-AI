@@ -57,7 +57,10 @@ def list_responses(
                 analysis_status=r["analysis_status"],
                 review_status=r["review_status"],
                 flags_count=len(flags),
-                flags_summary=flag_msgs
+                flags_summary=flag_msgs,
+                source=r["source"] if "source" in r.keys() and r["source"] else "online_form",
+                enumerator_id=r["enumerator_id"] if "enumerator_id" in r.keys() and r["enumerator_id"] else "",
+                omr_confidence=float(r["omr_confidence"]) if "omr_confidence" in r.keys() and r["omr_confidence"] is not None else 1.0
             ))
         return result
 
@@ -122,6 +125,7 @@ def get_response_detail(survey_id: str, response_id: str):
                 score_logic=round(qa_row["score_logic"], 1),
                 score_speed=round(qa_row["score_speed"], 1),
                 score_text=round(qa_row["score_text"], 1),
+                score_enum=round(qa_row["score_enum"], 1) if "score_enum" in qa_row.keys() and qa_row["score_enum"] is not None else 0.0,
                 composite_score=round(qa_row["composite_score"], 1),
                 flags=flags_data,
                 closest_match_response_id=qa_row["closest_match_response_id"],
@@ -148,7 +152,12 @@ def get_response_detail(survey_id: str, response_id: str):
             client_metadata=client_meta,
             answers=answers,
             questions=questions,
-            assessment=assessment
+            assessment=assessment,
+            source=r_row["source"] if "source" in r_row.keys() and r_row["source"] else "online_form",
+            enumerator_id=r_row["enumerator_id"] if "enumerator_id" in r_row.keys() and r_row["enumerator_id"] else "",
+            paper_form_id=r_row["paper_form_id"] if "paper_form_id" in r_row.keys() and r_row["paper_form_id"] else "",
+            scan_image_url=r_row["scan_image_url"] if "scan_image_url" in r_row.keys() and r_row["scan_image_url"] else "",
+            omr_confidence=float(r_row["omr_confidence"]) if "omr_confidence" in r_row.keys() and r_row["omr_confidence"] is not None else 1.0
         )
 
 @router.patch("/{response_id}/review")
@@ -237,6 +246,22 @@ def compare_responses(survey_id: str, resp1: str = Query(...), resp2: str = Quer
             "resp2_id": resp2,
             "resp1_risk_score": r1["risk_score"],
             "resp2_risk_score": r2["risk_score"],
+            "resp1_meta": {
+                "source": r1["source"] if "source" in r1.keys() and r1["source"] else "online_form",
+                "enumerator_id": r1["enumerator_id"] if "enumerator_id" in r1.keys() and r1["enumerator_id"] else "",
+                "risk_level": r1["risk_level"],
+                "review_status": r1["review_status"],
+                "submitted_at": r1["submitted_at"],
+                "duration_seconds": round(r1["duration_seconds"], 1) if r1["duration_seconds"] is not None else 0.0
+            },
+            "resp2_meta": {
+                "source": r2["source"] if "source" in r2.keys() and r2["source"] else "online_form",
+                "enumerator_id": r2["enumerator_id"] if "enumerator_id" in r2.keys() and r2["enumerator_id"] else "",
+                "risk_level": r2["risk_level"],
+                "review_status": r2["review_status"],
+                "submitted_at": r2["submitted_at"],
+                "duration_seconds": round(r2["duration_seconds"], 1) if r2["duration_seconds"] is not None else 0.0
+            },
             "total_questions_compared": total_compared,
             "matching_answers_count": matching_count,
             "similarity_percentage": round(similarity * 100, 1),

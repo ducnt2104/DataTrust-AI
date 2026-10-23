@@ -54,7 +54,12 @@ def init_db(db_path: str = None):
             analysis_status TEXT DEFAULT 'pending',
             review_status TEXT DEFAULT 'unverified',
             review_notes TEXT DEFAULT '',
-            reviewed_at TEXT
+            reviewed_at TEXT,
+            source TEXT DEFAULT 'online_form',
+            enumerator_id TEXT DEFAULT '',
+            paper_form_id TEXT DEFAULT '',
+            scan_image_url TEXT DEFAULT '',
+            omr_confidence REAL DEFAULT 1.0
         );
 
         CREATE TABLE IF NOT EXISTS response_answers (
@@ -73,11 +78,20 @@ def init_db(db_path: str = None):
             score_logic REAL DEFAULT 0.0,
             score_speed REAL DEFAULT 0.0,
             score_text REAL DEFAULT 0.0,
+            score_enum REAL DEFAULT 0.0,
             composite_score REAL DEFAULT 0.0,
             flags_json TEXT NOT NULL DEFAULT '[]',
             closest_match_response_id TEXT,
             highest_similarity REAL DEFAULT 0.0,
             assessed_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS paper_templates (
+            id TEXT PRIMARY KEY,
+            survey_id TEXT NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+            template_version INTEGER NOT NULL DEFAULT 1,
+            layout_config_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS audit_logs (
@@ -94,7 +108,25 @@ def init_db(db_path: str = None):
         CREATE INDEX IF NOT EXISTS idx_responses_survey ON responses(survey_id, submitted_at);
         CREATE INDEX IF NOT EXISTS idx_answers_response ON response_answers(response_id);
         CREATE INDEX IF NOT EXISTS idx_quality_response ON quality_assessments(response_id);
+        CREATE INDEX IF NOT EXISTS idx_paper_templates_survey ON paper_templates(survey_id);
         """)
+
+        # Migration logic for existing tables
+        resp_cols = [c[1] for c in conn.execute("PRAGMA table_info(responses);").fetchall()]
+        if "source" not in resp_cols:
+            conn.execute("ALTER TABLE responses ADD COLUMN source TEXT DEFAULT 'online_form';")
+        if "enumerator_id" not in resp_cols:
+            conn.execute("ALTER TABLE responses ADD COLUMN enumerator_id TEXT DEFAULT '';")
+        if "paper_form_id" not in resp_cols:
+            conn.execute("ALTER TABLE responses ADD COLUMN paper_form_id TEXT DEFAULT '';")
+        if "scan_image_url" not in resp_cols:
+            conn.execute("ALTER TABLE responses ADD COLUMN scan_image_url TEXT DEFAULT '';")
+        if "omr_confidence" not in resp_cols:
+            conn.execute("ALTER TABLE responses ADD COLUMN omr_confidence REAL DEFAULT 1.0;")
+
+        qa_cols = [c[1] for c in conn.execute("PRAGMA table_info(quality_assessments);").fetchall()]
+        if "score_enum" not in qa_cols:
+            conn.execute("ALTER TABLE quality_assessments ADD COLUMN score_enum REAL DEFAULT 0.0;")
     conn.close()
 
 def get_connection(db_path: str = None) -> sqlite3.Connection:

@@ -8,10 +8,12 @@ import {
   Download,
   CheckCircle2,
   HelpCircle,
-  FileText
+  FileText,
+  FileCheck
 } from 'lucide-react';
 import { api } from '../api/client';
 import { SurveyAnalytics } from '../types/survey';
+import { QualityAuditReportModal } from '../components/QualityAuditReportModal';
 
 interface Props {
   surveyId: string;
@@ -21,6 +23,7 @@ interface Props {
 export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) => {
   const [analytics, setAnalytics] = useState<SurveyAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
 
   useEffect(() => {
     loadAnalytics();
@@ -87,7 +90,21 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsAuditModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-all shadow-xs"
+          >
+            <FileCheck className="w-4 h-4 text-emerald-600" />
+            <span>Báo cáo kiểm định độc lập</span>
+          </button>
+          <button
+            onClick={() => onNavigate(`/surveys/${surveyId}/enumerators`)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all"
+          >
+            <Users className="w-4 h-4" />
+            <span>Giám sát Điều tra viên</span>
+          </button>
           <button
             onClick={() => onNavigate(`/surveys/${surveyId}/responses`)}
             className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
@@ -289,6 +306,14 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           </div>
         ))}
       </div>
+
+      {/* Quality Audit Report & Legal Compliance Modal */}
+      <QualityAuditReportModal
+        surveyId={surveyId}
+        isOpen={isAuditModalOpen}
+        onClose={() => setIsAuditModalOpen(false)}
+        onRefreshAnalytics={loadAnalytics}
+      />
     </div>
   );
 };

@@ -14,14 +14,15 @@ router = APIRouter(prefix="/api/surveys/{survey_id}", tags=["Export & Import"])
 def export_survey_data(
     survey_id: str,
     scope: str = Query("verified_clean", description="Phạm vi xuất: raw, reviewed, verified_clean"),
-    format: str = Query("csv", description="Định dạng: csv hoặc json")
+    format: str = Query("csv", description="Định dạng: csv hoặc json"),
+    source: Optional[str] = Query(None, description="Lọc theo nguồn: online_form, paper_scan, csv_import")
 ):
     with get_db() as conn:
         s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
         if not s_row:
             raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
 
-        # Lọc danh sách phản hồi theo scope
+        # Lọc danh sách phản hồi theo scope và source
         query = "SELECT * FROM responses WHERE survey_id = ?"
         params = [survey_id]
 
@@ -29,6 +30,10 @@ def export_survey_data(
             query += " AND review_status != 'unverified'"
         elif scope == "verified_clean":
             query += " AND (review_status = 'verified_valid' OR (review_status = 'unverified' AND risk_level = 'low'))"
+
+        if source:
+            query += " AND source = ?"
+            params.append(source)
 
         query += " ORDER BY submitted_at ASC"
         resp_rows = conn.execute(query, params).fetchall()
@@ -52,6 +57,8 @@ def export_survey_data(
             
             row_data = {
                 "Response_ID": rid,
+                "Source": r["source"] if "source" in r.keys() and r["source"] else "online_form",
+                "Enumerator_ID": r["enumerator_id"] if "enumerator_id" in r.keys() and r["enumerator_id"] else "",
                 "Submitted_At": r["submitted_at"],
                 "Duration_Seconds": round(r["duration_seconds"], 1),
                 "Risk_Score": round(r["risk_score"], 1),
@@ -70,13 +77,14 @@ def export_survey_data(
                 "survey_id": survey_id,
                 "survey_title": s_row["title"],
                 "export_scope": scope,
+                "export_source": source or "all",
                 "total_records": len(data),
                 "records": data
             }
 
         # Xuất định dạng CSV với UTF-8 BOM
         output = io.StringIO()
-        fieldnames = ["Response_ID", "Submitted_At", "Duration_Seconds", "Risk_Score", "Risk_Level", "Review_Status", "Review_Notes"] + list(q_map.values())
+        fieldnames = ["Response_ID", "Source", "Enumerator_ID", "Submitted_At", "Duration_Seconds", "Risk_Score", "Risk_Level", "Review_Status", "Review_Notes"] + list(q_map.values())
         
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
@@ -141,8 +149,8 @@ async def import_csv_responses(survey_id: str, file: UploadFile = File(...)):
                 INSERT INTO responses (
                     id, survey_id, survey_version, started_at, submitted_at,
                     duration_seconds, client_metadata_json, risk_score, risk_level,
-                    analysis_status, review_status
-                ) VALUES (?, ?, ?, ?, ?, 30.0, '{"source": "csv_import"}', 0.0, 'low', 'pending', 'unverified')
+                    analysis_status, review_status, source
+                ) VALUES (?, ?, ?, ?, ?, 30.0, '{"source": "csv_import"}', 0.0, 'low', 'pending', 'unverified', 'csv_import')
             """, (response_id, survey_id, s_row["version"], current_time, current_time))
 
             for qid, val in answers.items():

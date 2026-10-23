@@ -19,6 +19,7 @@ class QualityEngine:
         "dup": 0.35,
         "pat": 0.25,
         "logic": 0.25,
+        "enum": 0.15,
         "speed": 0.15
     }
 
@@ -51,7 +52,8 @@ class QualityEngine:
         new_answers: Dict[str, Any],
         duration_seconds: float,
         questions: List[Dict[str, Any]],
-        prior_responses: List[Dict[str, Any]]
+        prior_responses: List[Dict[str, Any]],
+        enumerator_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Phân tích toàn diện một phản hồi mới đối chiếu với schema câu hỏi và tập phản hồi trước đó.
@@ -62,6 +64,7 @@ class QualityEngine:
         score_logic = 0.0
         score_speed = 0.0
         score_text = 0.0
+        score_enum = 0.0
         
         closest_match_id = None
         highest_similarity = 0.0
@@ -254,7 +257,60 @@ class QualityEngine:
                             })
                             break
 
-        # 6. LAYER G: Tính điểm rủi ro tổng hợp (Composite Risk Score: 0 - 100)
+        # 6. LAYER G: Phân tích bất thường theo điều tra viên (Enumerator & Group Anomalies)
+        if enumerator_id and str(enumerator_id).strip() and prior_responses:
+            enum_str = str(enumerator_id).strip()
+            # Lọc các phản hồi trước của chính điều tra viên này
+            enum_prior = [
+                p for p in prior_responses
+                if str(p.get("enumerator_id", "")).strip() == enum_str
+            ]
+            
+            # Kiểm tra 1: Tỷ lệ phiếu rủi ro cao trong lô của điều tra viên này (nếu đã nộp >= 3 phiếu)
+            if len(enum_prior) >= 3:
+                high_risk_priors = sum(
+                    1 for p in enum_prior
+                    if float(p.get("risk_score", 0.0)) >= 60.0
+                )
+                if high_risk_priors / len(enum_prior) >= 0.5:
+                    score_enum = max(score_enum, 75.0)
+                    flags.append({
+                        "code": "FLAG_ENUMERATOR_HIGH_RISK_CONCENTRATION",
+                        "severity": "HIGH",
+                        "message": f"Điều tra viên '{enum_str}' có tỷ lệ phiếu bị cảnh báo rủi ro cao bất thường ({high_risk_priors}/{len(enum_prior)} phiếu).",
+                        "details": {"enumerator_id": enum_str, "high_risk_ratio": round(high_risk_priors / len(enum_prior), 2)}
+                    })
+
+            # Kiểm tra 2: Đo độ tương đồng nội bộ bất thường giữa các phiếu của cùng một điều tra viên
+            eval_q_ids = [q["id"] for q in closed_q_items]
+            if eval_q_ids and (len(enum_prior) + 1) >= 4:
+                all_enum_responses = enum_prior + [{"answers": new_answers}]
+                enum_answer_sets = []
+                for resp in all_enum_responses:
+                    ans_map = resp.get("answers", {})
+                    vec = [cls.normalize_value(ans_map.get(qid)) for qid in eval_q_ids]
+                    enum_answer_sets.append(vec)
+                
+                pairwise_sims = []
+                for i in range(len(enum_answer_sets)):
+                    for j in range(i + 1, len(enum_answer_sets)):
+                        matches = sum(1 for a, b in zip(enum_answer_sets[i], enum_answer_sets[j]) if a == b and a != "")
+                        valid = sum(1 for a, b in zip(enum_answer_sets[i], enum_answer_sets[j]) if a != "" or b != "")
+                        if valid > 0:
+                            pairwise_sims.append(matches / valid)
+                
+                if pairwise_sims:
+                    avg_internal_sim = sum(pairwise_sims) / len(pairwise_sims)
+                    if avg_internal_sim >= 0.80:
+                        score_enum = max(score_enum, 80.0)
+                        flags.append({
+                            "code": "FLAG_ENUMERATOR_VARIANCE_ANOMALY",
+                            "severity": "HIGH",
+                            "message": f"Lô phiếu của điều tra viên '{enum_str}' có độ tương đồng nội bộ bất thường ({avg_internal_sim * 100:.1f}%), nghi ngờ tự điền hàng loạt ngoài thực địa.",
+                            "details": {"enumerator_id": enum_str, "avg_internal_similarity": round(avg_internal_sim, 3), "batch_size": len(all_enum_responses)}
+                        })
+
+        # 7. LAYER H: Tính điểm rủi ro tổng hợp (Composite Risk Score: 0 - 100)
         # Tái chuẩn hóa trọng số nếu một thành phần không áp dụng
         active_weights = {}
         total_w = 0.0
@@ -277,12 +333,17 @@ class QualityEngine:
             active_weights["speed"] = cls.DEFAULT_WEIGHTS["speed"]
             total_w += cls.DEFAULT_WEIGHTS["speed"]
 
+        if score_enum > 0:
+            active_weights["enum"] = cls.DEFAULT_WEIGHTS["enum"]
+            total_w += cls.DEFAULT_WEIGHTS["enum"]
+
         raw_score = 0.0
         if total_w > 0:
             raw_score += (active_weights.get("dup", 0) / total_w) * score_dup
             raw_score += (active_weights.get("pat", 0) / total_w) * score_pat
             raw_score += (active_weights.get("logic", 0) / total_w) * score_logic
             raw_score += (active_weights.get("speed", 0) / total_w) * score_speed
+            raw_score += (active_weights.get("enum", 0) / total_w) * score_enum
 
         # Quy tắc ưu tiên cho các cờ cảnh báo đặc biệt nghiêm trọng (Overriding rules)
         if score_dup >= 100.0:
@@ -309,6 +370,7 @@ class QualityEngine:
             "score_logic": round(score_logic, 1),
             "score_speed": round(score_speed, 1),
             "score_text": round(score_text, 1),
+            "score_enum": round(score_enum, 1),
             "composite_score": composite_score,
             "risk_level": risk_level,
             "flags": flags,

@@ -85,6 +85,7 @@ export interface QualityAssessment {
   score_logic: number;
   score_speed: number;
   score_text: number;
+  score_enum?: number;
   composite_score: number;
   flags: QualityFlag[];
   closest_match_response_id?: string | null;
@@ -104,6 +105,9 @@ export interface ResponseListItem {
   review_status: 'unverified' | 'under_review' | 'verified_valid' | 'verified_fraud' | 'inconclusive';
   flags_count: number;
   flags_summary: string[];
+  source?: string;
+  enumerator_id?: string;
+  omr_confidence?: number;
 }
 
 export interface ResponseDetail {
@@ -124,6 +128,99 @@ export interface ResponseDetail {
   answers: Record<string, any>;
   questions: Question[];
   assessment?: QualityAssessment | null;
+  source?: string;
+  enumerator_id?: string;
+  paper_form_id?: string;
+  scan_image_url?: string;
+  omr_confidence?: number;
+}
+
+// --- Paper Survey & OMR Types ---
+export interface PaperBubbleConfig {
+  option_id: string;
+  option_label: string;
+  x: number;
+  y: number;
+  radius: number;
+}
+
+export interface PaperQuestionLayout {
+  question_id: string;
+  question_type: string;
+  title: string;
+  order_index: number;
+  box_x: number;
+  box_y: number;
+  box_w: number;
+  box_h: number;
+  bubbles: PaperBubbleConfig[];
+}
+
+export interface PaperTemplateLayout {
+  survey_id: string;
+  survey_title: string;
+  template_version: number;
+  page_width: number;
+  page_height: number;
+  fiducial_markers: { id: string; x: number; y: number; w: number; h: number }[];
+  qr_region: { x: number; y: number; w: number; h: number };
+  questions: PaperQuestionLayout[];
+}
+
+export interface PaperScanResult {
+  success: boolean;
+  survey_id: string;
+  form_id: string;
+  enumerator_id: string;
+  image_quality: {
+    is_passed: boolean;
+    laplacian_variance: number;
+    sharpness_status: string;
+    mean_brightness: number;
+    contrast_std: number;
+    message: string;
+  };
+  confidence_score: number;
+  detected_answers: Record<string, any>;
+  question_confidences: Record<string, number>;
+  overlay_image_base64?: string | null;
+  warnings: string[];
+}
+
+export interface PaperIngestPayload {
+  form_id: string;
+  enumerator_id: string;
+  answers: Record<string, any>;
+  omr_confidence: number;
+  scan_image_url?: string;
+  manual_corrections?: {
+    question_id: string;
+    original: any;
+    corrected: any;
+    reason: string;
+  }[];
+}
+
+// --- Enumerator Analytics Types ---
+export interface EnumeratorMetrics {
+  enumerator_id: string;
+  total_responses: number;
+  online_count: number;
+  paper_count: number;
+  avg_duration_seconds: number;
+  avg_risk_score: number;
+  high_risk_count: number;
+  high_risk_rate: number;
+  variance_z_score: number;
+  is_anomaly: boolean;
+  anomaly_reasons: string[];
+}
+
+export interface EnumeratorAnalytics {
+  survey_id: string;
+  total_enumerators: number;
+  total_field_responses: number;
+  enumerators: EnumeratorMetrics[];
 }
 
 export interface QuestionStats {
@@ -153,4 +250,35 @@ export interface SurveyAnalytics {
   risk_distribution: Record<string, number>;
   review_distribution: Record<string, number>;
   questions_analytics: QuestionStats[];
+}
+
+export interface QualityAuditReport {
+  survey_id: string;
+  survey_title: string;
+  survey_status: string;
+  generated_at: string;
+  total_collected: number;
+  source_breakdown: Record<string, number>;
+  verified_clean_count: number;
+  data_trust_index: number;
+  risk_breakdown: Record<string, number>;
+  review_breakdown: Record<string, number>;
+  fraud_signals: {
+    speeding: number;
+    straightlining: number;
+    duplicate: number;
+    logic_violation: number;
+    gibberish_text: number;
+    enumerator_anomaly: number;
+  };
+  compliance_statement: {
+    law_name: string;
+    principles_applied: {
+      principle: string;
+      description: string;
+    }[];
+    compliance_status: string;
+  };
+  methodology_citations: string[];
+  audit_hash: string;
 }

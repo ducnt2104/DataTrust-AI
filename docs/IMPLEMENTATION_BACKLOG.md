@@ -2,8 +2,8 @@
 
 Trạng thái:
 - [x] **P0-1:** Khởi tạo cấu trúc dự án Frontend & Backend & Git & Tài liệu kiến trúc.
-- [x] **P0-2:** Xây dựng Backend Database (SQLite với WAL mode) & Core Models & Migrations (`backend/app/database.py`).
-- [x] **P0-3:** Xây dựng DataTrust Quality Engine (Hamming distance, straightlining, logic rules, timing, composite score: `backend/app/engine/quality_engine.py`).
+- [x] **P0-2:** Xây dựng Backend Database (SQLite với WAL mode) & Core Models & Dynamic Migrations (`backend/app/database.py`).
+- [x] **P0-3:** Xây dựng DataTrust Quality Engine (Hamming distance, straightlining, logic rules, timing, text entropy, composite score: `backend/app/engine/quality_engine.py`).
 - [x] **P0-4:** Xây dựng Surveys API (CRUD, Autosave, Publish flow, Closed status: `backend/app/routes/surveys.py`).
 - [x] **P0-5:** Xây dựng Public Survey API (Lấy schema công khai, kiểm tra trạng thái, tiếp nhận nộp bài: `backend/app/routes/public.py`).
 - [x] **P0-6:** Xây dựng Frontend Public Survey Page (`/s/:slug`) hỗ trợ đầy đủ 12 loại câu hỏi, logic rẽ nhánh và validation (`frontend/src/pages/PublicSurveyPage.tsx`).
@@ -14,3 +14,20 @@ Trạng thái:
 - [x] **P1-1:** Xây dựng AI Survey Assistant Adapter (Hỗ trợ gợi ý câu hỏi & kiểm định câu hỏi dẫn dắt/kép; cơ chế fallback thông minh: `backend/app/engine/ai_assistant.py`).
 - [x] **P1-2:** Xây dựng CSV Import & Schema Mapping (`backend/app/routes/export_import.py`).
 - [x] **P0-11:** Bộ kiểm thử tự động toàn diện TEST-01 đến TEST-12 đạt 100% tỷ lệ vượt qua và Báo cáo kiểm định `docs/TEST_RESULTS.md`.
+- [x] **P0-12:** Xây dựng Phân hệ Số hóa Khảo sát Giấy (Stream B - Field Survey Digitization) chuẩn hóa theo hồ sơ dự án:
+  - Bản in mẫu phiếu A4 kèm mã định danh QR và 4 dấu căn góc vuông (Fiducial Markers).
+  - Động cơ nhận diện OMR bằng OpenCV (`backend/app/engine/omr_engine.py`) với căn chỉnh phối cảnh 2D (`warpPerspective`), kiểm định độ nét Laplacian, giải mã QR và phân tích tỷ lệ lấp đầy ô tích.
+  - Giao diện người dùng chuyên dụng (`frontend/src/pages/PaperSurveyPage.tsx`) hỗ trợ in phiếu, chụp/tải ảnh, lớp phủ thị giác (Visual Overlay) và hiệu chỉnh thủ công kèm ghi nhật ký kiểm toán.
+  - Tuyến API `/api/surveys/{id}/paper/template`, `/scan`, `/ingest` liên kết trực tiếp vào SQLite với nhãn nguồn `paper_scan`.
+- [x] **P0-13:** Xây dựng Tầng kiểm định bất thường theo Điều tra viên (Layer G - $S_{enum}$):
+  - Tính toán Z-score phương sai câu trả lời ($Z_{var}$), tỷ lệ phản hồi rủi ro cao theo lô và mức độ phân kỳ phân bố.
+  - Bảng điều khiển phân tích điều tra viên (`frontend/src/pages/EnumeratorAnalyticsPage.tsx`) theo dõi danh sách, cờ cảnh báo bất thường và số lượng mẫu thực tế.
+- [x] **P0-14:** Bộ dữ liệu kiểm chuẩn đối chứng khoa học (Controlled Benchmark Dataset):
+  - Kịch bản đo lường thực nghiệm Mục II.1 trong hồ sơ Word với $N = 150$ mẫu thực tế trải dài qua 4 dạng gian lận: Speeding, Straightlining, Exact Duplicate, Logic Contradiction.
+  - Kết quả kiểm chứng tự động: Precision 100%, Recall 100%, F1 100%, thời gian xử lý trung bình 0.64 ms/phản hồi (`docs/BENCHMARK_RESULTS.md`).
+- [x] **P0-15:** Nâng cấp Trang đối sánh phản hồi song song (`ResponseComparePage.tsx`):
+  - Hiển thị nhãn kênh thu thập (Trực tuyến, Phiếu giấy OMR, Tệp CSV), mã điều tra viên, thời lượng, mức rủi ro và quyết định thẩm định.
+  - Bổ sung bộ lọc câu hỏi (Tất cả, Chỉ câu khác biệt, Chỉ câu trùng khớp) và tô màu làm nổi bật trực quan.
+- [x] **P0-16:** Nâng cấp Trung tâm Xuất & Nhập dữ liệu (`ExportImportPage.tsx`):
+  - Hỗ trợ lọc phạm vi xuất theo kênh nguồn (Toàn bộ, Trực tuyến, Phiếu giấy, CSV).
+  - Tích hợp thông tin giải thích quy trình bảo toàn tính toàn vẹn và tái kiểm định 7 tầng cho dữ liệu ngoại tuyến.

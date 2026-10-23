@@ -8,7 +8,9 @@ import {
   Share2,
   Trash2,
   Lock,
-  Edit3
+  Edit3,
+  Camera,
+  UserCheck
 } from 'lucide-react';
 import { api } from '../api/client';
 import { SurveyListItem } from '../types/survey';
@@ -199,6 +201,20 @@ export const SurveysListPage: React.FC<Props> = ({ onNavigate }) => {
                     className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                   >
                     <BarChart3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    title="Mẫu phiếu giấy & Quét OMR"
+                    onClick={() => onNavigate(`/surveys/${survey.id}/paper`)}
+                    className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                  <button
+                    title="Giám sát Điều tra viên & Khu vực"
+                    onClick={() => onNavigate(`/surveys/${survey.id}/enumerators`)}
+                    className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  >
+                    <UserCheck className="w-4 h-4" />
                   </button>
                   {survey.status === 'published' && (
                     <button

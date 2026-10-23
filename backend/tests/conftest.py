@@ -6,6 +6,12 @@ TEST_DB_PATH = os.path.join(tempfile.gettempdir(), "datatrust_test_suite.db")
 os.environ["DATABASE_PATH"] = TEST_DB_PATH
 
 from app.database import init_db
+from fastapi.testclient import TestClient
+from app.main import app
+
+@pytest.fixture
+def client():
+    return TestClient(app)
 
 @pytest.fixture(autouse=True)
 def clean_test_database():

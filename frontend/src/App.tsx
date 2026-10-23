@@ -10,6 +10,8 @@ import { ResponsesListPage } from './pages/ResponsesListPage';
 import { ResponseDetailPage } from './pages/ResponseDetailPage';
 import { ResponseComparePage } from './pages/ResponseComparePage';
 import { ExportImportPage } from './pages/ExportImportPage';
+import { PaperSurveyPage } from './pages/PaperSurveyPage';
+import { EnumeratorAnalyticsPage } from './pages/EnumeratorAnalyticsPage';
 
 export function App() {
   const [currentPath, setCurrentPath] = useState<string>(window.location.pathname || '/');
@@ -54,9 +56,15 @@ export function App() {
     const responseDetailMatch = currentPath.match(/^\/surveys\/([^/]+)\/responses\/([^/]+)$/);
     const compareMatch = currentPath.match(/^\/surveys\/([^/]+)\/compare/);
     const exportMatch = currentPath.match(/^\/surveys\/([^/]+)\/export$/);
+    const paperMatch = currentPath.match(/^\/surveys\/([^/]+)\/paper$/);
+    const enumMatch = currentPath.match(/^\/surveys\/([^/]+)\/enumerators$/);
 
     if (editMatch) {
       content = <SurveyBuilderPage surveyId={editMatch[1]} onNavigate={navigate} />;
+    } else if (paperMatch) {
+      content = <PaperSurveyPage surveyId={paperMatch[1]} onNavigate={navigate} />;
+    } else if (enumMatch) {
+      content = <EnumeratorAnalyticsPage surveyId={enumMatch[1]} onNavigate={navigate} />;
     } else if (analyticsMatch) {
       content = <SurveyAnalyticsPage surveyId={analyticsMatch[1]} onNavigate={navigate} />;
     } else if (responsesMatch) {

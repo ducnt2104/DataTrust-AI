@@ -8,7 +8,9 @@ import {
   AlertTriangle,
   Eye,
   GitCompare,
-  Download
+  Download,
+  FileText,
+  Globe
 } from 'lucide-react';
 import { api } from '../api/client';
 import { ResponseListItem } from '../types/survey';
@@ -24,6 +26,7 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
   const [loading, setLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState<string>('all');
   const [reviewFilter, setReviewFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
 
   useEffect(() => {
@@ -147,6 +150,29 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
             </button>
           ))}
         </div>
+
+        {/* Source Filter */}
+        <div className="flex items-center gap-1 text-xs">
+          <span className="font-semibold text-slate-500 mr-2 uppercase tracking-wider">Nguồn:</span>
+          {[
+            { id: 'all', label: 'Tất cả' },
+            { id: 'online_form', label: 'Trực tuyến' },
+            { id: 'paper_scan', label: 'Phiếu giấy' },
+            { id: 'csv_import', label: 'Tệp CSV' }
+          ].map((src) => (
+            <button
+              key={src.id}
+              onClick={() => setSourceFilter(src.id)}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                sourceFilter === src.id
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 hover:bg-slate-200/70 text-slate-600'
+              }`}
+            >
+              {src.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Responses Table */}
@@ -167,6 +193,7 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
                 <tr>
                   <th className="py-3.5 px-4 w-10">Chọn</th>
                   <th className="py-3.5 px-4">Mã phản hồi</th>
+                  <th className="py-3.5 px-4">Nguồn</th>
                   <th className="py-3.5 px-4">Thời điểm gửi</th>
                   <th className="py-3.5 px-4">Thời lượng</th>
                   <th className="py-3.5 px-4">Điểm rủi ro</th>
@@ -176,7 +203,12 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {responses.map((resp) => {
+                {responses
+                  .filter((r) => {
+                    if (sourceFilter === 'all') return true;
+                    return (r.source || 'online_form') === sourceFilter;
+                  })
+                  .map((resp) => {
                   const isChecked = selectedForCompare.includes(resp.id);
                   return (
                     <tr
@@ -195,6 +227,21 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
                       </td>
                       <td className="py-4 px-4 font-mono text-xs font-bold text-slate-800">
                         {resp.id.slice(0, 8)}...
+                      </td>
+                      <td className="py-4 px-4 text-xs whitespace-nowrap">
+                        {resp.source === 'paper_scan' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                            <FileText className="w-3 h-3" /> Phiếu giấy {resp.enumerator_id ? `(${resp.enumerator_id})` : ''}
+                          </span>
+                        ) : resp.source === 'csv_import' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-semibold">
+                            Tệp CSV
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+                            <Globe className="w-3 h-3" /> Trực tuyến
+                          </span>
+                        )}
                       </td>
                       <td className="py-4 px-4 text-xs whitespace-nowrap text-slate-600">
                         {new Date(resp.submitted_at).toLocaleString()}

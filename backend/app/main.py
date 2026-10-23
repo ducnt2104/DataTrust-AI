@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
-from app.routes import surveys, public, responses, analytics, export_import, ai
+from app.routes import surveys, public, responses, analytics, export_import, ai, paper, enumerators, audit_report
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,6 +33,9 @@ app.include_router(responses.router)
 app.include_router(analytics.router)
 app.include_router(export_import.router)
 app.include_router(ai.router)
+app.include_router(paper.router)
+app.include_router(enumerators.router)
+app.include_router(audit_report.router)
 
 @app.get("/", tags=["System"])
 @app.head("/", tags=["System"])
@@ -58,6 +61,8 @@ def health_check():
             "Quality Assurance Engine",
             "Human Review Center",
             "Real Analytics Dashboard",
-            "Multi-scope Export"
+            "Multi-scope Export",
+            "Paper Survey & OMR Scanning",
+            "Enumerator & Field Group Analytics"
         ]
     }

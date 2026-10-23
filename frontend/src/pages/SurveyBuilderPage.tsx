@@ -14,7 +14,8 @@ import {
   Settings,
   HelpCircle,
   CheckCircle2,
-  Share2
+  Share2,
+  Printer
 } from 'lucide-react';
 import { api } from '../api/client';
 import { Question, QuestionType, Survey } from '../types/survey';
@@ -415,6 +416,18 @@ export const SurveyBuilderPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
             <Save className="w-3.5 h-3.5" />
             <span>Lưu</span>
           </button>
+
+          {/* Paper Survey Button */}
+          {survey.id && survey.id !== 'new' && (
+            <button
+              onClick={() => onNavigate(`/surveys/${survey.id}/paper`)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-xs transition-all"
+              title="Mẫu in A4 & Quét phiếu OMR"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
+              <span>Phiếu giấy A4 & OMR</span>
+            </button>
+          )}
 
           {/* Publish / Share Button */}
           {survey.status === 'published' ? (

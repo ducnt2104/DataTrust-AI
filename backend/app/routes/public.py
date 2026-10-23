@@ -145,15 +145,17 @@ def submit_response(slug_or_id: str, payload: ResponseSubmit):
         started_at_iso = start_dt.isoformat()
 
         # 1. Lưu bản ghi response
+        source_val = payload.source or "online_form"
+        enum_val = payload.enumerator_id or ""
         conn.execute("""
             INSERT INTO responses (
                 id, survey_id, survey_version, started_at, submitted_at,
                 duration_seconds, client_metadata_json, risk_score, risk_level,
-                analysis_status, review_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0.0, 'low', 'pending', 'unverified')
+                analysis_status, review_status, source, enumerator_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0.0, 'low', 'pending', 'unverified', ?, ?)
         """, (
             response_id, survey_id, survey_version, started_at_iso, submitted_at_iso,
-            duration, json.dumps(payload.client_metadata or {})
+            duration, json.dumps(payload.client_metadata or {}), source_val, enum_val
         ))
 
         # 2. Lưu từng câu trả lời vào response_answers
@@ -165,9 +167,9 @@ def submit_response(slug_or_id: str, payload: ResponseSubmit):
                 VALUES (?, ?, ?, ?, ?)
             """, (ans_id, response_id, qid, ans_str, submitted_at_iso))
 
-        # 3. Lấy các phản hồi trước đó để đối chiếu (Layer B & F)
+        # 3. Lấy các phản hồi trước đó để đối chiếu (Layer B & F & G)
         prior_resp_rows = conn.execute("""
-            SELECT id FROM responses WHERE survey_id = ? AND id != ?
+            SELECT id, enumerator_id, risk_score FROM responses WHERE survey_id = ? AND id != ?
         """, (survey_id, response_id)).fetchall()
 
         prior_responses = []
@@ -185,27 +187,34 @@ def submit_response(slug_or_id: str, payload: ResponseSubmit):
                 except Exception:
                     p_answers[a["question_id"]] = raw_val
                     
-            prior_responses.append({"id": pr_id, "answers": p_answers})
+            prior_responses.append({
+                "id": pr_id,
+                "answers": p_answers,
+                "enumerator_id": pr["enumerator_id"] if "enumerator_id" in pr.keys() else "",
+                "risk_score": pr["risk_score"] if "risk_score" in pr.keys() else 0.0
+            })
 
         # 4. Thực thi QualityEngine phân tích chất lượng
         analysis = QualityEngine.analyze_response(
             new_answers=payload.answers,
             duration_seconds=duration,
             questions=questions,
-            prior_responses=prior_responses
+            prior_responses=prior_responses,
+            enumerator_id=enum_val
         )
 
         # 5. Lưu kết quả đánh giá chất lượng
         assessment_id = str(uuid.uuid4())
         conn.execute("""
             INSERT INTO quality_assessments (
-                id, response_id, score_dup, score_pattern, score_logic, score_speed, score_text,
+                id, response_id, score_dup, score_pattern, score_logic, score_speed, score_text, score_enum,
                 composite_score, flags_json, closest_match_response_id, highest_similarity, assessed_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             assessment_id, response_id,
             analysis["score_dup"], analysis["score_pattern"], analysis["score_logic"],
-            analysis["score_speed"], analysis["score_text"], analysis["composite_score"],
+            analysis["score_speed"], analysis["score_text"], analysis.get("score_enum", 0.0),
+            analysis["composite_score"],
             json.dumps(analysis["flags"], ensure_ascii=False),
             analysis.get("closest_match_response_id"), analysis.get("highest_similarity", 0.0),
             submitted_at_iso

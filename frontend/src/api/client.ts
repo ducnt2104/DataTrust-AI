@@ -162,5 +162,62 @@ export const api = {
   async getAiStatus(): Promise<any> {
     const res = await fetch(`${BASE_URL}/ai/status`);
     return handleResponse(res);
+  },
+
+  // --- Paper Survey & OMR Scanning ---
+  async getPaperTemplate(surveyId: string): Promise<{ template_id: string; survey_id: string; version: number; layout: any }> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/paper/template`);
+    return handleResponse(res);
+  },
+
+  async scanPaperImage(surveyId: string, file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/paper/scan`, {
+      method: 'POST',
+      body: formData
+    });
+    return handleResponse(res);
+  },
+
+  async ingestPaperResponse(surveyId: string, payload: {
+    form_id: string;
+    enumerator_id?: string;
+    answers: Record<string, any>;
+    omr_confidence?: number;
+    scan_image_url?: string;
+    manual_corrections?: any[];
+  }): Promise<any> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/paper/ingest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse(res);
+  },
+
+  // --- Enumerator Analytics ---
+  async getEnumeratorAnalytics(surveyId: string): Promise<any> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/enumerators`);
+    return handleResponse(res);
+  },
+
+  // --- Quality Audit Report & Compliance ---
+  async getQualityAuditReport(surveyId: string): Promise<any> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/audit-report`);
+    return handleResponse(res);
+  },
+
+  async anonymizeSurveyResponses(surveyId: string, payload: {
+    anonymize_client_metadata?: boolean;
+    mask_text_answers?: boolean;
+    operator_notes?: string;
+  }): Promise<{ message: string; anonymized_responses_count: number; audit_log_id: string }> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/privacy/anonymize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse(res);
   }
 };

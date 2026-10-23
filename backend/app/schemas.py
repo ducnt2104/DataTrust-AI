@@ -101,6 +101,8 @@ class ResponseSubmit(BaseModel):
     submitted_at: str
     client_metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
     answers: Dict[str, Any]  # question_id -> answer value (string, array, or object)
+    source: Optional[str] = "online_form"
+    enumerator_id: Optional[str] = ""
 
 # --- Quality & Review Schemas ---
 class QualityFlag(BaseModel):
@@ -116,6 +118,7 @@ class QualityAssessmentOut(BaseModel):
     score_logic: float
     score_speed: float
     score_text: float
+    score_enum: float = 0.0
     composite_score: float
     flags: List[QualityFlag]
     closest_match_response_id: Optional[str] = None
@@ -134,6 +137,9 @@ class ResponseListItemOut(BaseModel):
     review_status: str
     flags_count: int = 0
     flags_summary: List[str] = []
+    source: str = "online_form"
+    enumerator_id: str = ""
+    omr_confidence: float = 1.0
 
 class ResponseDetailOut(BaseModel):
     id: str
@@ -153,10 +159,85 @@ class ResponseDetailOut(BaseModel):
     answers: Dict[str, Any]
     questions: List[QuestionOut]
     assessment: Optional[QualityAssessmentOut] = None
+    source: str = "online_form"
+    enumerator_id: str = ""
+    paper_form_id: str = ""
+    scan_image_url: str = ""
+    omr_confidence: float = 1.0
 
 class ReviewStatusUpdate(BaseModel):
     review_status: str  # 'unverified', 'under_review', 'verified_valid', 'verified_fraud', 'inconclusive'
     review_notes: Optional[str] = ""
+
+# --- Paper Survey & OMR Schemas ---
+class PaperBubbleConfig(BaseModel):
+    option_id: str
+    option_label: str
+    x: int
+    y: int
+    radius: int = 14
+
+class PaperQuestionLayout(BaseModel):
+    question_id: str
+    question_type: str
+    title: str
+    order_index: int
+    box_x: int
+    box_y: int
+    box_w: int
+    box_h: int
+    bubbles: List[PaperBubbleConfig]
+
+class PaperTemplateLayout(BaseModel):
+    survey_id: str
+    survey_title: str
+    template_version: int
+    page_width: int = 1240
+    page_height: int = 1754
+    fiducial_markers: List[Dict[str, int]]
+    qr_region: Dict[str, int]
+    questions: List[PaperQuestionLayout]
+
+class PaperScanResult(BaseModel):
+    success: bool
+    survey_id: str
+    form_id: str
+    enumerator_id: str
+    image_quality: Dict[str, Any]  # sharpness, brightness, status
+    confidence_score: float
+    detected_answers: Dict[str, Any]
+    question_confidences: Dict[str, float]
+    overlay_image_base64: Optional[str] = None
+    warnings: List[str] = []
+
+class PaperIngestPayload(BaseModel):
+    form_id: str
+    enumerator_id: str = ""
+    answers: Dict[str, Any]
+    omr_confidence: float = 1.0
+    scan_image_url: Optional[str] = ""
+    manual_corrections: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+
+# --- Enumerator Analytics Schemas ---
+class EnumeratorMetrics(BaseModel):
+    enumerator_id: str
+    total_responses: int
+    online_count: int
+    paper_count: int
+    avg_duration_seconds: float
+    avg_risk_score: float
+    high_risk_count: int
+    high_risk_rate: float
+    variance_z_score: float
+    is_anomaly: bool
+    anomaly_reasons: List[str]
+
+class EnumeratorAnalyticsOut(BaseModel):
+    survey_id: str
+    total_enumerators: int
+    total_field_responses: int
+    enumerators: List[EnumeratorMetrics]
+
 
 # --- Analytics Schemas ---
 class QuestionStats(BaseModel):
@@ -178,3 +259,32 @@ class SurveyAnalyticsOut(BaseModel):
     risk_distribution: Dict[str, int]  # 'low', 'medium', 'high'
     review_distribution: Dict[str, int]
     questions_analytics: List[QuestionStats]
+
+
+# --- Quality Audit Report & Compliance Schemas ---
+class QualityAuditReportOut(BaseModel):
+    survey_id: str
+    survey_title: str
+    survey_status: str
+    generated_at: str
+    total_collected: int
+    source_breakdown: Dict[str, int]
+    verified_clean_count: int
+    data_trust_index: float  # Percentage 0 - 100%
+    risk_breakdown: Dict[str, int]
+    review_breakdown: Dict[str, int]
+    fraud_signals: Dict[str, int]
+    compliance_statement: Dict[str, Any]
+    methodology_citations: List[str]
+    audit_hash: str
+
+class AnonymizeRequest(BaseModel):
+    anonymize_client_metadata: bool = True
+    mask_text_answers: bool = False
+    operator_notes: str = ""
+
+class AnonymizeResponse(BaseModel):
+    message: str
+    anonymized_responses_count: int
+    audit_log_id: str
+

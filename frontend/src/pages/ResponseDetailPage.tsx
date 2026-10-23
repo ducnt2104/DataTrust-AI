@@ -132,8 +132,18 @@ export const ResponseDetailPage: React.FC<Props> = ({ surveyId, responseId, onNa
               </span>
             </div>
 
+            {/* Source & Metadata Banner */}
+            <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-slate-700">
+              <span>Nguồn thu thập: <strong className="text-slate-900">{detail.source === 'paper_scan' ? 'Phiếu giấy (Mobile OMR)' : detail.source === 'csv_import' ? 'Nhập từ CSV' : 'Biểu mẫu trực tuyến (Web)'}</strong></span>
+              {detail.enumerator_id && <span>• Điều tra viên: <strong className="text-slate-900 font-mono">{detail.enumerator_id}</strong></span>}
+              {detail.paper_form_id && <span>• Mã phiếu cứng: <strong className="text-slate-900 font-mono">{detail.paper_form_id}</strong></span>}
+              {detail.omr_confidence !== undefined && detail.source === 'paper_scan' && (
+                <span>• Độ tin cậy OMR: <strong className="text-emerald-700 font-mono">{Math.round(detail.omr_confidence * 100)}%</strong></span>
+              )}
+            </div>
+
             {assessment && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
                 <div className="p-3 bg-slate-50 rounded-xl">
                   <span className="text-[11px] text-slate-500 font-medium block">Trùng lặp (S_dup)</span>
                   <span className={`text-base font-bold ${assessment.score_dup > 50 ? 'text-rose-600' : 'text-slate-800'}`}>
@@ -156,6 +166,12 @@ export const ResponseDetailPage: React.FC<Props> = ({ surveyId, responseId, onNa
                   <span className="text-[11px] text-slate-500 font-medium block">Tốc độ (S_speed)</span>
                   <span className={`text-base font-bold ${assessment.score_speed > 50 ? 'text-amber-600' : 'text-slate-800'}`}>
                     {assessment.score_speed}
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl">
+                  <span className="text-[11px] text-slate-500 font-medium block">ĐTV/Nhóm (S_enum)</span>
+                  <span className={`text-base font-bold ${(assessment.score_enum || 0) > 50 ? 'text-rose-600' : 'text-slate-800'}`}>
+                    {assessment.score_enum || 0}
                   </span>
                 </div>
               </div>
