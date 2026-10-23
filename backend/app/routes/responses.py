@@ -267,3 +267,112 @@ def compare_responses(survey_id: str, resp1: str = Query(...), resp2: str = Quer
             "similarity_percentage": round(similarity * 100, 1),
             "questions_comparison": comparison
         }
+
+@router.post("/re-analyze")
+def reanalyze_all_responses(survey_id: str):
+    """
+    Tái phân tích toàn bộ phản hồi của cuộc khảo sát:
+    Áp dụng các cấu hình nhạy cảm mới nhất và thuật toán mở rộng (Đường chéo, Zíc-zắc, Sàng lọc ĐTV).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        settings = json.loads(s_row["settings_json"] or "{}")
+        quality_settings = settings.get("quality_settings", {})
+
+        q_rows = conn.execute("SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC", (survey_id,)).fetchall()
+        questions = [dict(q) for q in q_rows]
+        for q in questions:
+            q["options"] = json.loads(q.get("options_json") or "[]")
+            q["logic_rules"] = json.loads(q.get("logic_rules_json") or "[]")
+
+        resp_rows = conn.execute("SELECT * FROM responses WHERE survey_id = ?", (survey_id,)).fetchall()
+        if not resp_rows:
+            return {
+                "survey_id": survey_id,
+                "total_reanalyzed": 0,
+                "high_risk_count": 0,
+                "medium_risk_count": 0,
+                "low_risk_count": 0,
+                "message": "Không có phản hồi nào để phân tích."
+            }
+
+        # Đọc tất cả câu trả lời
+        all_answers = {}
+        for r in resp_rows:
+            rid = r["id"]
+            ans_rows = conn.execute("SELECT question_id, answer_value FROM response_answers WHERE response_id = ?", (rid,)).fetchall()
+            a_dict = {}
+            for a in ans_rows:
+                raw_v = a["answer_value"]
+                try:
+                    a_dict[a["question_id"]] = json.loads(raw_v)
+                except Exception:
+                    a_dict[a["question_id"]] = raw_v
+            all_answers[rid] = a_dict
+
+        counts = {"high": 0, "medium": 0, "low": 0}
+        now_ts = now_iso()
+
+        for r in resp_rows:
+            rid = r["id"]
+            dur = r["duration_seconds"] or 0.0
+            enum_id = r["enumerator_id"] if "enumerator_id" in r.keys() else ""
+            my_answers = all_answers.get(rid, {})
+
+            # Tập đối chiếu
+            priors = []
+            for other_r in resp_rows:
+                if other_r["id"] != rid:
+                    priors.append({
+                        "id": other_r["id"],
+                        "answers": all_answers.get(other_r["id"], {}),
+                        "enumerator_id": other_r["enumerator_id"] if "enumerator_id" in other_r.keys() else "",
+                        "risk_score": other_r["risk_score"] or 0.0
+                    })
+
+            analysis = QualityEngine.analyze_response(
+                new_answers=my_answers,
+                duration_seconds=dur,
+                questions=questions,
+                prior_responses=priors,
+                enumerator_id=enum_id,
+                quality_settings=quality_settings
+            )
+
+            risk_lvl = analysis["risk_level"]
+            counts[risk_lvl] = counts.get(risk_lvl, 0) + 1
+
+            conn.execute("""
+                UPDATE responses
+                SET risk_score = ?, risk_level = ?, analysis_status = 'completed'
+                WHERE id = ?
+            """, (analysis["composite_score"], risk_lvl, rid))
+
+            conn.execute("DELETE FROM quality_assessments WHERE response_id = ?", (rid,))
+            conn.execute("""
+                INSERT INTO quality_assessments (
+                    id, response_id, score_dup, score_pattern, score_logic, score_speed, score_text, score_enum,
+                    composite_score, flags_json, closest_match_response_id, highest_similarity, assessed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                str(uuid.uuid4()), rid,
+                analysis["score_dup"], analysis["score_pattern"], analysis["score_logic"],
+                analysis["score_speed"], analysis["score_text"], analysis.get("score_enum", 0.0),
+                analysis["composite_score"],
+                json.dumps(analysis["flags"], ensure_ascii=False),
+                analysis.get("closest_match_response_id"), analysis.get("highest_similarity", 0.0),
+                now_ts
+            ))
+
+        return {
+            "survey_id": survey_id,
+            "total_reanalyzed": len(resp_rows),
+            "high_risk_count": counts.get("high", 0),
+            "medium_risk_count": counts.get("medium", 0),
+            "low_risk_count": counts.get("low", 0),
+            "quality_sensitivity": quality_settings.get("sensitivity", "standard"),
+            "message": f"Đã tái phân tích thành công {len(resp_rows)} phản hồi."
+        }

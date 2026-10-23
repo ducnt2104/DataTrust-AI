@@ -240,12 +240,16 @@ def submit_response(slug_or_id: str, payload: ResponseSubmit, request: Request):
             })
 
         # 4. Thực thi QualityEngine phân tích chất lượng
+        s_settings = json.loads(s_row["settings_json"] or "{}") if "settings_json" in s_row.keys() else {}
+        quality_settings = s_settings.get("quality_settings", {})
+
         analysis = QualityEngine.analyze_response(
             new_answers=payload.answers,
             duration_seconds=duration,
             questions=questions,
             prior_responses=prior_responses,
-            enumerator_id=enum_val
+            enumerator_id=enum_val,
+            quality_settings=quality_settings
         )
 
         # 5. Lưu kết quả đánh giá chất lượng

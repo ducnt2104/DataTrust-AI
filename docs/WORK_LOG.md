@@ -167,3 +167,26 @@
      - `docs/DEPLOYMENT.md`: Cung cấp cấu hình Systemd unit, Nginx reverse proxy với HTTPS và rate-limiting, kịch bản sao lưu tự động SQLite WAL không ngừng dịch vụ (`backup_sqlite.sh`).
      - `docs/TEST_RESULTS.md`: Cập nhật bảng đối chiếu 25 ca kiểm thử đạt 100% với thời gian thực thi chi tiết.
      - `docs/IMPLEMENTATION_BACKLOG.md`: Hoàn thành 100% các hạng mục từ P0-1 đến P0-20.
+
+
+---
+
+## Checkpoint 11: Mở Rộng Mẫu Hình Học (Đường Chéo, Zíc-Zắc), Cấu Hình Độ Nhạy & Bóc Tách Phiếu Giấy Theo Lô
+- **Thời gian:** 2026-10-23 15:50 - 16:00
+- **Thực hiện:**
+  1. **Nâng cấp QualityEngine Layer C (Geometric Pattern Detection):**
+     - Thực thi quy định tại Mục II.1 & Mục 2.1 của Hồ sơ Word: "Điền qua loa (Straightlining / Đường chéo / Zíc-zắc)".
+     - Phát hiện mẫu đường chéo bậc thang (`FLAG_DIAGONAL_PATTERN`): $1 \to 2 \to 3 \to 4 \to 5$ hoặc $5 \to 4 \to 3 \to 2 \to 1$ trên thang đo Likert/Matrix.
+     - Phát hiện mẫu zíc-zắc xen kẽ hai cực (`FLAG_ZIGZAG_PATTERN`): $1 \to 5 \to 1 \to 5 \to 1$ lặp lại đối xứng cơ học.
+  2. **Cấu hình Độ nhạy Kiểm định Chất lượng (Quality Sensitivity Settings):**
+     - Hỗ trợ lưu trữ cấu hình trong `surveys.settings_json`.
+     - Cho phép chuyển đổi linh hoạt giữa 3 chế độ: `strict` (nghiên cứu hàn lâm, y tế, luận án), `standard` (tiêu chuẩn), `lenient` (khảo sát cộng đồng) hoặc tham số tùy chỉnh người dùng.
+  3. **Phân hệ Xử lý Lô Phiếu Thực Địa (Batch Paper Scan API):**
+     - Tuyến API `POST /api/surveys/{id}/paper/batch-scan`: Cho phép tải lên đồng thời nhiều ảnh chụp phiếu giấy từ điện thoại điều tra viên, tự động bóc tách và trả về báo cáo xử lý theo lô.
+  4. **Tái Phân Tích Chất Lượng Hàng Loạt (Re-Analyze Responses API):**
+     - Tuyến API `POST /api/surveys/{id}/responses/re-analyze`: Tái chạy toàn bộ động cơ kiểm tra chất lượng trên mọi phản hồi đã thu thập theo cấu hình mới nhất.
+     - Tích hợp nút "Tái phân tích chất lượng" trên thanh công cụ của `SurveyAnalyticsPage.tsx`.
+  5. **Xác minh Kiểm thử:**
+     - Tạo mới `backend/tests/test_quality_advanced_patterns.py` với 5 ca kiểm thử chuyên sâu.
+     - Toàn bộ **30/30 tests** trên 15 test suites đạt **100% PASSED** trong 7.24s.
+     - Biên dịch production Frontend `npm run build`: 1,981 modules transformed không lỗi trong 611ms.

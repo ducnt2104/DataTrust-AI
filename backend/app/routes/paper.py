@@ -151,6 +151,98 @@ async def scan_paper_image(
         warnings=warnings
     )
 
+@router.post("/batch-scan")
+async def batch_scan_paper_images(
+    survey_id: str,
+    files: List[UploadFile] = File(...)
+):
+    """
+    Tiếp nhận và xử lý hàng loạt ảnh phiếu khảo sát thực địa:
+    Tự động giải mã QR, nắn phẳng phối cảnh và bóc tách đáp án OMR theo lô.
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="Không có tệp ảnh nào được gửi lên.")
+
+    with get_db() as conn:
+        t_row = conn.execute("""
+            SELECT * FROM paper_templates WHERE survey_id = ? ORDER BY template_version DESC LIMIT 1
+        """, (survey_id,)).fetchone()
+
+        if not t_row:
+            s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+            if not s_row:
+                raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+            q_rows = conn.execute("SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC", (survey_id,)).fetchall()
+            questions = [{
+                "id": q["id"], "question_type": q["question_type"], "title": q["title"],
+                "order_index": q["order_index"], "options": json.loads(q["options_json"] or "[]")
+            } for q in q_rows]
+            layout = OMREngine.generate_paper_template(dict(s_row), questions)
+            t_id = str(uuid.uuid4())
+            conn.execute("""
+                INSERT INTO paper_templates (id, survey_id, template_version, layout_config_json, created_at)
+                VALUES (?, ?, 1, ?, ?)
+            """, (t_id, survey_id, json.dumps(layout, ensure_ascii=False), now_iso()))
+        else:
+            layout = json.loads(t_row["layout_config_json"])
+
+    results = []
+    success_count = 0
+    failure_count = 0
+
+    for file in files:
+        try:
+            content = await file.read()
+            nparr = np.frombuffer(content, np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if image is None:
+                results.append({
+                    "filename": file.filename,
+                    "success": False,
+                    "error": "Không thể giải mã tệp ảnh (định dạng không hợp lệ)."
+                })
+                failure_count += 1
+                continue
+
+            quality = OMREngine.assess_image_quality(image)
+            warped = OMREngine.normalize_perspective(image)
+            qr_data, qr_status = OMREngine.decode_qr(warped)
+            form_id = f"FORM-{uuid.uuid4().hex[:8].upper()}"
+            enumerator_id = ""
+            if qr_data and isinstance(qr_data, dict):
+                form_id = qr_data.get("form_id", form_id)
+                enumerator_id = qr_data.get("enumerator_id", "")
+
+            detected_answers, confidences, warnings = OMREngine.read_bubbles(warped, layout)
+            avg_conf = float(np.mean(list(confidences.values()))) if confidences else 0.85
+
+            results.append({
+                "filename": file.filename,
+                "success": True,
+                "form_id": form_id,
+                "enumerator_id": enumerator_id,
+                "confidence_score": round(avg_conf, 2),
+                "detected_answers": detected_answers,
+                "warnings": warnings,
+                "image_quality": quality
+            })
+            success_count += 1
+        except Exception as e:
+            results.append({
+                "filename": file.filename,
+                "success": False,
+                "error": str(e)
+            })
+            failure_count += 1
+
+    return {
+        "survey_id": survey_id,
+        "total_files": len(files),
+        "success_count": success_count,
+        "failure_count": failure_count,
+        "results": results
+    }
+
 @router.post("/ingest", status_code=201)
 def ingest_paper_response(
     survey_id: str,
@@ -246,12 +338,16 @@ def ingest_paper_response(
             })
 
         # Thực thi Quality Engine
+        s_settings = json.loads(s_row["settings_json"] or "{}") if "settings_json" in s_row.keys() else {}
+        quality_settings = s_settings.get("quality_settings", {})
+
         analysis = QualityEngine.analyze_response(
             new_answers=payload.answers,
             duration_seconds=duration,
             questions=questions,
             prior_responses=prior_responses,
-            enumerator_id=payload.enumerator_id
+            enumerator_id=payload.enumerator_id,
+            quality_settings=quality_settings
         )
 
         assessment_id = str(uuid.uuid4())

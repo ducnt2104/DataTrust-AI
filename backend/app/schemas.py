@@ -39,6 +39,7 @@ class SurveyUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     instructions: Optional[str] = None
+    settings: Optional[Dict[str, Any]] = None
     questions: Optional[List[QuestionCreate]] = None
 
 class SurveyOut(BaseModel):
@@ -52,6 +53,7 @@ class SurveyOut(BaseModel):
     created_at: str
     updated_at: str
     closed_at: Optional[str] = None
+    settings: Optional[Dict[str, Any]] = None
     questions: List[QuestionOut] = []
     responses_count: int = 0
 

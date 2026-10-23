@@ -120,11 +120,45 @@ class QualityEngine:
         duration_seconds: float,
         questions: List[Dict[str, Any]],
         prior_responses: List[Dict[str, Any]],
-        enumerator_id: Optional[str] = None
+        enumerator_id: Optional[str] = None,
+        quality_settings: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Phân tích toàn diện một phản hồi mới đối chiếu với schema câu hỏi và tập phản hồi trước đó.
         """
+        # Cấu hình độ nhạy kiểm định chất lượng (Sensitivity settings)
+        q_settings = quality_settings or {}
+        sensitivity_mode = q_settings.get("sensitivity", "standard")
+        
+        duplicate_threshold = 0.85
+        straightline_threshold = 0.85
+        speed_threshold_per_question = 2.2
+        
+        if sensitivity_mode == "strict":
+            duplicate_threshold = 0.80
+            straightline_threshold = 0.75
+            speed_threshold_per_question = 2.8
+        elif sensitivity_mode == "lenient":
+            duplicate_threshold = 0.90
+            straightline_threshold = 0.90
+            speed_threshold_per_question = 1.5
+
+        if "duplicate_threshold" in q_settings:
+            try:
+                duplicate_threshold = float(q_settings["duplicate_threshold"])
+            except (ValueError, TypeError):
+                pass
+        if "straightline_threshold" in q_settings:
+            try:
+                straightline_threshold = float(q_settings["straightline_threshold"])
+            except (ValueError, TypeError):
+                pass
+        if "speed_threshold_per_question" in q_settings:
+            try:
+                speed_threshold_per_question = float(q_settings["speed_threshold_per_question"])
+            except (ValueError, TypeError):
+                pass
+
         flags = []
         score_dup = 0.0
         score_pat = 0.0
@@ -168,7 +202,7 @@ class QualityEngine:
                     "message": "Phản hồi có vector đáp án đóng trùng khớp 100% với một phản hồi đã gửi trước đó.",
                     "details": {"closest_response_id": closest_match_id, "similarity": 1.0}
                 })
-            elif highest_similarity >= 0.85:
+            elif highest_similarity >= duplicate_threshold:
                 score_dup = highest_similarity * 90.0
                 flags.append({
                     "code": "FLAG_NEAR_DUPLICATE",
@@ -185,7 +219,7 @@ class QualityEngine:
                     "details": {"closest_response_id": closest_match_id, "similarity": round(highest_similarity, 3)}
                 })
 
-        # 2. LAYER C: Mẫu đáp án bất thường (Straightlining & Shannon Entropy)
+        # 2. LAYER C: Mẫu đáp án bất thường (Straightlining, Đường chéo, Zíc-zắc & Shannon Entropy)
         scale_answers = []
         for q in questions:
             qid = q["id"]
@@ -209,7 +243,7 @@ class QualityEngine:
             max_freq = max(counts.values()) if counts else 0
             straightline_ratio = max_freq / len(scale_answers)
 
-            if straightline_ratio >= 0.85:
+            if straightline_ratio >= straightline_threshold:
                 score_pat = max(score_pat, 85.0)
                 flags.append({
                     "code": "FLAG_STRAIGHTLINING",
@@ -225,6 +259,49 @@ class QualityEngine:
                     "message": "Độ đa dạng câu trả lời thang đo thấp, có xu hướng chọn lặp lại một phương án.",
                     "details": {"straightline_ratio": round(straightline_ratio, 2)}
                 })
+
+            # Chuyển đổi các câu trả lời thang đo sang dạng số để kiểm tra mẫu hình học (Geometric Pattern Detection)
+            numeric_scale_vals = []
+            for ans in scale_answers:
+                try:
+                    numeric_scale_vals.append(float(ans))
+                except (ValueError, TypeError):
+                    pass
+
+            if len(numeric_scale_vals) >= 4:
+                # A. Mẫu đường chéo / bậc thang tăng hoặc giảm liên tiếp (Monotonic Diagonal Pattern)
+                # Ví dụ: 1 -> 2 -> 3 -> 4 -> 5 hoặc 5 -> 4 -> 3 -> 2 -> 1
+                diffs = [round(numeric_scale_vals[i+1] - numeric_scale_vals[i], 2) for i in range(len(numeric_scale_vals) - 1)]
+                is_all_inc = all(d == 1.0 for d in diffs)
+                is_all_dec = all(d == -1.0 for d in diffs)
+
+                if is_all_inc or is_all_dec:
+                    score_pat = max(score_pat, 80.0)
+                    direction_str = "tăng dần đều (1 -> 2 -> 3...)" if is_all_inc else "giảm dần đều (5 -> 4 -> 3...)"
+                    flags.append({
+                        "code": "FLAG_DIAGONAL_PATTERN",
+                        "severity": "HIGH",
+                        "message": f"Phát hiện mẫu đường chéo bậc thang ({direction_str}): Thao tác tích lướt qua loa theo đường chéo.",
+                        "details": {"pattern_type": "monotonic_diagonal", "total_steps": len(numeric_scale_vals)}
+                    })
+
+                # B. Mẫu Zíc-Zắc xen kẽ lặp lại (Alternating Zig-Zag Pattern)
+                # Ví dụ: 1 -> 5 -> 1 -> 5 -> 1 hoặc 5 -> 1 -> 5 -> 1
+                val_set = set(numeric_scale_vals)
+                if len(val_set) == 2:
+                    is_alternating = all(
+                        numeric_scale_vals[i] != numeric_scale_vals[i+1]
+                        for i in range(len(numeric_scale_vals) - 1)
+                    )
+                    if is_alternating:
+                        v_list = sorted(list(val_set))
+                        score_pat = max(score_pat, 75.0)
+                        flags.append({
+                            "code": "FLAG_ZIGZAG_PATTERN",
+                            "severity": "HIGH",
+                            "message": f"Phát hiện mẫu zíc-zắc xen kẽ hai cực ({v_list[0]} <-> {v_list[1]}): Thể hiện thao tác điền đối xứng cơ học.",
+                            "details": {"pattern_type": "alternating_zigzag", "values": v_list, "length": len(numeric_scale_vals)}
+                        })
 
             # Tính Shannon Entropy
             entropy = 0.0
@@ -272,7 +349,7 @@ class QualityEngine:
 
         # 4. LAYER E: Thời gian hoàn thành & Tốc độ làm bài (Speeding)
         total_questions = len(questions)
-        min_expected_duration = max(5.0, total_questions * 2.2)  # Tối thiểu 2.2 giây/câu
+        min_expected_duration = max(5.0, total_questions * speed_threshold_per_question)
         
         if duration_seconds > 0 and duration_seconds < min_expected_duration:
             ratio = duration_seconds / min_expected_duration

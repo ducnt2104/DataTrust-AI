@@ -108,6 +108,8 @@ def get_survey(survey_id: str):
                 created_at=q["created_at"]
             ))
             
+        settings_val = json.loads(s_row["settings_json"] or "{}") if "settings_json" in s_row.keys() else {}
+
         return SurveyOut(
             id=s_row["id"],
             title=s_row["title"],
@@ -119,6 +121,7 @@ def get_survey(survey_id: str):
             created_at=s_row["created_at"],
             updated_at=s_row["updated_at"],
             closed_at=s_row["closed_at"],
+            settings=settings_val,
             questions=questions,
             responses_count=resp_count
         )
@@ -142,6 +145,11 @@ def update_survey(survey_id: str, payload: SurveyUpdate):
             SET title = ?, description = ?, instructions = ?, version = ?, updated_at = ?
             WHERE id = ?
         """, (title, description, instructions, new_version, current_time, survey_id))
+
+        # Cập nhật cài đặt cấu hình khảo sát (chất lượng, độ nhạy, v.v.)
+        if payload.settings is not None:
+            settings_str = json.dumps(payload.settings, ensure_ascii=False)
+            conn.execute("UPDATE surveys SET settings_json = ? WHERE id = ?", (settings_str, survey_id))
 
         # Cập nhật danh sách câu hỏi nếu được cung cấp
         if payload.questions is not None:

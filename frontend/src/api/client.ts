@@ -148,6 +148,21 @@ export const api = {
     return handleResponse(res);
   },
 
+  async reanalyzeSurveyResponses(surveyId: string): Promise<{
+    survey_id: string;
+    total_reanalyzed: number;
+    high_risk_count: number;
+    medium_risk_count: number;
+    low_risk_count: number;
+    quality_sensitivity: string;
+    message: string;
+  }> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/responses/re-analyze`, {
+      method: 'POST'
+    });
+    return handleResponse(res);
+  },
+
   // --- Analytics ---
   async getSurveyAnalytics(surveyId: string): Promise<SurveyAnalytics> {
     const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics`);
@@ -188,6 +203,18 @@ export const api = {
     const formData = new FormData();
     formData.append('file', file);
     const res = await fetch(`${BASE_URL}/surveys/${surveyId}/paper/scan`, {
+      method: 'POST',
+      body: formData
+    });
+    return handleResponse(res);
+  },
+
+  async batchScanPaperImages(surveyId: string, files: File[]): Promise<any> {
+    const formData = new FormData();
+    for (const f of files) {
+      formData.append('files', f);
+    }
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/paper/batch-scan`, {
       method: 'POST',
       body: formData
     });

@@ -9,7 +9,8 @@ import {
   CheckCircle2,
   HelpCircle,
   FileText,
-  FileCheck
+  FileCheck,
+  RefreshCw
 } from 'lucide-react';
 import { api } from '../api/client';
 import { SurveyAnalytics } from '../types/survey';
@@ -25,6 +26,7 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
   const [analytics, setAnalytics] = useState<SurveyAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
 
   useEffect(() => {
     loadAnalytics();
@@ -40,6 +42,19 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
       alert('Không thể tải báo cáo phân tích.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReanalyze = async () => {
+    try {
+      setReanalyzing(true);
+      const res = await api.reanalyzeSurveyResponses(surveyId);
+      alert(`Tái phân tích chất lượng hoàn tất!\n- Tổng số phản hồi: ${res.total_reanalyzed}\n- Rủi ro cao: ${res.high_risk_count}\n- Rủi ro trung bình: ${res.medium_risk_count}\n- Rủi ro thấp: ${res.low_risk_count}`);
+      await loadAnalytics();
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi tái phân tích');
+    } finally {
+      setReanalyzing(false);
     }
   };
 
@@ -92,6 +107,15 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleReanalyze}
+            disabled={reanalyzing}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 transition-all shadow-xs disabled:opacity-50"
+            title="Tái chạy động cơ Quality Engine đa tầng trên toàn bộ phản hồi"
+          >
+            <RefreshCw className={`w-4 h-4 text-violet-600 ${reanalyzing ? 'animate-spin' : ''}`} />
+            <span>{reanalyzing ? 'Đang phân tích...' : 'Tái phân tích chất lượng'}</span>
+          </button>
           <button
             onClick={() => setIsAuditModalOpen(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-all shadow-xs"
