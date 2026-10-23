@@ -10,7 +10,9 @@ import {
   Lock,
   Edit3,
   Camera,
-  UserCheck
+  UserCheck,
+  RotateCcw,
+  Copy
 } from 'lucide-react';
 import { api } from '../api/client';
 import { SurveyListItem } from '../types/survey';
@@ -53,6 +55,27 @@ export const SurveysListPage: React.FC<Props> = ({ onNavigate }) => {
       } catch (err) {
         alert(err instanceof Error ? err.message : 'Lỗi đóng khảo sát');
       }
+    }
+  };
+
+  const handleReopenSurvey = async (id: string) => {
+    if (window.confirm('Bạn có muốn mở lại khảo sát này để tiếp tục nhận phản hồi công khai?')) {
+      try {
+        await api.reopenSurvey(id);
+        fetchSurveys();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Lỗi mở lại khảo sát');
+      }
+    }
+  };
+
+  const handleDuplicateSurvey = async (id: string) => {
+    try {
+      const dup = await api.duplicateSurvey(id);
+      fetchSurveys();
+      alert(`Đã nhân bản thành công! Bản nháp mới: "${dup.title}"`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Lỗi nhân bản khảo sát');
     }
   };
 
@@ -216,6 +239,13 @@ export const SurveysListPage: React.FC<Props> = ({ onNavigate }) => {
                   >
                     <UserCheck className="w-4 h-4" />
                   </button>
+                  <button
+                    title="Nhân bản khảo sát (Duplicate)"
+                    onClick={() => handleDuplicateSurvey(survey.id)}
+                    className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
                   {survey.status === 'published' && (
                     <button
                       title="Lấy link & mã QR"
@@ -228,6 +258,15 @@ export const SurveysListPage: React.FC<Props> = ({ onNavigate }) => {
                 </div>
 
                 <div className="flex items-center gap-1">
+                  {survey.status === 'closed' && (
+                    <button
+                      title="Mở lại khảo sát"
+                      onClick={() => handleReopenSurvey(survey.id)}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  )}
                   {survey.status === 'published' && (
                     <button
                       title="Đóng khảo sát"

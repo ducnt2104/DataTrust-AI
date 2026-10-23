@@ -76,6 +76,20 @@ export const api = {
     return handleResponse<Survey>(res);
   },
 
+  async reopenSurvey(id: string): Promise<Survey> {
+    const res = await fetch(`${BASE_URL}/surveys/${id}/reopen`, {
+      method: 'POST'
+    });
+    return handleResponse<Survey>(res);
+  },
+
+  async duplicateSurvey(id: string): Promise<Survey> {
+    const res = await fetch(`${BASE_URL}/surveys/${id}/duplicate`, {
+      method: 'POST'
+    });
+    return handleResponse<Survey>(res);
+  },
+
   async deleteSurvey(id: string): Promise<void> {
     const res = await fetch(`${BASE_URL}/surveys/${id}`, {
       method: 'DELETE'
