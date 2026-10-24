@@ -4678,3 +4678,46 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép minh họa điểm gãy bán thực nghiệm và mật độ trơn McCrary.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition giải thích kết quả hồi quy RKD, kiểm định độ trơn mật độ và độ co giãn chính sách biên.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `REGRESSION_KINK_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 113. Staggered Difference-in-Differences & Group-Time Average Treatment Effects Engine (Callaway & Sant'Anna 2021; Goodman-Bacon 2021; Sun & Abraham 2021)
+- **Lý thuyết nền tảng:**
+  1. **Khuyết tật của Hồi quy Hai Chiều Cố Định (Two-Way Fixed Effects - TWFE) khi Can Thiệp Phân Tầng Thời Gian:**
+     - Trong các nghiên cứu khảo sát dọc / bảng (panel surveys) nơi các đơn vị khảo sát (doanh nghiệp, chi nhánh, trường học, tỉnh thành) tiếp cận hoặc triển khai chính sách tại các thời điểm khác nhau (staggered adoption cohorts $g \in \{g_1, g_2, \dots\}$), phương pháp truyền thống thường chạy mô hình hồi quy TWFE:
+       $$Y_{it} = \alpha_i + \lambda_t + \beta^{\text{TWFE}} D_{it} + \varepsilon_{it}$$
+     - **Goodman-Bacon (2021)** đã chứng minh định lý phân rã toán học quan trọng: $\beta^{\text{TWFE}}$ là bình quân gia quyền của tất cả các phép so sánh $2 \times 2$ DiD trong mẫu. Khi hiệu ứng can thiệp biến thiên theo thời gian (dynamic / heterogeneous treatment effects $\theta(t - g)$), các đơn vị can thiệp sớm (already treated) bị đưa vào làm "nhóm đối chứng" cho các đơn vị can thiệp muộn hơn, dẫn đến **trọng số âm (negative weights)**. Hậu quả là $\beta^{\text{TWFE}}$ có thể mang dấu âm ngay cả khi hiệu ứng can thiệp thực tế của từng đơn vị đều dương!
+  2. **Trụ Cột Phương Pháp Luận Callaway & Sant'Anna (2021) & Sun & Abraham (2021):**
+     - **Đại lượng Ước Lượng Nhóm - Thời điểm $ATT(g, t)$:**
+       $$ATT(g, t) = \mathbb{E}[Y_t(g) - Y_t(0) \mid G_g = 1]$$
+       với $G_g = 1$ là chỉ số đơn vị được can thiệp lần đầu tại mốc $g$, và $t$ là mốc quan sát.
+       Ước lượng phi tham số không chệch bằng cách chỉ so sánh với nhóm chưa từng can thiệp (never-treated $C$) hoặc nhóm chưa can thiệp tại thời điểm $t$ (not-yet-treated):
+       $$\widehat{ATT}(g, t) = (\bar{Y}_{g, t} - \bar{Y}_{g, g-1}) - (\bar{Y}_{C, t} - \bar{Y}_{C, g-1})$$
+     - **Nghiên cứu Biến cố Động (Dynamic Event Study Aggregation $ATT(e)$):**
+       Tổng hợp các hiệu ứng theo khoảng thời gian biến cố $e = t - g \in \{-K, \dots, +M\}$:
+       $$ATT_{\text{es}}(e) = \sum_g w(g, e) \cdot ATT(g, g + e)$$
+       Cho phép kiểm định trực tiếp tính hợp lệ của giả định xu hướng song song trước can thiệp (Pre-Trends Parallel Assumption, $e < 0$) thông qua thống kê Wald $\chi^2$.
+     - **Ước lượng Tác động Gộp Toàn cục (Overall Summary ATT $\hat{\tau}_{\text{CS}}$):**
+       Trung bình gia quyền quy mô mẫu của các $ATT(g, t)$ hậu can thiệp, bảo đảm không bị ô nhiễm bởi trọng số âm.
+     - **Phân tích Phân rã Goodman-Bacon (2021):**
+       Tự động tính toán tỷ lệ trọng số âm tiềm ẩn và đo lường khoảng cách sai lệch (Bias Gap $\Delta = \hat{\tau}_{\text{CS}} - \beta^{\text{TWFE}}$) so với mô hình TWFE OLS cổ điển.
+     - **Đồ thị SVG Kép Khoa Học:**
+       - Panel A: Đồ thị nghiên cứu biến cố động $ATT(e)$ với dải tin cậy 95%, phân định rõ tiền can thiệp (kiểm định xu hướng song song) và hậu can thiệp (quỹ đạo động của chính sách).
+       - Panel B: Đồ thị phân tán phân rã Goodman-Bacon trực quan hóa các ước lượng $2 \times 2$ so với tỷ trọng phân rã, đối chiếu trực diện giữa đường chuẩn $\hat{\tau}_{\text{CS}}$ và $\beta^{\text{TWFE}}$.
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/staggered-did`
+- **Request Body (`StaggeredDIDRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả $Y$.
+  - `unit_question_id`: UUID biến định danh đơn vị quan sát (doanh nghiệp, đối tượng, chi nhánh).
+  - `time_question_id`: UUID biến đo lường đợt / mốc thời gian khảo sát $T$.
+  - `treatment_timing_question_id`: UUID biến xác định mốc thời gian bắt đầu can thiệp $G$ (0 nếu chưa bao giờ can thiệp).
+  - `anticipation_periods`: Số kỳ dự báo trước tác động (Mặc định 0).
+  - `control_group_type`: Nhóm đối chứng so sánh (`"never_treated"` hoặc `"not_yet_treated"`).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`StaggeredDIDOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, `"INSUFFICIENT_TIME_PERIODS"`, hoặc `"NO_TREATED_UNITS"`.
+  - `model_type`: `"STAGGERED_DID_CALLAWAY_SANTANNA_2021"`.
+  - `diagnostics`: Quy mô mẫu quan sát, số đơn vị, số mốc thời gian, số đoàn hệ, số đơn vị thuần đối chứng, Ước lượng gộp $\hat{\tau}_{\text{CS}}$, Sai số chuẩn SE, $p$-value, Khoảng tin cậy 95% CI, Kiểm định xu hướng song song (Wald $\chi^2$ và $p$-value), Cờ thỏa mãn song song (`parallel_trends_supported`), Hệ số OLS TWFE ngây thơ $\beta^{\text{TWFE}}$, Độ lệch thiên lệch $\Delta$, Tỷ lệ trọng số âm (`pct_negative_weights`).
+  - `group_time_effects`: Bảng chi tiết toàn bộ các ước lượng $ATT(g, t)$ kèm SE, $t$, $p$-value và quy mô mẫu treated/control.
+  - `event_study_effects`: Bảng nghiên cứu biến cố động $ATT(e)$ tổng hợp theo thời gian tương đối $e = t - g$.
+  - `bacon_decomposition`: Kết quả phân rã Goodman-Bacon phân tách thành các cặp so sánh $2 \times 2$ DiD và tỷ trọng đóng góp.
+  - `svg_visualization`: Đồ thị SVG khoa học kép trực quan hóa quỹ đạo biến cố động và phân tán trọng số Bacon.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition giải thích kết quả Callaway-Sant'Anna, kiểm định xu hướng song song và so sánh với TWFE.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `STAGGERED_DID_EVALUATED` vào chuỗi sổ cái SHA-256.

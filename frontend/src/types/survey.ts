@@ -6916,3 +6916,88 @@ export interface RegressionKinkRequest {
   known_kink_slope?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+export interface StaggeredDIDDiagnostics {
+  n_observations: number;
+  n_units: number;
+  n_time_periods: number;
+  n_cohorts: number;
+  n_never_treated_units: number;
+  overall_att: number;
+  overall_se: number;
+  overall_z: number;
+  overall_p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_statistically_significant: boolean;
+  pre_trends_p_value: number;
+  pre_trends_wald_stat: number;
+  parallel_trends_supported: boolean;
+  twfe_naive_beta: number;
+  twfe_naive_se: number;
+  twfe_bias_gap: number;
+  pct_negative_weights: number;
+}
+
+export interface GroupTimeEffect {
+  cohort_g: number;
+  calendar_time_t: number;
+  event_time_e: number;
+  att: number;
+  se: number;
+  t_statistic: number;
+  p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_pre_treatment: boolean;
+  n_treated: number;
+  n_control: number;
+}
+
+export interface EventStudyEffect {
+  event_time: number;
+  att: number;
+  se: number;
+  z_statistic: number;
+  p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_pre_period: boolean;
+}
+
+export interface BaconComponent {
+  comparison_type: string;
+  group_k: number | string;
+  group_u: number | string;
+  estimate: number;
+  weight: number;
+  weight_share?: number;
+}
+
+export interface BaconDecomposition {
+  n_comparisons: number;
+  pct_negative_weights: number;
+  components: BaconComponent[];
+}
+
+export interface StaggeredDIDResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: StaggeredDIDDiagnostics;
+  group_time_effects?: GroupTimeEffect[];
+  event_study_effects?: EventStudyEffect[];
+  bacon_decomposition?: BaconDecomposition;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface StaggeredDIDRequest {
+  outcome_question_id: string;
+  unit_question_id: string;
+  time_question_id: string;
+  treatment_timing_question_id: string;
+  anticipation_periods?: number;
+  control_group_type?: 'never_treated' | 'not_yet_treated';
+  scope?: 'all' | 'verified_clean';
+}

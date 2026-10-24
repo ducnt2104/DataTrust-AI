@@ -177,7 +177,9 @@ import {
   DoubleMachineLearningRequest,
   DoubleMachineLearningResult,
   RegressionKinkRequest,
-  RegressionKinkResult
+  RegressionKinkResult,
+  StaggeredDIDRequest,
+  StaggeredDIDResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2191,5 +2193,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<RegressionKinkResult>(res);
+  },
+
+  // --- Staggered Difference-in-Differences (Callaway & Sant'Anna 2021; Goodman-Bacon 2021) ---
+  async runStaggeredDID(
+    surveyId: string,
+    payload: StaggeredDIDRequest
+  ): Promise<StaggeredDIDResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/staggered-did`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<StaggeredDIDResult>(res);
   }
 };

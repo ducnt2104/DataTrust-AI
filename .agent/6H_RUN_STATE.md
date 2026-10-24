@@ -523,3 +523,21 @@
 - Frontend build: **2,097 modules transformed, 0 errors in 999ms**.
 - Backend tests mới: **6 passed, 0 failed in 3.18s**.
 - Git commit cho Iteration 131.
+
+
+### Mốc 03:56:00 — Hoàn thành Iteration 132: Staggered Difference-in-Differences & Group-Time Average Treatment Effects Engine (Callaway & Sant'Anna 2021; Goodman-Bacon 2021; Sun & Abraham 2021)
+- Xây dựng `backend/app/engine/staggered_did_engine.py` (Phương pháp luận Brantly Callaway & Pedro H. C. Sant'Anna 2021 Journal of Econometrics; Andrew Goodman-Bacon 2021 Journal of Econometrics; Liyang Sun & Sarah Abraham 2021 Journal of Econometrics; giải quyết triệt để vấn đề thiên lệch nghiêm trọng của mô hình Two-Way Fixed Effects TWFE khi can thiệp phân tầng theo thời gian có hiệu ứng động:
+  1. Loại bỏ các phép so sánh ô nhiễm nơi các đơn vị can thiệp sớm bị dùng làm đối chứng cho đơn vị can thiệp muộn gây ra trọng số âm (negative weights);
+  2. Ước lượng phi tham số các tác động nhóm - thời gian $ATT(g, t) = \mathbb{E}[Y_t(g) - Y_t(0) \mid G_g = 1]$ sử dụng nhóm thuần chưa từng can thiệp (never-treated) hoặc nhóm chưa can thiệp tại thời điểm $t$ (not-yet-treated);
+  3. Nghiên cứu biến cố động Dynamic Event Study Aggregation $ATT(e)$ với $e = t - g$ và kiểm định giả định xu hướng song song tiền can thiệp (Pre-Trends Parallel Assumption Wald $\chi^2$);
+  4. Phân rã tuyến tính Goodman-Bacon (2021) bóc tách toàn bộ các phép so sánh $2 \times 2$, tính toán tỷ lệ trọng số âm tiềm ẩn và xác định khoảng chệch Bias Gap $\Delta = \hat{\tau}_{\text{CS}} - \beta^{\text{TWFE}}$ so với OLS ngây thơ;
+  5. Dual-panel SVG: Panel A Quỹ đạo biến cố động $ATT(e)$ với dải tin cậy 95% phân chia rõ giai đoạn tiền can thiệp (kiểm định giả định) và hậu can thiệp (hiệu ứng tích lũy) + Panel B Đồ thị phân tán phân rã Goodman-Bacon so sánh các ước lượng $2 \times 2$ với tỷ trọng phân rã và đối chiếu trực diện đường chuẩn Callaway-Sant'Anna vs TWFE;
+  6. APA 7th narrative).
+- Viết unit tests `backend/tests/test_staggered_did_engine.py` (4 passed) và route tests `backend/tests/test_staggered_did_routes.py` (2 passed).
+- Thêm schemas `StaggeredDIDRequest`, `StaggeredDIDOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/staggered-did`, audit log `STAGGERED_DID_EVALUATED`.
+- Thêm types trong `survey.ts`, API client method `runStaggeredDID` trong `client.ts`, component `StaggeredDIDCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 113 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,098 modules transformed, 0 errors in 1.24s**.
+- Backend tests mới: **6 passed, 0 failed in 1.36s**.
+- Git commit cho Iteration 132.

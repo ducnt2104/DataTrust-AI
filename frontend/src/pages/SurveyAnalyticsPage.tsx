@@ -110,6 +110,7 @@ import { DynamicTreatmentRegimesCard } from '../components/DynamicTreatmentRegim
 import { FiniteMixtureRaschCard } from '../components/FiniteMixtureRaschCard';
 import { DoubleMachineLearningCard } from '../components/DoubleMachineLearningCard';
 import { RegressionKinkCard } from '../components/RegressionKinkCard';
+import { StaggeredDIDCard } from '../components/StaggeredDIDCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1272,6 +1273,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           question_type: q.question_type
         }))}
       />
+      {/* Staggered Difference-in-Differences (Callaway & Sant'Anna 2021; Goodman-Bacon 2021) */}
+      <StaggeredDIDCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
 
 
       {/* Non-Parametric Hypothesis Tests (Mann-Whitney U, Wilcoxon Signed-Rank, Kruskal-Wallis & Dunn Post-Hoc) */}
