@@ -4939,3 +4939,42 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép điểm AIPW & so sánh phúc lợi chế độ chính sách.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition phân tích tính tối ưu và thặng dư phúc lợi xã hội.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `POLICY_LEARNING_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 119. RDD with Local Randomization for Discrete Running Variables (Cattaneo, Frandsen, & Titiunik 2015 JCA)
+
+- **Mục đích & Cơ sở Khoa học:**
+  1. **Hạn chế của RDD tiệm cận liên tục đối với Biến Chạy Rời rạc (Discrete Running Variables):**
+     - Trong thực tế khảo sát kinh tế lượng và khoa học xã hội, biến chạy (running / forcing variable $X$) thường có tính chất rời rạc với số điểm tập trung giá trị (mass points) hữu hạn (ví dụ: tuổi theo năm nguyên, số năm thâm niên, điểm thi trắc nghiệm nguyên 1-100, số lượng nhân viên).
+     - Khi số điểm mass points hữu hạn hoặc biến chạy rời rạc, các phương pháp hồi quy đa thức cục bộ tiệm cận liên tục (Hahn et al. 2001; Calonico, Cattaneo, & Titiunik 2014) không thể thu hẹp băng thông $h \to 0$ về ngưỡng $c$, dẫn đến chệch do xấp xỉ hàm đa thức và suy diễn thống kê quy ước bị sai lệch.
+  2. **Khung Suy diễn Ngẫu nhiên Cục bộ (Local Randomization Framework - Cattaneo, Frandsen, & Titiunik 2015):**
+     - Cattaneo et al. (2015) thiết lập khung phân tích giả định tồn tại một cửa sổ hẹp $W^* = [c - w, c + w]$ xung quanh ngưỡng phân định $c$, trong đó cơ chế gán can thiệp cận ngưỡng có tính chất ngẫu nhiên hoàn toàn như một thí nghiệm đối chứng ngẫu nhiên (RCT):
+       $$W_i \perp (Y_i(1), Y_i(0)) \mid X_i \in W^*$$
+     - Lựa chọn cửa sổ $W^*$ dựa trên kiểm định cân bằng hiệp biến tiền can thiệp (Covariate Balance Tests) sử dụng thống kê sai khác trung bình hoặc Kolmogorov-Smirnov.
+  3. **Kiểm định Hoán vị Chính xác Mẫu Hữu hạn (Exact Finite-Sample Permutation Test):**
+     - Dưới giả thuyết không Fisher sắc nét (Sharp Null Hypothesis $H_0: Y_i(1) = Y_i(0)$ với mọi $i \in W^*$), phân phối mẫu của hiệu số trung bình $\hat{\tau}_{\text{diff}} = \bar{Y}_{1, W} - \bar{Y}_{0, W}$ hoặc hiệu số trung vị $\hat{\tau}_{\text{median}}$ được mô phỏng chính xác qua phép hoán vị ngẫu nhiên (Monte Carlo permutation with $B$ resamples).
+     - Cho phép suy diễn thống kê hợp lệ với mẫu hữu hạn mà không cần giả định phân phối tiệm cận chuẩn.
+  4. **Đối chiếu So sánh với RDD Đa thức Cục bộ (Local Polynomial RDD Benchmark):**
+     - Đối chiếu kết quả hiệu số trung bình ngẫu nhiên cục bộ với mô hình hồi quy đa thức bậc 1 (Local Linear) trong cửa sổ nhằm đánh giá độ bền vững trước xu hướng dốc (slope drift) của biến chạy rời rạc.
+  5. **Đồ thị SVG Kép Khoa học:**
+     - Panel A: Đồ thị phân phối các điểm khối lượng (mass points) của biến chạy rời rạc quanh ngưỡng $c$, phân định rõ nhóm đối chứng và can thiệp trong cửa sổ $W^*$.
+     - Panel B: Phân phối hoán vị chính xác (Exact Permutation Null Distribution) cùng vị trí của thống kê quan sát thực tế $\hat{\tau}_{\text{obs}}$ và vùng bác bỏ kiểm định hai phía.
+  6. **Đoạn Thuyết minh Học thuật Chuẩn APA 7th Edition:**
+     - Tự động biên soạn theo chuẩn mực Cattaneo, Frandsen, & Titiunik (2015 JCA).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/rdd-local-randomization`
+- **Request Body (`RDDLocalRandomizationRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả $Y$.
+  - `running_question_id`: UUID biến chạy rời rạc $X$.
+  - `cutoff`: Ngưỡng phân định can thiệp $c$ (Mặc định 50.0).
+  - `window_half_width`: Bán độ rộng cửa sổ ngẫu nhiên cục bộ $w$ (Mặc định 2.0, kiểm tra khoảng $[c-w, c+w]$).
+  - `covariate_question_ids`: Danh sách UUID các biến hiệp biến kiểm tra cân bằng (Tùy chọn).
+  - `n_permutations`: Số lần hoán vị ngẫu nhiên mẫu hữu hạn (Mặc định 500).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`RDDLocalRandomizationOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"NO_WINDOW_VARIATION"`.
+  - `model_type`: `"RDD_LOCAL_RANDOMIZATION_CATTANEO_2015"`.
+  - `diagnostics`: Cỡ mẫu tổng $N$, số quan sát trong cửa sổ $N_W$, số quan sát can thiệp/đối chứng trong cửa sổ, số lượng điểm mass points bên trái/phải ngưỡng, Ước lượng hiệu số trung bình ngẫu nhiên cục bộ $\hat{\tau}_{\text{LR}}$, p-value hoán vị chính xác (Exact Permutation p-value), Hiệu số trung vị, Ước lượng đối chiếu RDD đa thức bậc 1 (Local Linear RDD estimate & p-value), Kết quả kiểm định cân bằng hiệp biến.
+  - `mass_points`: Bảng tổng hợp các điểm giá trị rời rạc của biến chạy kèm cỡ mẫu, giá trị kết quả trung bình và trạng thái can thiệp.
+  - `svg_visualization`: Đồ thị SVG khoa học kép phân phối điểm khối lượng và phân phối hoán vị giả thuyết không.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition theo Cattaneo, Frandsen, & Titiunik (2015).
+- **Niêm phong kiểm toán:** Tự động ghi nhận `RDD_LOCAL_RANDOMIZATION_EVALUATED` vào chuỗi sổ cái SHA-256.

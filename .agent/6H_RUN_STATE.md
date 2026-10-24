@@ -649,3 +649,22 @@
 
 
 
+
+
+### Mốc 04:34:00 – Hoàn thành Iteration 138: RDD with Local Randomization for Discrete Running Variables Engine (Cattaneo, Frandsen, & Titiunik 2015 JCA)
+- Xây dựng `backend/app/engine/rdd_local_randomization_engine.py` (Phương pháp luận Matias D. Cattaneo, Brigham R. Frandsen, & Rocio Titiunik 2015 Journal of Causal Inference; Matias D. Cattaneo, Nicolas Idrobo, & Rocio Titiunik 2024 Cambridge University Press; xử lý biến chạy rời rạc với số điểm tập trung giá trị mass points hữu hạn):
+  1. Khung suy diễn ngẫu nhiên cục bộ (Local Randomization) trong cửa sổ hẹp $W^* = [c - w, c + w]$ quanh ngưỡng phân định $c$, xem xét cơ chế gán can thiệp tương đương thử nghiệm đối chứng ngẫu nhiên (RCT);
+  2. Tổng hợp các điểm khối lượng (mass points) của biến chạy rời rạc kèm cỡ mẫu và giá trị kết quả trung bình từng điểm;
+  3. Kiểm định hoán vị chính xác mẫu hữu hạn (Exact Finite-Sample Permutation Test) dưới giả thuyết không Fisher sắc nét ($H_0: Y_i(1) = Y_i(0)$) cho hiệu số trung bình và hiệu số trung vị;
+  4. Đối chiếu so sánh với mô hình hồi quy đa thức bậc 1 (Local Linear RDD) trong cửa sổ để kiểm tra độ bền vững trước xu hướng dốc (slope drift);
+  5. Đánh giá tính cân bằng của các biến hiệp biến tiền can thiệp trong cửa sổ $W^*$;
+  6. Dual-panel SVG: Panel A Đồ thị phân phối các điểm khối lượng (mass points) của biến chạy quanh ngưỡng $c$ + Panel B Phân phối hoán vị chính xác của giả thuyết không cùng giá trị quan sát thực tế;
+  7. APA 7th narrative khoa học diễn giải chi tiết ước lượng ngẫu nhiên cục bộ, p-value hoán vị chính xác và độ tin cậy của thiết kế đối với biến chạy rời rạc.
+- Viết unit tests `backend/tests/test_rdd_local_randomization_engine.py` (3 passed) và route tests `backend/tests/test_rdd_local_randomization_routes.py` (2 passed).
+- Thêm schemas `RDDLocalRandomizationRequest`, `RDDLocalRandomizationOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/rdd-local-randomization`, audit log `RDD_LOCAL_RANDOMIZATION_EVALUATED`.
+- Thêm types trong `survey.ts`, API client method `runRDDLocalRandomization` trong `client.ts`, component `RDDLocalRandomizationCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 119 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,104 modules transformed, 0 errors in 1.21s**.
+- Backend tests mới: **5 passed, 0 failed in 1.40s**.
+- Git commit cho Iteration 138.

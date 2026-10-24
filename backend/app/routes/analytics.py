@@ -1,3 +1,4 @@
+from app.engine.rdd_local_randomization_engine import RDDLocalRandomizationEngine
 from app.engine.policy_learning_engine import PolicyLearningEngine
 from app.engine.multiple_mediators_engine import MultipleMediatorsEngine
 from app.engine.interactive_fixed_effects_engine import compute_interactive_fixed_effects
@@ -56,6 +57,8 @@ from app.schemas import (
     MultipleMediatorsOut,
     PolicyLearningRequest,
     PolicyLearningOut,
+    RDDLocalRandomizationRequest,
+    RDDLocalRandomizationOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -13545,6 +13548,128 @@ def run_policy_learning_analysis(
                 "n_samples": len(y_list),
                 "optimal_welfare": res.get("diagnostics", {}).get("optimal_welfare_value") if res.get("diagnostics") else None,
                 "net_gain": res.get("diagnostics", {}).get("net_welfare_gain") if res.get("diagnostics") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- RDD with Local Randomization for Discrete Running Variables (Cattaneo et al. 2015) ---
+@router.post("/rdd-local-randomization", response_model=RDDLocalRandomizationOut)
+def run_rdd_local_randomization_analysis(
+    survey_id: str,
+    payload: RDDLocalRandomizationRequest
+):
+    """
+    Regression Discontinuity Design with Local Randomization (Cattaneo, Frandsen, & Titiunik 2015).
+    Specialized for discrete or few-valued running variables with exact finite-sample permutation tests.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        if payload.outcome_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến kết quả (Y QID: {payload.outcome_question_id}) không tồn tại.")
+        if payload.running_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến chạy phân tầng (X QID: {payload.running_question_id}) không tồn tại.")
+
+        cov_ids = payload.covariate_question_ids or []
+        for cid in cov_ids:
+            if cid not in q_map:
+                raise HTTPException(status_code=400, detail=f"Biến đặc tính (Covariate QID: {cid}) không tồn tại.")
+
+        scope_sql = ""
+        if payload.scope == "verified_clean":
+            scope_sql = " AND r.is_verified = 1 AND r.is_flagged = 0 "
+
+        target_qids = [payload.outcome_question_id, payload.running_question_id] + cov_ids
+        target_qids = list(dict.fromkeys(target_qids))
+
+        placeholders = ",".join(["?"] * len(target_qids))
+        query = f"""
+            SELECT ra.response_id, ra.question_id, ra.answer_value
+            FROM response_answers ra
+            JOIN responses r ON ra.response_id = r.id
+            WHERE r.survey_id = ? {scope_sql}
+              AND ra.question_id IN ({placeholders})
+        """
+        rows = conn.execute(query, [survey_id] + target_qids).fetchall()
+
+        resp_data = {}
+        for r in rows:
+            resp_id = r["response_id"]
+            if resp_id not in resp_data:
+                resp_data[resp_id] = {}
+            resp_data[resp_id][r["question_id"]] = r["answer_value"]
+
+        y_list = []
+        x_list = []
+        cov_matrix_rows = []
+
+        for resp_id, answers in resp_data.items():
+            if (payload.outcome_question_id not in answers or
+                payload.running_question_id not in answers):
+                continue
+
+            has_all_covs = True
+            c_vals = []
+            for cid in cov_ids:
+                if cid not in answers:
+                    has_all_covs = False
+                    break
+                try:
+                    c_vals.append(float(answers[cid]))
+                except (ValueError, TypeError):
+                    has_all_covs = False
+                    break
+
+            if not has_all_covs:
+                continue
+
+            try:
+                yv = float(answers[payload.outcome_question_id])
+                xv = float(answers[payload.running_question_id])
+
+                y_list.append(yv)
+                x_list.append(xv)
+                cov_matrix_rows.append(c_vals)
+            except (ValueError, TypeError):
+                continue
+
+        cov_mat = np.array(cov_matrix_rows, dtype=float) if len(cov_ids) > 0 and len(cov_matrix_rows) > 0 else None
+        cov_names = [q_map.get(cid, cid) for cid in cov_ids] if len(cov_ids) > 0 else None
+
+        res = RDDLocalRandomizationEngine.evaluate(
+            y=np.array(y_list, dtype=float),
+            x=np.array(x_list, dtype=float),
+            cutoff=payload.cutoff,
+            covariates=cov_mat,
+            covariate_names=cov_names,
+            window_half_width=payload.window_half_width,
+            n_permutations=payload.n_permutations,
+            outcome_label=q_map.get(payload.outcome_question_id, "Biến kết quả Y"),
+            running_label=q_map.get(payload.running_question_id, "Biến chạy X")
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="RDD_LOCAL_RANDOMIZATION_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "running_qid": payload.running_question_id,
+                "cutoff": payload.cutoff,
+                "n_samples": len(y_list),
+                "tau_diff_means": res.get("diagnostics", {}).get("tau_diff_means") if res.get("diagnostics") else None,
+                "permutation_p_val": res.get("diagnostics", {}).get("permutation_p_value") if res.get("diagnostics") else None,
                 "status": res.get("status")
             }
         )

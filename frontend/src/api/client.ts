@@ -189,7 +189,9 @@ import {
   MultipleMediatorsRequest,
   MultipleMediatorsResult,
   PolicyLearningRequest,
-  PolicyLearningResult
+  PolicyLearningResult,
+  RDDLocalRandomizationRequest,
+  RDDLocalRandomizationResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2281,5 +2283,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<PolicyLearningResult>(res);
+  },
+
+  // --- RDD with Local Randomization (Cattaneo et al. 2015) ---
+  async runRDDLocalRandomization(
+    surveyId: string,
+    payload: RDDLocalRandomizationRequest
+  ): Promise<RDDLocalRandomizationResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/rdd-local-randomization`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<RDDLocalRandomizationResult>(res);
   }
 };

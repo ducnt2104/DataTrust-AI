@@ -7311,5 +7311,66 @@ export interface PolicyLearningRequest {
   scope?: 'all' | 'verified_clean';
 }
 
+// --- RDD with Local Randomization (Cattaneo, Frandsen, & Titiunik 2015) Types ---
+export interface RDDLocalRandomizationDiagnostics {
+  sample_size: number;
+  cutoff_c: number;
+  window_half_width: number;
+  window_lower: number;
+  window_upper: number;
+  n_in_window: number;
+  n_window_treated: number;
+  n_window_control: number;
+  tau_diff_means: number;
+  tau_diff_medians: number;
+  se_permutation: number;
+  permutation_p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_statistically_significant: boolean;
+  tau_continuity_benchmark: number;
+  methodology_bias_gap: number;
+}
+
+export interface RDDLocalRandomizationBalanceItem {
+  covariate_name: string;
+  mean_treated: number;
+  mean_control: number;
+  difference: number;
+  p_value: number;
+  is_balanced: boolean;
+}
+
+export interface RDDLocalRandomizationDiscreteBin {
+  x_value: number;
+  centered_x: number;
+  is_treated: boolean;
+  is_in_window: boolean;
+  count: number;
+  mean_y: number;
+}
+
+export interface RDDLocalRandomizationResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: RDDLocalRandomizationDiagnostics;
+  balance_table?: RDDLocalRandomizationBalanceItem[];
+  discrete_bins?: RDDLocalRandomizationDiscreteBin[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface RDDLocalRandomizationRequest {
+  outcome_question_id: string;
+  running_question_id: string;
+  cutoff?: number;
+  covariate_question_ids?: string[];
+  window_half_width?: number | null;
+  n_permutations?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
 
 
