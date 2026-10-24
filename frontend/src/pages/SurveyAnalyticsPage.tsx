@@ -107,6 +107,7 @@ import { BayesianNetworkCard } from '../components/BayesianNetworkCard';
 import { StochasticDominanceCard } from '../components/StochasticDominanceCard';
 import { ManskiBoundsCard } from '../components/ManskiBoundsCard';
 import { DynamicTreatmentRegimesCard } from '../components/DynamicTreatmentRegimesCard';
+import { FiniteMixtureRaschCard } from '../components/FiniteMixtureRaschCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1233,6 +1234,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Dynamic Treatment Regimes (DTR) & Sequential Q-Learning Decision Engine (Murphy 2003, Robins 2004) */}
       <DynamicTreatmentRegimesCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Finite Mixture Rasch Models (FMRM) & Latent Class IRT Engine (Rost 1990; von Davier & Rost 2007) */}
+      <FiniteMixtureRaschCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

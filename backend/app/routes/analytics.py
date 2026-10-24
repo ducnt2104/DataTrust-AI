@@ -1,3 +1,4 @@
+from app.engine.finite_mixture_rasch_engine import FiniteMixtureRaschEngine
 from app.engine.dynamic_treatment_regimes_engine import DynamicTreatmentRegimesEngine
 from app.engine.manski_bounds_engine import ManskiBoundsEngine
 from app.engine.stochastic_dominance_engine import StochasticDominanceEngine
@@ -35,6 +36,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Response
 from app.database import get_db, record_audit_log
 from app.schemas import (
+    FiniteMixtureRaschRequest,
+    FiniteMixtureRaschOut,
     DynamicTreatmentRegimesRequest,
     DynamicTreatmentRegimesOut,
     ManskiBoundsRequest,
@@ -12358,6 +12361,145 @@ def run_dynamic_treatment_regimes_analysis(
                 "v_always": res.get("diagnostics", {}).get("v_always_treated"),
                 "v_never": res.get("diagnostics", {}).get("v_never_treated"),
                 "policy_gain": res.get("diagnostics", {}).get("policy_value_gain"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Finite Mixture Rasch Models (FMRM) & Latent Class IRT Engine (Rost 1990; von Davier & Rost 2007) ---
+@router.post("/finite-mixture-rasch", response_model=FiniteMixtureRaschOut)
+def run_finite_mixture_rasch_analysis(
+    survey_id: str,
+    payload: FiniteMixtureRaschRequest
+):
+    """
+    Evaluates Finite Mixture Rasch Models (FMRM) to identify latent classes of respondents
+    exhibiting differential item functioning (DIF) and distinct psychometric response patterns
+    via Expectation-Maximization (EM) algorithm (Rost 1990; von Davier & Rost 2007).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy cuộc khảo sát.")
+
+        if len(payload.question_ids) < 3:
+            raise HTTPException(status_code=400, detail="Cần chọn tối thiểu 3 câu hỏi để phân tích Rasch hỗn hợp.")
+
+        placeholders_q = ",".join(["?"] * len(payload.question_ids))
+        q_rows = conn.execute(
+            f"SELECT id, title, question_type FROM questions WHERE id IN ({placeholders_q}) AND survey_id = ?",
+            (*payload.question_ids, survey_id)
+        ).fetchall()
+        q_map = {q["id"]: q for q in q_rows}
+
+        for qid in payload.question_ids:
+            if qid not in q_map:
+                raise HTTPException(status_code=400, detail=f"Câu hỏi với ID {qid} không tồn tại trong khảo sát.")
+
+        item_titles = [q_map[qid]["title"] for qid in payload.question_ids]
+
+        if payload.scope == "verified_clean":
+            resp_rows = conn.execute("""
+                SELECT id FROM responses
+                WHERE survey_id = ? AND review_status NOT IN ('verified_fraud', 'quota_screened_out')
+                  AND (risk_level != 'high' OR review_status = 'verified_valid')
+            """, (survey_id,)).fetchall()
+        else:
+            resp_rows = conn.execute("SELECT id FROM responses WHERE survey_id = ?", (survey_id,)).fetchall()
+
+        if not resp_rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Không tìm thấy phản hồi trong phạm vi khảo sát đã chọn."}
+
+        resp_ids = [r["id"] for r in resp_rows]
+        placeholders_r = ",".join(["?"] * len(resp_ids))
+
+        ans_rows = conn.execute(f"""
+            SELECT response_id, question_id, answer_value
+            FROM response_answers
+            WHERE response_id IN ({placeholders_r}) AND question_id IN ({placeholders_q})
+        """, (*resp_ids, *payload.question_ids)).fetchall()
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {rid: {} for rid in resp_ids}
+        for a in ans_rows:
+            rid = a["response_id"]
+            qid = a["question_id"]
+            data_by_resp[rid][qid] = a["answer_value"]
+
+        import numpy as np
+
+        # Convert to binary matrix
+        # For each question, inspect values to decide threshold
+        q_vals_all: Dict[str, List[float]] = {qid: [] for qid in payload.question_ids}
+        for rid, ans_dict in data_by_resp.items():
+            for qid in payload.question_ids:
+                v_raw = ans_dict.get(qid)
+                if v_raw is not None:
+                    try:
+                        q_vals_all[qid].append(float(v_raw))
+                    except (ValueError, TypeError):
+                        pass
+
+        q_thresholds = {}
+        for qid in payload.question_ids:
+            arr = q_vals_all[qid]
+            if len(arr) > 0:
+                mx = max(arr)
+                mn = min(arr)
+                if mx > 1.0:
+                    # Likert 1-5 or 1-10 -> midpoint
+                    q_thresholds[qid] = 0.5 * (mn + mx)
+                else:
+                    q_thresholds[qid] = 0.5
+            else:
+                q_thresholds[qid] = 0.5
+
+        valid_rows = []
+        for rid in resp_ids:
+            ans_dict = data_by_resp.get(rid, {})
+            row = []
+            has_missing = False
+            for qid in payload.question_ids:
+                v_raw = ans_dict.get(qid)
+                if v_raw is None or str(v_raw).strip() == "":
+                    has_missing = True
+                    break
+                try:
+                    num_val = float(v_raw)
+                    bin_val = 1 if num_val >= q_thresholds[qid] else 0
+                except (ValueError, TypeError):
+                    s = str(v_raw).strip().lower()
+                    bin_val = 1 if s in ("1", "true", "yes", "đồng ý", "agree", "có") else 0
+                row.append(bin_val)
+
+            if not has_missing and len(row) == len(payload.question_ids):
+                valid_rows.append(row)
+
+        if len(valid_rows) < 30:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng phản hồi trả lời đầy đủ tất cả câu hỏi (N={len(valid_rows)}) không đủ. Cần tối thiểu 30 quan sát."
+            }
+
+        mat = np.array(valid_rows, dtype=int)
+        res = FiniteMixtureRaschEngine.evaluate_fmrm(
+            responses_matrix=mat,
+            item_labels=item_titles,
+            n_classes=payload.n_classes
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="FINITE_MIXTURE_RASCH_EVALUATED",
+            details={
+                "n_items": len(payload.question_ids),
+                "n_classes": payload.n_classes,
+                "n_samples": len(valid_rows),
+                "entropy": res.get("diagnostics", {}).get("entropy"),
+                "log_likelihood": res.get("diagnostics", {}).get("log_likelihood"),
                 "status": res.get("status")
             }
         )

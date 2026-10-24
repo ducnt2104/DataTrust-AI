@@ -4562,3 +4562,44 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
     - Panel B: Biểu đồ thanh ngang so sánh Giá trị Kỳ vọng Chính sách ($V(d^*)$ xanh ngọc Emerald nổi bật vs $V(1,1)$ Indigo, $V_{\text{obs}}$ Sky Blue, và $V(0,0)$ Slate) kèm hộp nổi bật $\Delta V^*$.
   - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Murphy (2003), Robins (2004), và Schulte et al. (2014).
 - **Niêm phong kiểm toán:** Tự động ghi nhận `DYNAMIC_TREATMENT_REGIMES_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 110. Động Cơ Mô Hình Rasch Hỗn Hợp Hữu Hạn & IRT Phân Lớp Tiềm Ẩn (Finite Mixture Rasch Models (FMRM) & Latent Class IRT Engine - Rost 1990; von Davier & Rost 2007; Glas 2010)
+- **Nền tảng lý thuyết:**
+  1. **Vấn Đề Không Đồng Nhất Tiềm Ẩn trong Đo Lường Tâm Lý Học (Unobserved Heterogeneity in Psychometrics; Rost 1990):**
+     Các mô hình Rasch truyền thống (1PL) giả định toàn bộ mẫu đáp viên thuộc về một tổng thể đơn nhất với tập tham số độ khó câu hỏi $\beta_i$ không đổi. Tuy nhiên, trong khảo sát thực tế, đáp viên thường chia thành các phân lớp tiềm ẩn (Latent Classes $g \in \{1, \dots, G\}$) với các phong cách phản hồi khác biệt:
+     - Nhóm Đánh giá Khắt khe (Critical Evaluators): Độ khó của toàn bộ các câu hỏi chất lượng cao hơn đáng kể.
+     - Nhóm Dễ dãi / Đồng thuận cao (Acquiescent Evaluators): Xu hướng đánh giá cao, độ khó thấp.
+     - Nhóm Ưu tiên Thuộc tính Chuyên biệt (Dimension-Specific Evaluators): Giao diện kỹ thuật hay chính sách giá có độ khó tương đối phân hóa sâu sắc so với nhóm còn lại (Differential Item Functioning - DIF nội sinh).
+  2. **Mô Hình Rasch Hỗn Hợp Hữu Hạn (FMRM Formulation):**
+     Cho $X_{vi} \in \{0, 1\}$ là phản hồi nhị phân của người $v$ đối với câu hỏi $i$ ($i = 1, \dots, I$). Xác suất phản hồi có điều kiện theo phân lớp tiềm ẩn $g$:
+     $$P(X_{vi} = 1 \mid \theta_v, g) = \frac{\exp(\theta_v - \beta_{ig})}{1 + \exp(\theta_v - \beta_{ig})}$$
+     với điều kiện nhận dạng chuẩn định tâm tham số trong từng phân lớp: $\sum_{i=1}^I \beta_{ig} = 0$.
+     Xác suất hợp lý hỗn hợp của toàn bộ vector câu trả lời $\mathbf{x}_v$:
+     $$P(\mathbf{x}_v) = \sum_{g=1}^G \pi_g P(\mathbf{x}_v \mid g)$$
+     trong đó $\pi_g > 0$ và $\sum_{g=1}^G \pi_g = 1$ là tỷ trọng thành phần hỗn hợp (Mixing Proportions).
+  3. **Thuật Toán Kỳ Vọng - Cực Đại Hóa (Expectation-Maximization - EM):**
+     - **Bước E (Expectation Step):** Tính toán xác suất hậu nghiệm thuộc phân lớp $g$ cho từng đáp viên:
+       $$\hat{\tau}_{vg} = P(g \mid \mathbf{x}_v) = \frac{\pi_g P(\mathbf{x}_v \mid g)}{\sum_{k=1}^G \pi_k P(\mathbf{x}_v \mid k)}$$
+     - **Bước M (Maximization Step):** Cập nhật tỷ trọng phân lớp $\hat{\pi}_g = \frac{1}{N} \sum_{v=1}^N \hat{\tau}_{vg}$ và giải hệ phương trình Rasch trọng số cập nhật tham số độ khó $\beta_{ig}$ sao cho bảo toàn $\sum_i \beta_{ig} = 0$.
+     - Lặp cho đến khi hàm hợp lý logarit hội tụ $|\Delta \ln L| < 10^{-4}$.
+  4. **Tiêu Chuẩn Lựa Chọn Mô Hình & Chỉ Số Phân Tách Entropy:**
+     - Tiêu chuẩn Thông tin: $AIC = -2 \ln L + 2K$, $BIC = -2 \ln L + K \ln N$, $aBIC = -2 \ln L + K \ln((N+2)/24)$ với số bậc tự do $K = (G - 1) + G(I - 1)$.
+     - Chỉ số Phân tách Entropy Chuẩn hóa:
+       $$E = 1 - \frac{\sum_{v=1}^N \sum_{g=1}^G -\hat{\tau}_{vg} \ln \hat{\tau}_{vg}}{N \ln G} \in [0, 1]$$
+       $E \ge 0.80$ biểu thị chất lượng phân tách xuất sắc; $E \ge 0.60$ biểu thị chất lượng phân lớp tốt.
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/finite-mixture-rasch`
+- **Request Body (`FiniteMixtureRaschRequest`):**
+  - `question_ids`: Danh sách UUID các câu hỏi thang đo khảo sát (tối thiểu 3 câu hỏi).
+  - `n_classes`: Số lượng phân lớp tiềm ẩn cần phân rã (Mặc định 2, dải 2-4).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`FiniteMixtureRaschOut`):**
+  - `status`: `"SUCCESS"` hoặc `"INSUFFICIENT_SAMPLE"`.
+  - `model_type`: `"FINITE_MIXTURE_RASCH_ROST_1990"`.
+  - `diagnostics`: Quy mô mẫu hợp lệ $N$, số câu hỏi $I$, số phân lớp $G$, Hợp lý cực đại log-likelihood, AIC, BIC, aBIC, Chỉ số Entropy, Cờ chất lượng phân tách (`is_well_separated`), Câu hỏi có độ phân hóa mạnh nhất (`top_shifted_item`) và biên độ dịch chuyển cực đại $\Delta \beta_{\max}$.
+  - `class_proportions`: Danh sách tỷ trọng phần trăm từng phân lớp $\pi_g\%$.
+  - `items_parameters`: Bảng tham số độ khó câu hỏi theo từng phân lớp ($\beta_{i1}, \beta_{i2}, \dots$) và độ dịch chuyển cực đại $\Delta \beta_i$.
+  - `svg_visualization`: Đồ thị SVG khoa học kép:
+    - Panel A: Biểu đồ đường quỹ đạo độ khó câu hỏi qua các phân lớp tiềm ẩn (Item Difficulty Profiles $\beta_{ig}$) phân biệt bằng các đường phát sáng màu sắc khác nhau.
+    - Panel B: Biểu đồ thanh tỷ trọng phân lớp và hộp đo chỉ số Entropy phân tách.
+  - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Rost (1990) và von Davier & Rost (2007).
+- **Niêm phong kiểm toán:** Tự động ghi nhận `FINITE_MIXTURE_RASCH_EVALUATED` vào chuỗi sổ cái SHA-256.

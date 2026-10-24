@@ -6770,3 +6770,52 @@ export interface DynamicTreatmentRegimesRequest {
   interim_state_question_id: string;
   scope?: 'all' | 'verified_clean';
 }
+
+// --- Finite Mixture Rasch Models (FMRM) & Latent Class IRT Types ---
+export interface FMRMDiagnostics {
+  sample_size: number;
+  sample_size_total: number;
+  n_items: number;
+  n_classes: number;
+  log_likelihood: number;
+  aic: number;
+  bic: number;
+  abic: number;
+  entropy: number;
+  is_well_separated: boolean;
+  top_shifted_item: string;
+  top_shift_magnitude: number;
+}
+
+export interface FMRMClassProportion {
+  class_name: string;
+  class_index: number;
+  proportion: number;
+}
+
+export interface FMRMItemParameter {
+  item_title: string;
+  item_index: number;
+  beta_class_1?: number;
+  beta_class_2?: number;
+  beta_class_3?: number;
+  beta_class_4?: number;
+  max_diff: number;
+}
+
+export interface FiniteMixtureRaschResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: FMRMDiagnostics;
+  class_proportions?: FMRMClassProportion[];
+  items_parameters?: FMRMItemParameter[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface FiniteMixtureRaschRequest {
+  question_ids: string[];
+  n_classes?: number;
+  scope?: 'all' | 'verified_clean';
+}

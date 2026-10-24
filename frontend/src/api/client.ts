@@ -171,7 +171,9 @@ import {
   ManskiBoundsRequest,
   ManskiBoundsResult,
   DynamicTreatmentRegimesRequest,
-  DynamicTreatmentRegimesResult
+  DynamicTreatmentRegimesResult,
+  FiniteMixtureRaschRequest,
+  FiniteMixtureRaschResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2146,5 +2148,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<DynamicTreatmentRegimesResult>(res);
+  },
+
+  // --- Finite Mixture Rasch Models (FMRM) & Latent Class IRT Engine (Rost 1990; von Davier & Rost 2007) ---
+  async runFiniteMixtureRasch(
+    surveyId: string,
+    payload: FiniteMixtureRaschRequest
+  ): Promise<FiniteMixtureRaschResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/finite-mixture-rasch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<FiniteMixtureRaschResult>(res);
   }
 };
