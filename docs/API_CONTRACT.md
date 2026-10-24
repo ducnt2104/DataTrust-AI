@@ -4806,3 +4806,51 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép quỹ đạo chuỗi thời gian và phân bổ trọng số đơn vị đối chứng.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition phân tích tác động chính sách và so sánh với DiD / SC cổ điển.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `SDID_ADVANCED_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 116. Causal Panel Factor Models with Interactive Fixed Effects & Cross-Sectional Dependence (Bai 2009; Gobillon & Magnac 2016)
+- **Lý thuyết nền tảng:**
+  1. **Hạn chế của mô hình Two-Way Fixed Effects (TWFE) khi có phụ thuộc chéo:**
+     - Mô hình OLS hai chiều TWFE giả định các yếu tố nhiễu không quan sát được có dạng cộng tách rời: $\alpha_i + \lambda_t$.
+     - Trong thực tế khảo sát kinh tế - xã hội, các cú sốc vĩ mô (lạm phát, đổi mới công nghệ, khủng hoảng chuỗi cung ứng) tác động đến từng đối tượng khảo sát với độ nhạy khác nhau (heterogeneous factor loadings $\boldsymbol{\gamma}_i^\top \mathbf{f}_t$), tạo ra hiện tượng phụ thuộc chéo (Cross-Sectional Dependence). Khi việc áp dụng chính sách có tương quan với các hệ số tải này, TWFE bị chệch nghiêm trọng.
+  2. **Đặc tả Mô hình Interactive Fixed Effects (Bai 2009):**
+     $$Y_{it} = \tau D_{it} + \alpha_i + \lambda_t + \boldsymbol{\gamma}_i^\top \mathbf{f}_t + \varepsilon_{it}$$
+     - $\mathbf{f}_t \in \mathbb{R}^r$: Vector $r$ nhân tố tiềm ẩn chung biến thiên theo thời gian (chuỗi thời gian của cú sốc vĩ mô).
+     - $\boldsymbol{\gamma}_i \in \mathbb{R}^r$: Vector hệ số tải nhân tố đặc trưng cho từng đơn vị (độ nhạy cá thể đối với cú sốc).
+     - $\tau$: Tác động can thiệp trung bình trên nhóm can thiệp (ATT).
+  3. **Thuật toán Bình phương Tối thiểu Luân phiên (Alternating Least Squares - ALS):**
+     - Khử trung bình và ước lượng lặp kết hợp phân rã SVD trên phần dư (Gobillon & Magnac 2016 Section 3):
+       $Y^*_{it} = Y_{it} - \tau D_{it}$.
+       $\tilde{Y}^* = Y^* - \alpha - \lambda + \bar{Y}$.
+       SVD: $\tilde{Y}^* \approx \boldsymbol{\Gamma} \mathbf{F}^\top$ với điều kiện chuẩn hóa $\frac{1}{T} \mathbf{F}^\top \mathbf{F} = \mathbf{I}_r$.
+       Cập nhật $\tau$: $\tau^{(k+1)} = \frac{\sum D_{it} (Y_{it} - \hat{Y}_{it}(0))}{\sum D_{it}^2}$.
+       Lặp cho tới khi $\tau$ hội tụ sai số tuyệt đối $< 10^{-5}$.
+  4. **Tiêu chuẩn Thông tin Chọn Số Nhân tố Tối ưu Bai & Ng (2002):**
+     $$\text{IC}_{p1}(k) = \ln(V(k, \mathbf{F})) + k \left( \frac{N + T}{NT} \right) \ln\left( \frac{NT}{N + T} \right)$$
+     Tự động lựa chọn chiều nhân tố tối ưu $r^*$ tối thiểu hóa sai số phương sai kết hợp hàm phạt chiều dữ liệu bảng.
+  5. **Kiểm định Phụ thuộc Chéo Pesaran (2004, 2021) CD Test:**
+     $$CD = \sqrt{\frac{2T}{N(N-1)}} \sum_{i=1}^{N-1} \sum_{j=i+1}^N \hat{\rho}_{ij} \sim \mathcal{N}(0, 1)$$
+     Kiểm tra mức độ tự tương quan không gian còn sót lại trên phần dư $\hat{\varepsilon}_{it}$, chứng minh IFE đã triệt tiêu triệt để phụ thuộc chéo.
+  6. **Đồ thị SVG Kép Khoa Học:**
+     - Panel A: Biểu đồ Scree Plot phân rã phổ giá trị riêng (Eigenvalues) và đường ngưỡng lựa chọn $r^*$ theo tiêu chuẩn Bai-Ng.
+     - Panel B: Quỹ đạo động của các nhân tố tiềm ẩn chung $\mathbf{f}_t$ qua các mốc thời gian khảo sát.
+  7. **Đoạn Thuyết minh Học thuật Chuẩn APA 7th Edition:**
+     - Tự động biên soạn theo chuẩn mực Bai (2009) và Gobillon & Magnac (2016).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/interactive-fixed-effects`
+- **Request Body (`InteractiveFixedEffectsRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả $Y$.
+  - `unit_question_id`: UUID biến định danh đơn vị quan sát $U$.
+  - `time_question_id`: UUID biến đo lường đợt / mốc thời gian $T$.
+  - `treatment_question_id`: UUID biến chỉ báo can thiệp $W$ (1: Can thiệp, 0: Đối chứng).
+  - `num_factors`: Số lượng nhân tố tiềm ẩn chỉ định thủ công (Tùy chọn, mặc định tự động theo Bai-Ng IC).
+  - `max_factors`: Số nhân tố tối đa quét kiểm định (Mặc định 4).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`InteractiveFixedEffectsOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, `"INSUFFICIENT_UNITS"`, `"INSUFFICIENT_TIME_PERIODS"`, `"NO_TREATED_CELLS"`, hoặc `"INSUFFICIENT_CONTROLS"`.
+  - `model_type`: `"INTERACTIVE_FIXED_EFFECTS_BAI_2009"`.
+  - `diagnostics`: Số đơn vị $N$, số mốc thời gian $T$, số ô can thiệp, số ô đối chứng, số nhân tố tối ưu $r^*$, tỷ lệ phương sai giải thích (%), ước lượng tác động $\hat{\tau}_{\text{IFE}}$, sai số chuẩn SE Jackknife, $z$-statistic, $p$-value, khoảng tin cậy 95% CI, cờ ý nghĩa thống kê, ước lượng TWFE so sánh $\beta^{\text{TWFE}}$, độ lệch thiên lệch nhân tố Factor Bias Gap $\Delta$, thống kê Pesaran CD và $p$-value, cờ triệt tiêu phụ thuộc chéo.
+  - `latent_factors`: Danh sách các chuỗi nhân tố tiềm ẩn trích xuất được kèm tỷ trọng phương sai giải thích.
+  - `scree_spectrum`: Phổ các giá trị riêng và cờ lựa chọn của từng nhân tố.
+  - `cell_effects`: Danh sách chi tiết từng ô can thiệp (mã đơn vị, kỳ thời gian, $Y(1)$ quan sát, $Y(0)$ phục dựng phản sự kiện, hiệu ứng can thiệp).
+  - `svg_visualization`: Đồ thị SVG khoa học kép Scree Plot và quỹ đạo động các nhân tố.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition giải thích kết quả IFE và đối chiếu TWFE.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `INTERACTIVE_FIXED_EFFECTS_EVALUATED` vào chuỗi sổ cái SHA-256.

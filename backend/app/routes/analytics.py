@@ -1,3 +1,4 @@
+from app.engine.interactive_fixed_effects_engine import compute_interactive_fixed_effects
 from app.engine.sdid_advanced_engine import SDIDAdvancedEngine
 from app.engine.matrix_completion_causal_engine import MatrixCompletionCausalEngine
 from app.engine.staggered_did_engine import StaggeredDIDEngine
@@ -47,6 +48,8 @@ from app.schemas import (
     MatrixCompletionCausalRequest,
     SDIDAdvancedRequest,
     SDIDAdvancedOut,
+    InteractiveFixedEffectsRequest,
+    InteractiveFixedEffectsOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -13176,6 +13179,106 @@ def run_sdid_advanced_analysis(
                 "treatment_qid": payload.treatment_question_id,
                 "n_samples": len(y_list),
                 "tau_sdid": res.get("diagnostics", {}).get("tau_sdid") if res.get("diagnostics") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Interactive Fixed Effects (Bai 2009; Gobillon & Magnac 2016) ---
+@router.post("/interactive-fixed-effects", response_model=InteractiveFixedEffectsOut)
+def run_interactive_fixed_effects_analysis(
+    survey_id: str,
+    payload: InteractiveFixedEffectsRequest
+):
+    """
+    Interactive Fixed Effects (IFE) Causal Panel Engine (Bai 2009; Gobillon & Magnac 2016).
+    Estimates causal treatment effects under multi-dimensional latent factors and cross-sectional dependence.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        if payload.outcome_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến kết quả (QID: {payload.outcome_question_id}) không tồn tại.")
+        if payload.unit_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến đơn vị quan sát (Unit QID: {payload.unit_question_id}) không tồn tại.")
+        if payload.time_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến mốc thời gian (Time QID: {payload.time_question_id}) không tồn tại.")
+        if payload.treatment_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến can thiệp (Treatment QID: {payload.treatment_question_id}) không tồn tại.")
+
+        scope_sql = ""
+        if payload.scope == "verified_clean":
+            scope_sql = " AND r.is_verified = 1 AND r.is_flagged = 0 "
+
+        target_qids = [
+            payload.outcome_question_id,
+            payload.unit_question_id,
+            payload.time_question_id,
+            payload.treatment_question_id
+        ]
+        placeholders = ",".join(["?"] * len(target_qids))
+        query = f"""
+            SELECT ra.response_id, ra.question_id, ra.answer_value
+            FROM response_answers ra
+            JOIN responses r ON ra.response_id = r.id
+            WHERE r.survey_id = ? {scope_sql}
+              AND ra.question_id IN ({placeholders})
+        """
+        rows = conn.execute(query, [survey_id] + target_qids).fetchall()
+
+        resp_data = {}
+        for r in rows:
+            resp_id = r["response_id"]
+            if resp_id not in resp_data:
+                resp_data[resp_id] = {}
+            resp_data[resp_id][r["question_id"]] = r["answer_value"]
+
+        records = []
+        for resp_id, answers in resp_data.items():
+            if (payload.outcome_question_id not in answers or
+                payload.unit_question_id not in answers or
+                payload.time_question_id not in answers or
+                payload.treatment_question_id not in answers):
+                continue
+
+            records.append({
+                "y": answers[payload.outcome_question_id],
+                "u": answers[payload.unit_question_id],
+                "t": answers[payload.time_question_id],
+                "w": answers[payload.treatment_question_id]
+            })
+
+        res = compute_interactive_fixed_effects(
+            records=records,
+            outcome_key="y",
+            unit_key="u",
+            time_key="t",
+            treatment_key="w",
+            num_factors=payload.num_factors,
+            max_factors=payload.max_factors
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="INTERACTIVE_FIXED_EFFECTS_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "unit_qid": payload.unit_question_id,
+                "time_qid": payload.time_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "n_records": len(records),
+                "tau_ife": res.get("diagnostics", {}).get("tau_ife") if res.get("diagnostics") else None,
                 "status": res.get("status")
             }
         )

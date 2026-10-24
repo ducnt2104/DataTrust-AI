@@ -183,7 +183,9 @@ import {
   MatrixCompletionCausalRequest,
   MatrixCompletionCausalResult,
   SDIDAdvancedRequest,
-  SDIDAdvancedResult
+  SDIDAdvancedResult,
+  InteractiveFixedEffectsRequest,
+  InteractiveFixedEffectsResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2236,5 +2238,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<SDIDAdvancedResult>(res);
+  },
+
+  // --- Interactive Fixed Effects (Bai 2009; Gobillon & Magnac 2016) ---
+  async runInteractiveFixedEffects(
+    surveyId: string,
+    payload: InteractiveFixedEffectsRequest
+  ): Promise<InteractiveFixedEffectsResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/interactive-fixed-effects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<InteractiveFixedEffectsResult>(res);
   }
 };

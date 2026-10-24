@@ -590,3 +590,23 @@
 - Backend tests mới: **5 passed, 0 failed in 1.39s**.
 - Git commit cho Iteration 134.
 
+
+### Mốc 04:18:00 — Hoàn thành Iteration 135: Causal Panel Factor Models with Interactive Fixed Effects & Cross-Sectional Dependence (Bai 2009; Gobillon & Magnac 2016)
+- Xây dựng `backend/app/engine/interactive_fixed_effects_engine.py` (Phương pháp luận Jushan Bai 2009 Econometrica; Laurent Gobillon & Thierry Magnac 2016 Journal of Applied Econometrics; Jushan Bai & Serena Ng 2002 Econometrica; M. Hashem Pesaran 2004, 2021 Econometrics Journal; ước lượng tác động can thiệp nhân quả trên dữ liệu bảng dọc dưới sự tồn tại của các nhân tố tiềm ẩn đa chiều và phụ thuộc chéo giữa các đơn vị):
+  1. Mô hình hóa dạng $Y_{it} = \tau D_{it} + \alpha_i + \lambda_t + \boldsymbol{\gamma}_i^\top \mathbf{f}_t + \varepsilon_{it}$, khắc phục triệt để khiếm khuyết của OLS Two-Way Fixed Effects TWFE khi có cú sốc vĩ mô tác động không đồng nhất lên đối tượng;
+  2. Thuật toán Bình phương Tối thiểu Luân phiên (Alternating Least Squares - ALS) hội tụ lặp SVD trên phần dư, phân rã đồng thời chuỗi nhân tố vĩ mô $\mathbf{f}_t$ và hệ số tải $\boldsymbol{\gamma}_i$;
+  3. Tiêu chuẩn thông tin Bai & Ng (2002) $\text{IC}_{p1}$ tự động xác định số lượng nhân tố tiềm ẩn tối ưu $r^*$;
+  4. Phục dựng giá trị đối chứng phản sự kiện $Y(0)_{it} = \hat{\alpha}_i + \hat{\lambda}_t - \bar{Y} + \hat{\boldsymbol{\gamma}}_i^\top \hat{\mathbf{f}}_t$ và ước lượng tác động trung bình $\hat{\tau}_{\text{IFE}}$;
+  5. Ước lượng sai số chuẩn Jackknife vững qua các đơn vị và kiểm định phụ thuộc chéo Pesaran (2004) CD test trên phần dư $\hat{\varepsilon}_{it}$;
+  6. Dual-panel SVG: Panel A Biểu đồ Scree Plot phân rã phổ giá trị riêng và đường ngưỡng $r^*$ theo Bai-Ng IC + Panel B Quỹ đạo chuỗi thời gian các nhân tố tiềm ẩn chung $\mathbf{f}_t$;
+  7. APA 7th narrative khoa học phân tích tác động và khoảng chệch nhân tố Factor Bias Gap $\Delta = \hat{\tau}_{\text{IFE}} - \tau_{\text{TWFE}}$.
+- Viết unit tests `backend/tests/test_interactive_fixed_effects_engine.py` (3 passed) và route tests `backend/tests/test_interactive_fixed_effects_routes.py` (2 passed).
+- Thêm schemas `InteractiveFixedEffectsRequest`, `InteractiveFixedEffectsOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/interactive-fixed-effects`, audit log `INTERACTIVE_FIXED_EFFECTS_EVALUATED`.
+- Thêm types trong `survey.ts`, API client method `runInteractiveFixedEffects` trong `client.ts`, component `InteractiveFixedEffectsCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 116 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,101 modules transformed, 0 errors in 1.31s**.
+- Backend tests mới: **5 passed, 0 failed in 1.17s**.
+- Git commit cho Iteration 135.
+
+

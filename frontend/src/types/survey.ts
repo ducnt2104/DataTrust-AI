@@ -7120,3 +7120,76 @@ export interface SDIDAdvancedRequest {
   zeta_regularization?: number | null;
   scope?: 'all' | 'verified_clean';
 }
+
+// --- Interactive Fixed Effects (Bai 2009; Gobillon & Magnac 2016) Types ---
+export interface IFEDiagnostics {
+  n_units: number;
+  n_time_periods: number;
+  n_treated_cells: number;
+  n_control_cells: number;
+  num_factors_selected: number;
+  total_variance_explained_pct: number;
+  tau_ife: number;
+  se_ife: number;
+  z_statistic: number;
+  p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_statistically_significant: boolean;
+  tau_twfe: number;
+  factor_bias_gap: number;
+  pesaran_cd_statistic: number;
+  pesaran_cd_p_value: number;
+  cross_sectional_dependence_purged: boolean;
+}
+
+export interface IFEFactorSeriesPoint {
+  time_period: number;
+  value: number;
+}
+
+export interface IFELatentFactorItem {
+  factor_index: number;
+  variance_explained_pct: number;
+  eigenvalue: number;
+  series: IFEFactorSeriesPoint[];
+}
+
+export interface IFEScreeSpectrumItem {
+  factor_number: number;
+  eigenvalue: number;
+  variance_pct: number;
+  cumulative_pct: number;
+  is_selected: boolean;
+}
+
+export interface IFECellEffectItem {
+  unit_id: string;
+  time_period: number;
+  observed_y: number;
+  counterfactual_y0: number;
+  treatment_effect: number;
+}
+
+export interface InteractiveFixedEffectsResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: IFEDiagnostics;
+  latent_factors?: IFELatentFactorItem[];
+  scree_spectrum?: IFEScreeSpectrumItem[];
+  cell_effects?: IFECellEffectItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface InteractiveFixedEffectsRequest {
+  outcome_question_id: string;
+  unit_question_id: string;
+  time_question_id: string;
+  treatment_question_id: string;
+  num_factors?: number | null;
+  max_factors?: number;
+  scope?: 'all' | 'verified_clean';
+}
+

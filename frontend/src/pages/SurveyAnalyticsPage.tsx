@@ -113,6 +113,7 @@ import { RegressionKinkCard } from '../components/RegressionKinkCard';
 import { StaggeredDIDCard } from '../components/StaggeredDIDCard';
 import { MatrixCompletionCausalCard } from '../components/MatrixCompletionCausalCard';
 import { SDIDAdvancedCard } from '../components/SDIDAdvancedCard';
+import { InteractiveFixedEffectsCard } from '../components/InteractiveFixedEffectsCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1296,6 +1297,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Synthetic Difference-in-Differences Advanced (Arkhangelsky et al. 2021 AER) */}
       <SDIDAdvancedCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Interactive Fixed Effects & Factor Models (Bai 2009; Gobillon & Magnac 2016) */}
+      <InteractiveFixedEffectsCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,
