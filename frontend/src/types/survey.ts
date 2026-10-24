@@ -7193,3 +7193,66 @@ export interface InteractiveFixedEffectsRequest {
   scope?: 'all' | 'verified_clean';
 }
 
+// --- Multiple Sequential Mediators (VanderWeele 2014; Steen et al. 2012) Types ---
+export interface MultipleMediatorsDiagnostics {
+  sample_size: number;
+  n_bootstraps: number;
+  total_effect: number;
+  direct_effect: number;
+  total_indirect_effect: number;
+  nie_m1: number;
+  nie_m2: number;
+  nie_seq: number;
+  proportion_mediated_pct: number;
+  proportion_m1_pct: number;
+  proportion_m2_pct: number;
+  proportion_seq_pct: number;
+  is_full_mediation: boolean;
+  is_partial_mediation: boolean;
+}
+
+export interface MultipleMediatorsPathCoefficient {
+  path: string;
+  estimate: number;
+  se: number;
+  p_value: number;
+}
+
+export interface MultipleMediatorsEffectStats {
+  estimate: number;
+  se: number;
+  z: number;
+  p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_significant: boolean;
+}
+
+export interface MultipleMediatorsEffectItem {
+  effect_name: string;
+  stats: MultipleMediatorsEffectStats;
+  proportion_pct: number;
+}
+
+export interface MultipleMediatorsResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: MultipleMediatorsDiagnostics;
+  path_coefficients?: MultipleMediatorsPathCoefficient[];
+  effects_summary?: MultipleMediatorsEffectItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface MultipleMediatorsRequest {
+  treatment_question_id: string;
+  mediator1_question_id: string;
+  mediator2_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  n_bootstraps?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+

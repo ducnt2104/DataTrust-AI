@@ -1,3 +1,4 @@
+from app.engine.multiple_mediators_engine import MultipleMediatorsEngine
 from app.engine.interactive_fixed_effects_engine import compute_interactive_fixed_effects
 from app.engine.sdid_advanced_engine import SDIDAdvancedEngine
 from app.engine.matrix_completion_causal_engine import MatrixCompletionCausalEngine
@@ -50,6 +51,8 @@ from app.schemas import (
     SDIDAdvancedOut,
     InteractiveFixedEffectsRequest,
     InteractiveFixedEffectsOut,
+    MultipleMediatorsRequest,
+    MultipleMediatorsOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -13279,6 +13282,138 @@ def run_interactive_fixed_effects_analysis(
                 "treatment_qid": payload.treatment_question_id,
                 "n_records": len(records),
                 "tau_ife": res.get("diagnostics", {}).get("tau_ife") if res.get("diagnostics") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Multiple Sequential Mediators (VanderWeele 2014; Steen et al. 2012) ---
+@router.post("/multiple-mediators", response_model=MultipleMediatorsOut)
+def run_multiple_mediators_analysis(
+    survey_id: str,
+    payload: MultipleMediatorsRequest
+):
+    """
+    Multiple Sequential Mediators & Path-Specific Causal Mediation Engine (VanderWeele 2014; Steen et al. 2012).
+    Decomposes total causal effect into pure direct effect and sequential indirect effects.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        if payload.treatment_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến can thiệp (X QID: {payload.treatment_question_id}) không tồn tại.")
+        if payload.mediator1_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến trung gian 1 (M1 QID: {payload.mediator1_question_id}) không tồn tại.")
+        if payload.mediator2_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến trung gian 2 (M2 QID: {payload.mediator2_question_id}) không tồn tại.")
+        if payload.outcome_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến kết quả (Y QID: {payload.outcome_question_id}) không tồn tại.")
+
+        scope_sql = ""
+        if payload.scope == "verified_clean":
+            scope_sql = " AND r.is_verified = 1 AND r.is_flagged = 0 "
+
+        target_qids = [
+            payload.treatment_question_id,
+            payload.mediator1_question_id,
+            payload.mediator2_question_id,
+            payload.outcome_question_id
+        ]
+        cov_ids = payload.covariate_question_ids or []
+        for cid in cov_ids:
+            if cid in q_map and cid not in target_qids:
+                target_qids.append(cid)
+
+        placeholders = ",".join(["?"] * len(target_qids))
+        query = f"""
+            SELECT ra.response_id, ra.question_id, ra.answer_value
+            FROM response_answers ra
+            JOIN responses r ON ra.response_id = r.id
+            WHERE r.survey_id = ? {scope_sql}
+              AND ra.question_id IN ({placeholders})
+        """
+        rows = conn.execute(query, [survey_id] + target_qids).fetchall()
+
+        resp_data = {}
+        for r in rows:
+            resp_id = r["response_id"]
+            if resp_id not in resp_data:
+                resp_data[resp_id] = {}
+            resp_data[resp_id][r["question_id"]] = r["answer_value"]
+
+        x_list, m1_list, m2_list, y_list = [], [], [], []
+        cov_lists = [[] for _ in cov_ids]
+
+        for resp_id, answers in resp_data.items():
+            if (payload.treatment_question_id not in answers or
+                payload.mediator1_question_id not in answers or
+                payload.mediator2_question_id not in answers or
+                payload.outcome_question_id not in answers):
+                continue
+
+            try:
+                xv = float(answers[payload.treatment_question_id])
+                m1v = float(answers[payload.mediator1_question_id])
+                m2v = float(answers[payload.mediator2_question_id])
+                yv = float(answers[payload.outcome_question_id])
+
+                row_covs = []
+                has_all_covs = True
+                for c_idx, cid in enumerate(cov_ids):
+                    if cid in answers:
+                        row_covs.append(float(answers[cid]))
+                    else:
+                        has_all_covs = False
+                        break
+
+                if not has_all_covs and len(cov_ids) > 0:
+                    continue
+
+                x_list.append(xv)
+                m1_list.append(m1v)
+                m2_list.append(m2v)
+                y_list.append(yv)
+                for c_idx, val in enumerate(row_covs):
+                    cov_lists[c_idx].append(val)
+            except (ValueError, TypeError):
+                continue
+
+        cov_matrix = np.column_stack(cov_lists) if len(cov_ids) > 0 and len(x_list) > 0 else None
+
+        res = MultipleMediatorsEngine.evaluate(
+            x=np.array(x_list, dtype=float),
+            m1=np.array(m1_list, dtype=float),
+            m2=np.array(m2_list, dtype=float),
+            y=np.array(y_list, dtype=float),
+            covariates=cov_matrix,
+            n_bootstraps=payload.n_bootstraps,
+            x_label=q_map.get(payload.treatment_question_id, "Biến can thiệp X"),
+            m1_label=q_map.get(payload.mediator1_question_id, "Biến trung gian M1"),
+            m2_label=q_map.get(payload.mediator2_question_id, "Biến trung gian M2"),
+            y_label=q_map.get(payload.outcome_question_id, "Biến kết quả Y")
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="MULTIPLE_MEDIATORS_EVALUATED",
+            details={
+                "treatment_qid": payload.treatment_question_id,
+                "mediator1_qid": payload.mediator1_question_id,
+                "mediator2_qid": payload.mediator2_question_id,
+                "outcome_qid": payload.outcome_question_id,
+                "n_samples": len(x_list),
+                "total_effect": res.get("diagnostics", {}).get("total_effect") if res.get("diagnostics") else None,
                 "status": res.get("status")
             }
         )

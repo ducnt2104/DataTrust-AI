@@ -4854,3 +4854,45 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép Scree Plot và quỹ đạo động các nhân tố.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition giải thích kết quả IFE và đối chiếu TWFE.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `INTERACTIVE_FIXED_EFFECTS_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 117. Multiple Sequential Mediators & Path-Specific Causal Mediation Engine (VanderWeele 2014; Steen, Loeys, Moerkerke, & Vansteelandt 2012; Imai & Yamamoto 2013)
+- **Lý thuyết nền tảng:**
+  1. **Hạn chế của mô hình đơn trung gian (Single-Mediator Models):**
+     - Mô hình trung gian đơn tuyến cổ điển (Baron & Kenny 1986; Sobel 1982) chỉ xét duy nhất một biến trung gian độc lập $X \to M \to Y$.
+     - Trong các hiện tượng xã hội, hành vi và tổ chức phức tạp, cơ chế tác động thường vận hành qua chuỗi các biến trung gian liên hoàn (Sequential Mediators) hoặc song song (Parallel Mediators), trong đó trung gian sớm $M_1$ tác động trực tiếp lên trung gian muộn $M_2$ ($X \to M_1 \to M_2 \to Y$).
+     - Việc bỏ qua liên kết giữa các biến trung gian gây ra sai lệch trầm trọng (Mediator-Mediator Confounding).
+  2. **Phân rã Tác động Causal Đa biến Tuần tự (VanderWeele 2014):**
+     - Dưới khung kết quả tiềm năng (Counterfactual / Potential Outcomes Framework), tổng tác động (Total Effect - TE) được phân rã chặt chẽ thành:
+       $$\text{TE} = \text{PDE} + \text{NIE}_{M_1} + \text{NIE}_{M_2} + \text{NIE}_{\text{Seq}}$$
+       - **Tác động trực tiếp thuần (Pure Direct Effect - PDE):** Tác động độc lập của $X$ lên $Y$ khi cố định tất cả các biến trung gian ở mức đối chứng tự nhiên: $\mathbb{E}[Y(1, M_1(0), M_2(0, M_1(0))) - Y(0, M_1(0), M_2(0, M_1(0)))]$.
+       - **Tác động gián tiếp đặc thù qua $M_1$ ($\text{NIE}_{M_1}$):** Kênh $X \to M_1 \to Y$.
+       - **Tác động gián tiếp đặc thù qua $M_2$ ($\text{NIE}_{M_2}$):** Kênh $X \to M_2 \to Y$.
+       - **Tác động gián tiếp chuỗi tuần tự ($\text{NIE}_{\text{Seq}}$):** Kênh liên hoàn $X \to M_1 \to M_2 \to Y$.
+       - **Tổng tác động gián tiếp (Total Indirect Effect - TIE):** $\text{TIE} = \text{NIE}_{M_1} + \text{NIE}_{M_2} + \text{NIE}_{\text{Seq}}$.
+  3. **Ước lượng Sai số Chuẩn và Khoảng tin cậy Bootstrap:**
+     - Sử dụng phân phối tái chọn không tham số Bootstrap (mặc định 500 lần) để ước lượng sai số chuẩn và khoảng tin cậy 95% Percentile CI cho toàn bộ các tác động phi tuyến tính.
+  4. **Tỷ lệ Trung gian (Proportion Mediated - PM):**
+     - Tính toán tỷ lệ phần trăm đóng góp của từng kênh trung gian và tổng tác động gián tiếp so với tổng tác động: $\text{PM} = \frac{\text{TIE}}{\text{TE}} \times 100\%$.
+  5. **Đồ thị SVG Kép Khoa Học:**
+     - Panel A: Sơ đồ mạng DAG đường dẫn cấu trúc thể hiện các hệ số đường dẫn $a_1, a_2, d_{21}, b_1, b_2, c'$ cùng mức ý nghĩa thống kê.
+     - Panel B: Biểu đồ Forest Plot trực quan hóa các ước lượng điểm và khoảng tin cậy 95% CI của TE, PDE, TIE và từng kênh trung gian cụ thể.
+  6. **Đoạn Thuyết minh Học thuật Chuẩn APA 7th Edition:**
+     - Tự động biên soạn theo chuẩn mực VanderWeele (2014) và Steen et al. (2012).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/multiple-mediators`
+- **Request Body (`MultipleMediatorsRequest`):**
+  - `treatment_question_id`: UUID câu hỏi can thiệp $X$.
+  - `mediator1_question_id`: UUID câu hỏi trung gian thứ nhất $M_1$.
+  - `mediator2_question_id`: UUID câu hỏi trung gian thứ hai $M_2$.
+  - `outcome_question_id`: UUID câu hỏi kết quả $Y$.
+  - `covariate_question_ids`: Danh sách UUID các biến kiểm soát ngoại sinh (Tùy chọn).
+  - `n_bootstraps`: Số lần tái chọn mẫu Bootstrap (Mặc định 500).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`MultipleMediatorsOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"ZERO_VARIANCE"`.
+  - `model_type`: `"MULTIPLE_SEQUENTIAL_MEDIATORS_VANDERWEELE_2014"`.
+  - `diagnostics`: Cỡ mẫu $N$, số mẫu bootstrap, Tổng tác động (TE), Tác động trực tiếp thuần (PDE), Tổng tác động gián tiếp (TIE), Tác động qua M1 ($\text{NIE}_{M_1}$), Tác động qua M2 ($\text{NIE}_{M_2}$), Tác động chuỗi tuần tự ($\text{NIE}_{\text{Seq}}$), Tỷ lệ trung gian tổng (%), Tỷ lệ qua từng kênh (%), Cờ phân loại trung gian toàn phần (Full Mediation) hay một phần (Partial Mediation).
+  - `path_coefficients`: Bảng chi tiết toàn bộ các hệ số đường dẫn ($a_1, a_2, d_{21}, b_1, b_2, c'$) kèm sai số chuẩn SE và $p$-value.
+  - `effects_summary`: Bảng phân rã chi tiết 6 loại tác động kèm ước lượng, SE, $z$, $p$-value, 95% CI và tỷ trọng (%).
+  - `svg_visualization`: Đồ thị SVG khoa học kép sơ đồ mạng DAG và biểu đồ Forest Plot.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition phân tích cơ chế trung gian và kết luận khoa học.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `MULTIPLE_MEDIATORS_EVALUATED` vào chuỗi sổ cái SHA-256.

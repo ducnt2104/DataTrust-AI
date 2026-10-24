@@ -185,7 +185,9 @@ import {
   SDIDAdvancedRequest,
   SDIDAdvancedResult,
   InteractiveFixedEffectsRequest,
-  InteractiveFixedEffectsResult
+  InteractiveFixedEffectsResult,
+  MultipleMediatorsRequest,
+  MultipleMediatorsResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2251,5 +2253,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<InteractiveFixedEffectsResult>(res);
+  },
+
+  // --- Multiple Sequential Mediators (VanderWeele 2014) ---
+  async runMultipleMediators(
+    surveyId: string,
+    payload: MultipleMediatorsRequest
+  ): Promise<MultipleMediatorsResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/multiple-mediators`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<MultipleMediatorsResult>(res);
   }
 };

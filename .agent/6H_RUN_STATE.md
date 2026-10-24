@@ -610,3 +610,22 @@
 - Git commit cho Iteration 135.
 
 
+### Mốc 04:23:00 — Hoàn thành Iteration 136: Multiple Sequential Mediators & Path-Specific Causal Mediation Engine (VanderWeele 2014; Steen et al. 2012; Imai & Yamamoto 2013)
+- Xây dựng `backend/app/engine/multiple_mediators_engine.py` (Phương pháp luận Tyler J. VanderWeele 2014 American Journal of Epidemiology; Steen, Loeys, Moerkerke & Vansteelandt 2012 Psychological Methods; Kosuke Imai & Teppei Yamamoto 2013 JASA; bóc tách đa biến trung gian tuần tự trong chuỗi tác động nhân quả $X \to M_1 \to M_2 \to Y$):
+  1. Phân rã tổng tác động (Total Effect TE) thành Tác động trực tiếp thuần (Pure Direct Effect PDE) và các tác động gián tiếp đặc thù từng kênh: $X \to M_1 \to Y$ ($\text{NIE}_{M_1}$), $X \to M_2 \to Y$ ($\text{NIE}_{M_2}$) và chuỗi tuần tự liên hoàn $X \to M_1 \to M_2 \to Y$ ($\text{NIE}_{\text{Seq}}$);
+  2. Khắc phục triệt để hiện tượng nhiễu giữa các biến trung gian (Mediator-Mediator Confounding) thường gặp trong các mô hình SEM hoặc OLS đơn trung gian truyền thống;
+  3. Ước lượng sai số chuẩn và khoảng tin cậy 95% Percentile Bootstrap (150-500 resamples);
+  4. Tính toán tỷ lệ trung gian (Proportion Mediated %) cho từng kênh và tổng tác động gián tiếp;
+  5. Dual-panel SVG: Panel A Sơ đồ DAG đường dẫn cấu trúc đa trung gian tuần tự với các hệ số $a_1, a_2, d_{21}, b_1, b_2, c'$ + Panel B Biểu đồ Forest Plot trực quan hóa các ước lượng điểm và khoảng tin cậy 95% CI của 6 loại tác động;
+  6. APA 7th narrative khoa học giải thích chi tiết cơ chế trung gian toàn phần hay một phần.
+- Viết unit tests `backend/tests/test_multiple_mediators_engine.py` (3 passed) và route tests `backend/tests/test_multiple_mediators_routes.py` (2 passed).
+- Thêm schemas `MultipleMediatorsRequest`, `MultipleMediatorsOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/multiple-mediators`, audit log `MULTIPLE_MEDIATORS_EVALUATED`.
+- Thêm types trong `survey.ts`, API client method `runMultipleMediators` trong `client.ts`, component `MultipleMediatorsCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 117 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,102 modules transformed, 0 errors in 1.03s**.
+- Backend tests mới: **5 passed, 0 failed in 1.61s**.
+- Git commit cho Iteration 136.
+
+
+
