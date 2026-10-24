@@ -175,7 +175,9 @@ import {
   FiniteMixtureRaschRequest,
   FiniteMixtureRaschResult,
   DoubleMachineLearningRequest,
-  DoubleMachineLearningResult
+  DoubleMachineLearningResult,
+  RegressionKinkRequest,
+  RegressionKinkResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2176,5 +2178,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<DoubleMachineLearningResult>(res);
+  },
+
+  // --- Regression Kink Design (Card, Lee, Pei, & Weber 2015; Dong 2018) ---
+  async runRegressionKink(
+    surveyId: string,
+    payload: RegressionKinkRequest
+  ): Promise<RegressionKinkResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/regression-kink`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<RegressionKinkResult>(res);
   }
 };

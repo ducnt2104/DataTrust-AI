@@ -6864,3 +6864,55 @@ export interface DoubleMachineLearningRequest {
   alpha_penalty?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+export interface RegressionKinkDiagnostics {
+  sample_size_total: number;
+  effective_sample_size: number;
+  cutoff: number;
+  bandwidth: number;
+  tau_rkd: number;
+  se_rkd: number;
+  t_statistic: number;
+  p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  delta_slope_outcome: number;
+  left_slope: number;
+  right_slope: number;
+  level_at_cutoff: number;
+  mccrary_p_value: number;
+  is_density_smooth: boolean;
+  is_statistically_significant: boolean;
+  design_type?: string;
+  treatment_kink?: number;
+  delta_slope_treatment?: number;
+}
+
+export interface RegressionKinkBinnedScatter {
+  bin_center: number;
+  mean_running: number;
+  mean_outcome: number;
+  count: number;
+  side: string;
+}
+
+export interface RegressionKinkResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: RegressionKinkDiagnostics;
+  binned_scatter?: RegressionKinkBinnedScatter[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface RegressionKinkRequest {
+  outcome_question_id: string;
+  running_question_id: string;
+  cutoff: number;
+  treatment_question_id?: string | null;
+  bandwidth?: number | null;
+  polynomial_order?: number;
+  known_kink_slope?: number;
+  scope?: 'all' | 'verified_clean';
+}

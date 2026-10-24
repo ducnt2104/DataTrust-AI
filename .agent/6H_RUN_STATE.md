@@ -417,3 +417,109 @@
 - Ghi nhận Section 107 trong `docs/API_CONTRACT.md`.
 - Frontend build: **2,092 modules transformed, 0 errors in 1.10s**.
 - Backend tests mới: **5 passed, 0 failed in 1.25s**.
+
+
+### Mốc 03:17:00 — Hoàn thành Iteration 127: Manski Non-Parametric Partial Identification & Worst-Case Bounds Engine (Manski 1990, 1995, 2003; Manski & Pepper 2000; Imbens & Manski 2004)
+- Xây dựng `backend/app/engine/manski_bounds_engine.py` (Phương pháp luận Charles F. Manski 1990, 1995, 2003; Charles F. Manski & John V. Pepper 2000; Joel L. Horowitz & Charles F. Manski 2000; Guido W. Imbens & Charles F. Manski 2004; giải quyết triệt để vấn đề thiên lệch nghiêm trọng trong khảo sát xã hội học và kinh tế lượng khi dữ liệu bị mất mẫu hoặc bỏ qua câu hỏi theo cơ chế Khuyết Không Ngẫu Nhiên Not Missing At Random NMAR mà không cần áp đặt các giả định MAR bất khả kiểm chứng; xây dựng hệ thống phân cấp nhận dạng 4 bậc toàn diện:
+  1. Cận Tồi Tệ Nhất Không Giả Định Worst-Case Bounds $[LB_{\text{worst}}, UB_{\text{worst}}]$ dựa trên chặn miền giá trị hữu hạn $Y \in [y_{\min}, y_{\max}]$;
+  2. Cận Tiên Đề Lựa Chọn Điều Trị Đơn Điệu Monotone Treatment Selection MTS $[LB_{\text{worst}}, \text{Naive } ATE]$ với tiên đề $E[Y(d)|D=1] \ge E[Y(d)|D=0]$;
+  3. Cận Tiên Đề Đáp Ứng Đơn Điệu Monotone Treatment Response MTR $[0, UB_{\text{worst}}]$ với tiên đề $Y_i(1) \ge Y_i(0)$;
+  4. Cận Hợp Nhất MTS+MTR $[0, \min(UB_{\text{worst}}, \text{Naive } ATE)]$ thu hẹp tối đa biên độ bất định;
+  - Tích hợp thuật toán chia đôi Bisection Search tính giá trị tới hạn Imbens-Manski $c_\alpha$ giải phương trình tích phân chuẩn hóa cho khoảng tin cậy đồng nhất 95% Uniform Confidence Intervals;
+  - Phân tích độ nhạy trên lưới 15 điểm tỷ lệ mất mẫu $p \in [0, 0.50]$ và tự động định vị Điểm Gãy Dấu Sign Breakdown Point $p^*$ nơi biên dưới chuyển từ dương sang âm;
+  - Dual-panel SVG: Panel A Biểu đồ thanh ngang phân cấp biên Manski Worst-Case / MTS / MTR / Joint MTS+MTR với vạch đỏ chỉ Naive ATE + Panel B Đồ thị vùng phong bì nhạy cảm mất mẫu Envelope $[LB(p), UB(p)]$ với điểm gãy dấu nổi bật;
+  - APA 7th narrative).
+- Viết unit tests `backend/tests/test_manski_bounds_engine.py` (3 passed) và route tests `backend/tests/test_manski_bounds_routes.py` (1 passed).
+- Thêm schemas `ManskiBoundsRequest`, `ManskiBoundsOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/manski-bounds`, audit log `MANSKI_BOUNDS_EVALUATED`.
+- Thêm types trong `survey.ts`, API client trong `client.ts`, component `ManskiBoundsCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 108 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,093 modules transformed, 0 errors in 1.08s**.
+- Backend tests mới: **4 passed, 0 failed in 1.23s**.
+- Git commit: `be30146`.
+
+
+### Mốc 03:23:00 — Hoàn thành Iteration 128: Dynamic Treatment Regimes (DTR) & Sequential Q-Learning Decision Engine (Murphy 2003; Robins 2004; Schulte et al. 2014)
+- Xây dựng `backend/app/engine/dynamic_treatment_regimes_engine.py` (Phương pháp luận Susan A. Murphy 2003; James M. Robins 2004; Phillip J. Schulte, Anastasios A. Tsiatis, Eric B. Laber & Marie Davidian 2014; Bibhas Chakraborty & Eric E. Moodie 2013; mô hình hóa chính sách can thiệp thích ứng cá nhân hóa hai giai đoạn cho các chiến dịch khảo sát kéo dài và chương trình can thiệp hành vi nhiều chu kỳ; tích hợp thuật toán Học Tăng cường Q-Learning Quy nạp Ngược Sequential Backward Induction:
+  1. Hồi quy Hàm Q Giai đoạn 2 $Q_2(H_2, A_2) = \mathbb{E}[Y \mid H_2, A_2]$ xác định ngưỡng quyết định tối ưu thích ứng $X_2^* = -\beta_{21} / \theta_{21}$ và tính biến kết quả ảo phản thực $\tilde{Y}_1 = \max_{a_2} Q_2(H_2, a_2)$;
+  2. Hồi quy Hàm Q Giai đoạn 1 $Q_1(H_1, A_1) = \mathbb{E}[\tilde{Y}_1 \mid H_1, A_1]$ xác định ngưỡng phân bổ ban đầu $X_1^* = -\beta_{11} / \theta_{11}$;
+  - Đánh giá toàn diện Giá trị Kỳ vọng Chính sách Value of Policy $V(d^*)$ so sánh trực diện với chính sách Tĩnh Luôn can thiệp $V(1,1)$, Tĩnh Không can thiệp $V(0,0)$, và trung bình quan sát thực tế $V_{\text{obs}}$;
+  - Tính toán mức thặng dư giá trị chính sách Policy Value Gain $\Delta V^*$ và phần trăm cải thiện thặng dư $\Delta V^*\%$;
+  - Dual-panel SVG: Panel A Cây quyết định chính sách thích ứng DTR Decision Flowchart Tree từ nút gốc $X_1$ rẽ nhánh $A_1$, qua trạng thái giữa kỳ $X_2$, rẽ nhánh $A_2$, đến 4 điểm kết quả cuối cùng + Panel B Biểu đồ thanh ngang so sánh Giá trị Chính sách $V(d^*)$ xanh ngọc Emerald nổi bật vs các chiến lược tĩnh;
+  - APA 7th narrative).
+- Viết unit tests `backend/tests/test_dynamic_treatment_regimes_engine.py` (3 passed) và route tests `backend/tests/test_dynamic_treatment_regimes_routes.py` (1 passed).
+- Thêm schemas `DynamicTreatmentRegimesRequest`, `DynamicTreatmentRegimesOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/dynamic-treatment-regimes`, audit log `DYNAMIC_TREATMENT_REGIMES_EVALUATED`.
+- Thêm types trong `survey.ts`, API client trong `client.ts`, component `DynamicTreatmentRegimesCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 109 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,094 modules transformed, 0 errors in 1.16s**.
+- Backend tests mới: **4 passed, 0 failed in 1.29s**.
+- Git commit: `79875ed`.
+
+
+### Mốc 03:29:00 — Hoàn thành Iteration 129: Finite Mixture Rasch Models (FMRM) & Latent Class IRT Engine (Rost 1990; von Davier & Rost 2007; Glas 2010)
+- Xây dựng `backend/app/engine/finite_mixture_rasch_engine.py` (Phương pháp luận Jürgen Rost 1990; Matthias von Davier & Jürgen Rost 2007; Cees A. W. Glas 2010; David Preinerstorfer & Anton K. Formann 2012; kết hợp đột phá giữa Phân tích Lớp Tiềm ẩn Latent Class Analysis LCA và Lý thuyết Ứng đáp Câu hỏi Rasch IRT; giải quyết triệt để vấn đề thiên lệch chức năng câu hỏi DIF tiềm ẩn và phong cách trả lời không đồng nhất giữa các nhóm đối tượng khảo sát mà không cần biết trước biến nhân khẩu học bên ngoài; tích hợp thuật toán Kỳ vọng - Cực đại hóa Expectation-Maximization EM Algorithm:
+  1. Bước E: Tính xác suất hậu nghiệm thuộc phân lớp tiềm ẩn $\tau_{vg} = P(g \mid \mathbf{x}_v)$ qua hàm hợp lý logistic kernel;
+  2. Bước M: Cập nhật tỷ trọng phân lớp $\pi_g$ và giải hệ phương trình độ khó Rasch có trọng số $\beta_{ig}$ chuẩn hóa định tâm $\sum_i \beta_{ig} = 0$;
+  - Đánh giá chất lượng mô hình toàn diện qua Log-Likelihood, AIC, BIC, aBIC, và Chỉ số Phân tách Entropy Chuẩn hóa $E \in [0, 1]$;
+  - Tự động nhận diện câu hỏi có độ phân hóa mạnh nhất Top Shifted Item và biên độ dịch chuyển cực đại $\Delta \beta_{\max}$;
+  - Dual-panel SVG: Panel A Quỹ đạo Độ khó Câu hỏi qua các Phân lớp Tiềm ẩn $\beta_{ig}$ Profile Line Chart với các đường phát sáng đa màu sắc + Panel B Biểu đồ thanh tỷ trọng phân lớp và hộp đo chỉ số Entropy;
+  - APA 7th narrative).
+- Viết unit tests `backend/tests/test_finite_mixture_rasch_engine.py` (4 passed) và route tests `backend/tests/test_finite_mixture_rasch_routes.py` (1 passed).
+- Thêm schemas `FiniteMixtureRaschRequest`, `FiniteMixtureRaschOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/finite-mixture-rasch`, audit log `FINITE_MIXTURE_RASCH_EVALUATED`.
+- Thêm types trong `survey.ts`, API client trong `client.ts`, component `FiniteMixtureRaschCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 110 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,095 modules transformed, 0 errors in 1.02s**.
+- Backend tests mới: **5 passed, 0 failed in 1.34s**.
+- Git commit: `cc27439`.
+
+
+### Mốc 03:30:00 — Heartbeat 10 Fired [task-14026]
+- Thời gian thực tế: `2026-10-25T03:30:00+07:00` (Elapsed: 4h 53m 24s / Cần &ge; 6h 00m 00s).
+- Trạng thái hệ thống:
+  - Frontend: 2,095 modules transformed, 0 errors in 1.02s (`dist/index.html`, `dist/assets/index-*.js`).
+  - Backend: 100% test pass rate qua toàn bộ các module phân tích kinh tế lượng & tâm lý học đo lường.
+  - Đã hoàn thành trong ca này:
+    - Iteration 125: Gaussian Bayesian Network DAG Structure Learning Engine (Section 106).
+    - Iteration 126: Stochastic Dominance & Distributional Inequality Engine (Section 107).
+    - Iteration 127: Manski Non-Parametric Partial Identification & Worst-Case Bounds Engine (Section 108).
+    - Iteration 128: Dynamic Treatment Regimes (DTR) & Sequential Q-Learning Decision Engine (Section 109).
+    - Iteration 129: Finite Mixture Rasch Models (FMRM) & Latent Class IRT Engine (Section 110).
+  - Tiếp tục thực thi liên tục không dừng theo đúng chỉ thị tự chủ.
+
+
+### Mốc 03:36:00 — Hoàn thành Iteration 130: Double / Debiased Machine Learning (DML) for Causal Inference Engine (Chernozhukov et al. 2018; Robinson 1988)
+- Xây dựng `backend/app/engine/double_machine_learning_engine.py` (Phương pháp luận Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey & James Robins 2018 Econometrica; Peter M. Robinson 1988 Econometrica; Victor Chernozhukov, Christian Hansen & Martin Spindler 2015; giải quyết triệt để vấn đề thiên lệch chính quy hóa Regularization Bias khi áp dụng học máy trong suy diễn nhân quả; thiết lập mô hình bán tham số tuyến tính từng phần Partially Linear Regression PLR với hai trụ cột toán học vững chắc:
+  1. Hàm điểm trực giao Neyman Neyman-Orthogonal Score của Robinson (1988) thỏa mãn triệt tiêu đạo hàm Gateaux theo các hàm phụ trợ $\partial_\eta \mathbb{E}[\psi] = 0$, cách ly hoàn toàn ước lượng $\hat{\theta}_{\text{DML}}$ khỏi sai số làm mịn của các hàm học máy phi tham số;
+  2. K-Fold Cross-Fitting phân chia ngẫu nhiên dữ liệu huấn luyện ngoài mẫu triệt tiêu overfitting và bảo đảm phân phối chuẩn tiệm cận $\sqrt{N}$-consistent;
+  - Đo lường và làm sạch lượng thiên lệch gây nhiễu Confounding Bias $\Delta = \hat{\theta}_{\text{naive}} - \hat{\theta}_{\text{DML}}$ so với OLS ngây thơ;
+  - Tính toán sai số chuẩn dạng sandwich tiệm cận, khoảng tin cậy 95% CI, thống kê kiểm định $z$-statistic, và xếp hạng các biến kiểm soát gây nhiễu mạnh nhất;
+  - Dual-panel SVG: Panel A Đám mây thặng dư trực giao Robinson $(Y - \hat{g}(X))$ vs $(D - \hat{m}(X))$ với đường dốc hồi quy DML $\hat{\theta}_{\text{DML}}$ màu xanh ngọc Emerald phát sáng + Panel B Biểu đồ Forest Plot so sánh khoảng tin cậy 95% của $\hat{\theta}_{\text{DML}}$ vs $\hat{\theta}_{\text{naive}}$ kèm hộp làm nổi bật độ chệch được loại bỏ;
+  - APA 7th narrative).
+- Viết unit tests `backend/tests/test_double_machine_learning_engine.py` (3 passed) và route tests `backend/tests/test_double_machine_learning_routes.py` (1 passed).
+- Thêm schemas `DoubleMachineLearningRequest`, `DoubleMachineLearningOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/double-machine-learning`, audit log `DOUBLE_MACHINE_LEARNING_EVALUATED`.
+- Thêm types trong `survey.ts`, API client trong `client.ts`, component `DoubleMachineLearningCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 111 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,096 modules transformed, 0 errors in 1.01s**.
+- Backend tests mới: **4 passed, 0 failed in 1.26s**.
+- Git commit: `251c9ff`.
+
+
+### Mốc 03:51:00 — Hoàn thành Iteration 131: Regression Kink Design (RKD) Engine (Card, Lee, Pei, & Weber 2015; Dong 2018)
+- Xây dựng `backend/app/engine/regression_kink_engine.py` (Phương pháp luận David Card, David S. Lee, Zhuan Pei & Andrea Weber 2015 Econometrica; Yingying Dong 2018 Econometric Theory; Andrew Gelman & Guido Imbens 2019 JBES; Justin McCrary 2008 J. Econometrics; giải quyết bài toán nhận diện nhân quả bán thực nghiệm khi chính sách thay đổi độ dốc can thiệp mà không tạo bước nhảy gián đoạn cấp độ $\Delta D(c) = 0$, khiến RDD truyền thống gặp mẫu số $0/0$ và thất bại:
+  1. Nhận diện đạo hàm hiệu ứng chính sách biên (Marginal Treatment Effect Derivative) $\tau_{\text{RKD}} = \Delta \beta_Y / \Delta \beta_D$ cho cả Sharp RKD (với độ dốc chính sách đã biết $k$) và Fuzzy RKD (ước lượng đồng thời $\Delta \beta_D$ qua IV bán thực nghiệm);
+  2. Local Polynomial Spline Regression với hàm trọng số nhân tam giác (triangular kernel) và lựa chọn bậc 1 (Local Linear Spline) hoặc bậc 2 (Local Quadratic Spline);
+  3. Lựa chọn băng thông giải tích thích ứng riêng cho ước lượng đạo hàm bậc 1 (Silverman Rule of Thumb Bandwidth for Derivatives $h = C \cdot \sigma_X \cdot N^{-1/(2p+3)}$);
+  4. Kiểm định mật độ trơn McCrary (2008) chia bin đối xứng hai bên ngưỡng để bác bỏ giả thuyết người tham gia khảo sát tự thao túng vị trí quanh ngưỡng gãy;
+  5. Dual-panel SVG: Panel A Đồ thị spline gãy cục bộ với dải tin cậy 95%, đường xu hướng đổi màu tại ngưỡng và điểm gom binned scatter + Panel B Biểu đồ kiểm định mật độ trơn McCrary trực quan hóa tính liên tục của hàm mật độ xác suất;
+  6. APA 7th narrative).
+- Viết unit tests `backend/tests/test_regression_kink_engine.py` (3 passed) và route tests `backend/tests/test_regression_kink_routes.py` (3 passed).
+- Thêm schemas `RegressionKinkRequest`, `RegressionKinkOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/regression-kink`, audit log `REGRESSION_KINK_EVALUATED`.
+- Thêm types trong `survey.ts`, API client method `runRegressionKink` trong `client.ts`, component `RegressionKinkCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 112 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,097 modules transformed, 0 errors in 999ms**.
+- Backend tests mới: **6 passed, 0 failed in 3.18s**.
+- Git commit cho Iteration 131.

@@ -4643,3 +4643,38 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
     - Panel B: Biểu đồ Forest Plot so sánh khoảng tin cậy 95% của $\hat{\theta}_{\text{DML}}$ vs $\hat{\theta}_{\text{naive}}$ kèm hộp làm nổi bật độ chệch được loại bỏ.
   - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Chernozhukov et al. (2018) và Robinson (1988).
 - **Niêm phong kiểm toán:** Tự động ghi nhận `DOUBLE_MACHINE_LEARNING_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 112. Regression Kink Design (RKD) Engine (Card, Lee, Pei, & Weber 2015; Dong 2018)
+- **Lý thuyết nền tảng:**
+  1. **Nhận diện Nhân quả tại Điểm Gãy Độ Dốc (Causal Derivative Identification):**
+     - Thiết kế Đứt đoạn Hồi quy truyền thống (Sharp / Fuzzy RDD) đòi hỏi một bước nhảy cấp số (discontinuity in levels) tại điểm ngưỡng $c$ ($\Delta D(c) \neq 0$). Tuy nhiên trong thực tiễn khảo sát chính sách kinh tế - xã hội (thuế suất lũy tiến theo bậc thu nhập, chính sách trợ cấp xã hội giảm dần theo thang đo, các chương trình hỗ trợ học phí hoặc bảo hiểm y tế), can thiệp không làm thay đổi gián đoạn cấp độ mà chỉ làm thay đổi tỷ lệ thay đổi (độ dốc / marginal slope):
+       $$\lim_{x \downarrow c} D(x) = \lim_{x \uparrow c} D(x) = D(c)$$
+     - Tại ngưỡng $c$, RDD truyền thống gặp mẫu số bằng 0 ($0 / 0$) và thất bại hoàn toàn.
+     - Card, Lee, Pei, & Weber (2015) và Dong (2018) đã chứng minh rằng đạo hàm hiệu ứng xử lý biên (Marginal Treatment Effect Derivative $\tau_{\text{RKD}}$) được nhận diện phi tham số qua tỷ số giữa độ gãy dốc của hàm kết quả và hàm can thiệp:
+       $$\tau_{\text{RKD}} = \frac{\lim_{x \downarrow c} \frac{d\mathbb{E}[Y \mid X=x]}{dx} - \lim_{x \uparrow c} \frac{d\mathbb{E}[Y \mid X=x]}{dx}}{\lim_{x \downarrow c} \frac{d\mathbb{E}[D \mid X=x]}{dx} - \lim_{x \uparrow c} \frac{d\mathbb{E}[D \mid X=x]}{dx}} = \frac{\Delta \beta_Y}{\Delta \beta_D}$$
+       Đối với Sharp RKD (khi độ gãy của can thiệp đã biết, e.g. $\Delta \beta_D = k = 1.0$), $\tau_{\text{RKD}} = \Delta \beta_Y / k$. Đối với Fuzzy RKD, $\Delta \beta_D$ được ước lượng đồng thời qua hồi quy biến công cụ bán thực nghiệm.
+  2. **Thuật Toán Cốt Lõi Trong Engine:**
+     - **Ước lượng Hồi quy Đa thức Cục bộ (Local Polynomial Spline Regression):** Ước lượng spline liên tục tại ngưỡng $c$ với hàm trọng số nhân tam giác (triangular kernel $K(u) = (1 - |u|) \mathbf{1}(|u| \le 1)$) trong dải băng thông $[c - h, c + h]$. Hỗ trợ cả bậc 1 (Local Linear Spline) và bậc 2 (Local Quadratic Spline) theo khuyến nghị của Gelman & Imbens (2019).
+     - **Băng thông Thích ứng Đạo hàm (Silverman ROT Bandwidth for First Derivatives):** Tự động lựa chọn băng thông tối ưu giải tích thích ứng riêng cho bài toán ước lượng độ dốc bậc 1: $h = C \cdot \sigma_X \cdot N^{-1/(2p + 3)}$.
+     - **Kiểm định Mật độ Trơn McCrary (2008):** Chia dữ liệu thành các bin nhỏ đối xứng hai bên ngưỡng $c$ và kiểm tra tính liên tục của hàm mật độ xác suất biến gán chạy $f_X(c)$. Kiểm định này giúp loại trừ giả thuyết đối tượng khảo sát tự lựa chọn hoặc thao túng có chọn lọc vị trí của mình quanh ngưỡng gãy.
+     - **Đồ thị SVG Kép Bán Thực Nghiệm:**
+       - Panel A: Đồ thị spline gãy cục bộ kèm dải tin cậy 95% và các điểm gom phân tán (Local Binned Scatter) phân biệt màu sắc hai bên ngưỡng.
+       - Panel B: Biểu đồ kiểm định mật độ trơn McCrary (2008) trực quan hóa tần suất quan sát và đường tiệm cận mật độ xác suất.
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/regression-kink`
+- **Request Body (`RegressionKinkRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường biến kết quả $Y$.
+  - `running_question_id`: UUID câu hỏi đo lường biến gán chạy $X$.
+  - `cutoff`: Điểm ngưỡng gãy $c$ của chính sách.
+  - `treatment_question_id`: UUID biến can thiệp thực tế $D$ (Tùy chọn, để trống cho Sharp RKD, cung cấp cho Fuzzy RKD).
+  - `bandwidth`: Băng thông $h$ cục bộ (Tùy chọn, tự động tính bằng Silverman ROT nếu bỏ trống).
+  - `polynomial_order`: Bậc đa thức cục bộ (1: Tuyến tính, 2: Bậc hai).
+  - `known_kink_slope`: Độ thay đổi độ dốc chính sách đã biết đối với Sharp RKD (Mặc định 1.0).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`RegressionKinkOut`):**
+  - `status`: `"SUCCESS"` hoặc `"INSUFFICIENT_SAMPLE"`.
+  - `model_type`: `"REGRESSION_KINK_DESIGN_CARD_2015"`.
+  - `diagnostics`: Quy mô mẫu tổng thể, Mẫu hiệu dụng trong băng thông, Ngưỡng $c$, Băng thông $h$, Ước lượng đạo hàm hiệu ứng $\hat{\tau}_{\text{RKD}}$, Sai số chuẩn SE, Thống kê $t$, $p$-value, Khoảng tin cậy 95% CI, Độ gãy dốc Outcome $\Delta \beta_Y$, Độ dốc bên trái $\beta_1^-$, Độ dốc bên phải $\beta_1^+$, Giá trị mức chặn tại ngưỡng, $p$-value kiểm định McCrary, Cờ kiểm định mật độ trơn (`is_density_smooth`), Cờ ý nghĩa thống kê (`is_statistically_significant`).
+  - `binned_scatter`: Danh sách các bin gom cục bộ (tâm bin, trung bình $X$, trung bình $Y$, số lượng quan sát, phía ngưỡng `left`/`right`).
+  - `svg_visualization`: Đồ thị SVG khoa học kép minh họa điểm gãy bán thực nghiệm và mật độ trơn McCrary.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition giải thích kết quả hồi quy RKD, kiểm định độ trơn mật độ và độ co giãn chính sách biên.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `REGRESSION_KINK_EVALUATED` vào chuỗi sổ cái SHA-256.

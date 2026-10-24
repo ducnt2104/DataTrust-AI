@@ -1,3 +1,4 @@
+from app.engine.regression_kink_engine import RegressionKinkEngine
 from app.engine.double_machine_learning_engine import DoubleMachineLearningEngine
 from app.engine.finite_mixture_rasch_engine import FiniteMixtureRaschEngine
 from app.engine.dynamic_treatment_regimes_engine import DynamicTreatmentRegimesEngine
@@ -38,6 +39,8 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from app.database import get_db, record_audit_log
 from app.schemas import (
     DoubleMachineLearningRequest,
+    RegressionKinkRequest,
+    RegressionKinkOut,
     DoubleMachineLearningOut,
     FiniteMixtureRaschRequest,
     FiniteMixtureRaschOut,
@@ -12651,6 +12654,133 @@ def run_double_machine_learning_analysis(
                 "n_samples": len(y_list),
                 "theta_dml": res.get("diagnostics", {}).get("theta_dml"),
                 "p_value": res.get("diagnostics", {}).get("p_value"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Regression Kink Design (Card, Lee, Pei, and Weber 2015; Dong 2018) ---
+@router.post("/regression-kink", response_model=RegressionKinkOut)
+def run_regression_kink_analysis(
+    survey_id: str,
+    payload: RegressionKinkRequest
+):
+    """
+    Regression Kink Design (RKD) Engine (Card, Lee, Pei, and Weber 2015; Dong 2018).
+    Identifies causal derivative policy effects when treatment intensity or probability
+    changes slope at a known cutoff threshold.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        if payload.outcome_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến kết quả (QID: {payload.outcome_question_id}) không tồn tại.")
+        if payload.running_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến gán chạy (Running Variable QID: {payload.running_question_id}) không tồn tại.")
+
+        if payload.treatment_question_id is not None and payload.treatment_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến xử lý (Treatment QID: {payload.treatment_question_id}) không tồn tại.")
+
+        scope_sql = ""
+        if payload.scope == "verified_clean":
+            scope_sql = " AND r.is_verified = 1 AND r.is_flagged = 0 "
+
+        target_qids = [payload.outcome_question_id, payload.running_question_id]
+        if payload.treatment_question_id is not None:
+            target_qids.append(payload.treatment_question_id)
+
+        placeholders = ",".join(["?"] * len(target_qids))
+        query = f"""
+            SELECT ra.response_id, ra.question_id, ra.answer_value
+            FROM response_answers ra
+            JOIN responses r ON ra.response_id = r.id
+            WHERE r.survey_id = ? {scope_sql}
+              AND ra.question_id IN ({placeholders})
+        """
+        rows = conn.execute(query, [survey_id] + target_qids).fetchall()
+
+        resp_data: Dict[int, Dict[int, str]] = {}
+        for r in rows:
+            resp_id = r["response_id"]
+            if resp_id not in resp_data:
+                resp_data[resp_id] = {}
+            resp_data[resp_id][r["question_id"]] = r["answer_value"]
+
+        y_list = []
+        x_list = []
+        d_list = []
+
+        for resp_id, answers in resp_data.items():
+            if payload.outcome_question_id not in answers or payload.running_question_id not in answers:
+                continue
+            try:
+                y_val = float(answers[payload.outcome_question_id])
+                x_val = float(answers[payload.running_question_id])
+            except (ValueError, TypeError):
+                continue
+
+            d_val = None
+            if payload.treatment_question_id is not None:
+                if payload.treatment_question_id not in answers:
+                    continue
+                try:
+                    d_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+            y_list.append(y_val)
+            x_list.append(x_val)
+            if d_val is not None:
+                d_list.append(d_val)
+
+        if len(y_list) < 20:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng quan sát hợp lệ (N={len(y_list)}) không đủ cho hồi quy RKD. Cần tối thiểu 20 quan sát.",
+                "model_type": "Sharp RKD" if payload.treatment_question_id is None else "Fuzzy RKD",
+                "diagnostics": None,
+                "binned_scatter": None,
+                "svg_visualization": None,
+                "apa_narrative": None
+            }
+
+        d_arr = np.array(d_list, dtype=float) if (payload.treatment_question_id is not None and len(d_list) == len(y_list)) else None
+
+        res = RegressionKinkEngine.evaluate_rkd(
+            y_outcome=np.array(y_list, dtype=float),
+            x_running=np.array(x_list, dtype=float),
+            cutoff=payload.cutoff,
+            d_treatment=d_arr,
+            bandwidth=payload.bandwidth,
+            polynomial_order=payload.polynomial_order,
+            known_kink_slope=payload.known_kink_slope,
+            outcome_label=q_map.get(payload.outcome_question_id, "Biến kết quả"),
+            running_label=q_map.get(payload.running_question_id, "Biến gán chạy"),
+            treatment_label=q_map.get(payload.treatment_question_id, "Biến can thiệp") if payload.treatment_question_id else "Chính sách can thiệp"
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="REGRESSION_KINK_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "running_qid": payload.running_question_id,
+                "cutoff": payload.cutoff,
+                "is_fuzzy": payload.treatment_question_id is not None,
+                "n_samples": len(y_list),
+                "tau_rkd": res.get("diagnostics", {}).get("tau_rkd") if res.get("diagnostics") else None,
+                "p_value": res.get("diagnostics", {}).get("p_value") if res.get("diagnostics") else None,
                 "status": res.get("status")
             }
         )

@@ -109,6 +109,7 @@ import { ManskiBoundsCard } from '../components/ManskiBoundsCard';
 import { DynamicTreatmentRegimesCard } from '../components/DynamicTreatmentRegimesCard';
 import { FiniteMixtureRaschCard } from '../components/FiniteMixtureRaschCard';
 import { DoubleMachineLearningCard } from '../components/DoubleMachineLearningCard';
+import { RegressionKinkCard } from '../components/RegressionKinkCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1262,6 +1263,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           question_type: q.question_type
         }))}
       />
+      {/* Regression Kink Design (RKD) Engine (Card, Lee, Pei, & Weber 2015; Dong 2018) */}
+      <RegressionKinkCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
 
       {/* Non-Parametric Hypothesis Tests (Mann-Whitney U, Wilcoxon Signed-Rank, Kruskal-Wallis & Dunn Post-Hoc) */}
       <NonParametricTestsCard
