@@ -1,3 +1,4 @@
+from app.engine.policy_learning_engine import PolicyLearningEngine
 from app.engine.multiple_mediators_engine import MultipleMediatorsEngine
 from app.engine.interactive_fixed_effects_engine import compute_interactive_fixed_effects
 from app.engine.sdid_advanced_engine import SDIDAdvancedEngine
@@ -53,6 +54,8 @@ from app.schemas import (
     InteractiveFixedEffectsOut,
     MultipleMediatorsRequest,
     MultipleMediatorsOut,
+    PolicyLearningRequest,
+    PolicyLearningOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -13414,6 +13417,134 @@ def run_multiple_mediators_analysis(
                 "outcome_qid": payload.outcome_question_id,
                 "n_samples": len(x_list),
                 "total_effect": res.get("diagnostics", {}).get("total_effect") if res.get("diagnostics") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Doubly Robust Policy Learning (Athey & Wager 2021) ---
+@router.post("/policy-learning", response_model=PolicyLearningOut)
+def run_policy_learning_analysis(
+    survey_id: str,
+    payload: PolicyLearningRequest
+):
+    """
+    Doubly Robust Policy Learning & Optimal Treatment Regimes Engine (Athey & Wager 2021).
+    Estimates optimal individualized treatment rule pi*(X) and net policy welfare gain.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        if payload.outcome_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến kết quả (Y QID: {payload.outcome_question_id}) không tồn tại.")
+        if payload.treatment_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến can thiệp (W QID: {payload.treatment_question_id}) không tồn tại.")
+
+        cov_ids = payload.covariate_question_ids or []
+        for cid in cov_ids:
+            if cid not in q_map:
+                raise HTTPException(status_code=400, detail=f"Biến đặc tính (Covariate QID: {cid}) không tồn tại.")
+
+        scope_sql = ""
+        if payload.scope == "verified_clean":
+            scope_sql = " AND r.is_verified = 1 AND r.is_flagged = 0 "
+
+        target_qids = [payload.outcome_question_id, payload.treatment_question_id] + cov_ids
+        target_qids = list(dict.fromkeys(target_qids))
+
+        placeholders = ",".join(["?"] * len(target_qids))
+        query = f"""
+            SELECT ra.response_id, ra.question_id, ra.answer_value
+            FROM response_answers ra
+            JOIN responses r ON ra.response_id = r.id
+            WHERE r.survey_id = ? {scope_sql}
+              AND ra.question_id IN ({placeholders})
+        """
+        rows = conn.execute(query, [survey_id] + target_qids).fetchall()
+
+        resp_data = {}
+        for r in rows:
+            resp_id = r["response_id"]
+            if resp_id not in resp_data:
+                resp_data[resp_id] = {}
+            resp_data[resp_id][r["question_id"]] = r["answer_value"]
+
+        y_list = []
+        w_list = []
+        cov_matrix_rows = []
+
+        for resp_id, answers in resp_data.items():
+            if (payload.outcome_question_id not in answers or
+                payload.treatment_question_id not in answers):
+                continue
+
+            has_all_covs = True
+            c_vals = []
+            for cid in cov_ids:
+                if cid not in answers:
+                    has_all_covs = False
+                    break
+                try:
+                    c_vals.append(float(answers[cid]))
+                except (ValueError, TypeError):
+                    has_all_covs = False
+                    break
+
+            if not has_all_covs:
+                continue
+
+            try:
+                yv = float(answers[payload.outcome_question_id])
+                wv_raw = answers[payload.treatment_question_id]
+                try:
+                    wv = float(wv_raw)
+                except (ValueError, TypeError):
+                    wv = 1.0 if str(wv_raw).strip() in ["1", "true", "True", "yes"] else 0.0
+
+                y_list.append(yv)
+                w_list.append(wv)
+                cov_matrix_rows.append(c_vals)
+            except (ValueError, TypeError):
+                continue
+
+        if len(cov_matrix_rows) == 0 or len(cov_ids) == 0:
+            cov_mat = np.zeros((len(y_list), 1))
+            feat_names = ["Chỉ số mặc định"]
+        else:
+            cov_mat = np.array(cov_matrix_rows, dtype=float)
+            feat_names = [q_map.get(cid, cid) for cid in cov_ids]
+
+        res = PolicyLearningEngine.evaluate(
+            y=np.array(y_list, dtype=float),
+            w=np.array(w_list, dtype=float),
+            x_matrix=cov_mat,
+            feature_names=feat_names,
+            primary_feature_idx=payload.primary_feature_idx,
+            n_bootstraps=payload.n_bootstraps,
+            outcome_label=q_map.get(payload.outcome_question_id, "Biến kết quả Y"),
+            treatment_label=q_map.get(payload.treatment_question_id, "Biến can thiệp W")
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="POLICY_LEARNING_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "n_samples": len(y_list),
+                "optimal_welfare": res.get("diagnostics", {}).get("optimal_welfare_value") if res.get("diagnostics") else None,
+                "net_gain": res.get("diagnostics", {}).get("net_welfare_gain") if res.get("diagnostics") else None,
                 "status": res.get("status")
             }
         )

@@ -7255,4 +7255,61 @@ export interface MultipleMediatorsRequest {
   scope?: 'all' | 'verified_clean';
 }
 
+// --- Doubly Robust Policy Learning (Athey & Wager 2021) Types ---
+export interface PolicyLearningDiagnostics {
+  sample_size: number;
+  n_treated_observed: number;
+  n_control_observed: number;
+  pct_recommended_treatment: number;
+  n_recommended_treatment: number;
+  optimal_welfare_value: number;
+  treat_all_welfare_value: number;
+  treat_none_welfare_value: number;
+  observed_welfare_value: number;
+  net_welfare_gain: number;
+  se_gain: number;
+  z_gain: number;
+  p_value_gain: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_significant_gain: boolean;
+}
+
+export interface PolicyLearningRegime {
+  regime_name: string;
+  expected_welfare: number;
+  treated_pct: number;
+  description: string;
+}
+
+export interface PolicyLearningSampleAllocation {
+  respondent_id: string;
+  primary_feature_val: number;
+  observed_treatment: number;
+  aipw_score: number;
+  recommended_policy: number;
+  status: string;
+}
+
+export interface PolicyLearningResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: PolicyLearningDiagnostics;
+  regimes_comparison?: PolicyLearningRegime[];
+  sample_allocations?: PolicyLearningSampleAllocation[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface PolicyLearningRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids: string[];
+  primary_feature_idx?: number;
+  n_bootstraps?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
 

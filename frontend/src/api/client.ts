@@ -187,7 +187,9 @@ import {
   InteractiveFixedEffectsRequest,
   InteractiveFixedEffectsResult,
   MultipleMediatorsRequest,
-  MultipleMediatorsResult
+  MultipleMediatorsResult,
+  PolicyLearningRequest,
+  PolicyLearningResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2266,5 +2268,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<MultipleMediatorsResult>(res);
+  },
+
+  // --- Doubly Robust Policy Learning (Athey & Wager 2021) ---
+  async runPolicyLearning(
+    surveyId: string,
+    payload: PolicyLearningRequest
+  ): Promise<PolicyLearningResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/policy-learning`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<PolicyLearningResult>(res);
   }
 };

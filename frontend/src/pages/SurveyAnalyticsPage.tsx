@@ -115,6 +115,7 @@ import { MatrixCompletionCausalCard } from '../components/MatrixCompletionCausal
 import { SDIDAdvancedCard } from '../components/SDIDAdvancedCard';
 import { InteractiveFixedEffectsCard } from '../components/InteractiveFixedEffectsCard';
 import { MultipleMediatorsCard } from '../components/MultipleMediatorsCard';
+import { PolicyLearningCard } from '../components/PolicyLearningCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1318,6 +1319,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Multiple Sequential Mediators (VanderWeele 2014; Steen et al. 2012) */}
       <MultipleMediatorsCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Doubly Robust Policy Learning (Athey & Wager 2021 Econometrica) */}
+      <PolicyLearningCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

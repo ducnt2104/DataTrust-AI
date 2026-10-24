@@ -4896,3 +4896,46 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép sơ đồ mạng DAG và biểu đồ Forest Plot.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition phân tích cơ chế trung gian và kết luận khoa học.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `MULTIPLE_MEDIATORS_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 118. Doubly Robust Policy Learning & Optimal Treatment Regimes Engine (Athey & Wager 2021; Dudík, Langford, & Li 2011)
+- **Lý thuyết nền tảng:**
+  1. **Bài toán Học Chính sách Phân bổ Cá thể hóa (Optimal Individualized Policy Learning):**
+     - Thay vì chỉ đo lường tác động trung bình (ATE) hoặc tác động không đồng nhất (CATE), mục tiêu thực tiễn của người quản lý hoặc nhà hoạch định chính sách là tìm ra quy tắc quyết định tối ưu $\pi^*(X) \in \{0, 1\}$ phân bổ can thiệp cho từng khách thể dựa trên đặc tính $X$ nhằm tối đa hóa tổng phúc lợi xã hội / kỳ vọng giá trị kết quả:
+       $$Q(\pi) = \mathbb{E}[Y(\pi(X))]$$
+  2. **Biến đổi Điểm AIPW (Doubly Robust Pseudo-Outcomes):**
+     - Athey & Wager (2021) và Dudík et al. (2011) biến đổi bài toán tối ưu hóa phúc lợi thành bài toán phân loại có trọng số chi phí (Cost-Weighted Classification) sử dụng điểm AIPW:
+       $$\Gamma_i = \hat{\mu}_1(X_i) - \hat{\mu}_0(X_i) + \frac{W_i (Y_i - \hat{\mu}_1(X_i))}{\hat{e}(X_i)} - \frac{(1 - W_i)(Y_i - \hat{\mu}_0(X_i))}{1 - \hat{e}(X_i)}$$
+       $$\min_{\pi \in \Pi} \frac{1}{n} \sum_{i=1}^n |\Gamma_i| \cdot \mathbb{I}\left( \operatorname{sign}(\Gamma_i) \neq 2\pi(X_i) - 1 \right)$$
+     - Điểm $\Gamma_i$ có tính chất kép vững: chỉ cần mô hình propensity score $\hat{e}(X)$ HOẶC mô hình hàm hồi quy kết quả $\hat{\mu}_w(X)$ được đặc tả đúng, điểm $\Gamma_i$ là ước lượng không chệch của lợi ích can thiệp cá thể $\tau(X_i) = Y_i(1) - Y_i(0)$.
+  3. **Quy tắc Quyết định Tối ưu và Ngưỡng Phân tầng:**
+     - Quy tắc tối ưu: $\pi^*(X) = \mathbb{I}(\Gamma_i > 0)$.
+     - Phân bổ can thiệp cho mọi đối tượng có điểm phúc lợi thuần dương $\Gamma_i > 0$.
+  4. **So sánh Đối chiếu 4 Chế độ Chính sách & Thặng dư Phúc lợi Thuần (Net Welfare Gain):**
+     - $V(\pi^*)$: Phúc lợi kỳ vọng dưới chính sách tối ưu cá thể hóa.
+     - $V(\mathbf{1})$: Phúc lợi khi can thiệp đại trà 100% mẫu khảo sát (Treat All).
+     - $V(\mathbf{0})$: Phúc lợi khi không can thiệp (Treat None).
+     - $V(W)$: Phúc lợi của hiện trạng phân bổ thực tế trong mẫu khảo sát.
+     - Thặng dư phúc lợi thuần: $\Delta V = V(\pi^*) - \max(V(\mathbf{1}), V(\mathbf{0}))$.
+     - Kiểm định giả thuyết Bootstrap (one-sided test) cho thấy chính sách tối ưu có tạo ra sự cải thiện phúc lợi vượt trội có ý nghĩa thống kê hay không.
+  5. **Đồ thị SVG Kép Khoa Học:**
+     - Panel A: Đồ thị phân tán điểm AIPW $\Gamma_i$ theo đặc tính phân tầng chính, hiển thị rõ đường ngưỡng quyết định chính sách $\Gamma = 0$ và vùng can thiệp (xanh ngọc Emerald).
+     - Panel B: Biểu đồ cột so sánh phúc lợi dân số qua 4 chế độ chính sách (Tối ưu $\pi^*$, Treat All, Treat None, và Hiện trạng $W$).
+  6. **Đoạn Thuyết minh Học thuật Chuẩn APA 7th Edition:**
+     - Tự động biên soạn theo chuẩn mực Athey & Wager (2021) và Dudík et al. (2011).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/policy-learning`
+- **Request Body (`PolicyLearningRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả $Y$.
+  - `treatment_question_id`: UUID biến chỉ báo can thiệp $W$.
+  - `covariate_question_ids`: Danh sách UUID các biến đặc tính cá thể dùng phân tầng chính sách $X$.
+  - `primary_feature_idx`: Vị trí chỉ mục của biến đặc tính chính hiển thị trên trục hoành (Mặc định 0).
+  - `n_bootstraps`: Số lần tái chọn mẫu Bootstrap (Mặc định 300).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`PolicyLearningOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"INSUFFICIENT_VARIATION"`.
+  - `model_type`: `"DOUBLY_ROBUST_POLICY_LEARNING_ATHEY_WAGER_2021"`.
+  - `diagnostics`: Cỡ mẫu $N$, số quan sát can thiệp/đối chứng, Tỷ lệ phần trăm và số lượng đối tượng được khuyến nghị can thiệp theo chính sách tối ưu $\pi^*$, Giá trị phúc lợi kỳ vọng của từng chế độ ($V(\pi^*), V(\mathbf{1}), V(\mathbf{0}), V(W)$), Thặng dư phúc lợi thuần $\Delta V$, Sai số chuẩn Bootstrap SE, $z$-statistic, $p$-value, khoảng tin cậy 95% CI, Cờ ý nghĩa thống kê của thặng dư chính sách.
+  - `regimes_comparison`: Bảng so sánh chi tiết 4 chế độ chính sách kèm phúc lợi kỳ vọng, tỷ lệ can thiệp và mô tả nguyên tắc.
+  - `sample_allocations`: Danh sách phân bổ chi tiết cho từng cá thể trong mẫu (mã đối tượng, giá trị đặc tính, can thiệp thực tế, điểm AIPW $\Gamma_i$, quyết định tối ưu $\pi^*$ và trạng thái khuyến nghị).
+  - `svg_visualization`: Đồ thị SVG khoa học kép điểm AIPW & so sánh phúc lợi chế độ chính sách.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition phân tích tính tối ưu và thặng dư phúc lợi xã hội.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `POLICY_LEARNING_EVALUATED` vào chuỗi sổ cái SHA-256.

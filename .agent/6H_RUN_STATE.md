@@ -628,4 +628,24 @@
 - Git commit cho Iteration 136.
 
 
+### Mốc 04:27:00 — Hoàn thành Iteration 137: Doubly Robust Policy Learning & Optimal Treatment Regimes Engine (Athey & Wager 2021; Dudík, Langford, & Li 2011)
+- Xây dựng `backend/app/engine/policy_learning_engine.py` (Phương pháp luận Susan Athey & Stefan Wager 2021 Econometrica; Miroslav Dudík, John Langford & Lihong Li 2011; Zhengyuan Zhou, Susan Athey & Stefan Wager 2023 Operations Research; xác định quy tắc phân bổ chính sách cá thể hóa tối ưu $\pi^*(X) \in \{0, 1\}$ tối đa hóa kỳ vọng phúc lợi dân số $Q(\pi) = \mathbb{E}[Y(\pi(X))]$):
+  1. Biến đổi bài toán học chính sách thành bài toán phân loại có trọng số chi phí (Cost-Weighted Classification) sử dụng điểm AIPW kép vững $\Gamma_i$;
+  2. Ước lượng không chệch lợi ích can thiệp cá thể $\Gamma_i = \hat{\mu}_1(X_i) - \hat{\mu}_0(X_i) + \frac{W_i (Y_i - \hat{\mu}_1)}{\hat{e}} - \frac{(1-W_i)(Y_i - \hat{\mu}_0)}{1 - \hat{e}}$;
+  3. Xác định quy tắc quyết định tối ưu $\pi^*(X) = \mathbb{I}(\Gamma_i > 0)$ và tính toán tỷ lệ khuyến nghị can thiệp trong dân số;
+  4. So sánh phúc lợi kỳ vọng của 4 chế độ: Chính sách tối ưu $V(\pi^*)$, Can thiệp đại trà $V(\mathbf{1})$ (Treat All), Không can thiệp $V(\mathbf{0})$ (Treat None), và Hiện trạng thực tế quan sát $V(W)$;
+  5. Đánh giá thặng dư phúc lợi thuần $\Delta V = V(\pi^*) - \max(V(\mathbf{1}), V(\mathbf{0}))$ kèm sai số chuẩn và khoảng tin cậy 95% Bootstrap;
+  6. Dual-panel SVG: Panel A Đồ thị phân tán điểm AIPW $\Gamma_i$ với đường ngưỡng quyết định $\Gamma = 0$ và vùng can thiệp + Panel B Biểu đồ cột so sánh phúc lợi 4 chế độ chính sách;
+  7. APA 7th narrative khoa học giải thích tính tối ưu của chính sách phân bổ cá thể hóa và ý nghĩa thống kê của thặng dư phúc lợi.
+- Viết unit tests `backend/tests/test_policy_learning_engine.py` (3 passed) và route tests `backend/tests/test_policy_learning_routes.py` (2 passed).
+- Thêm schemas `PolicyLearningRequest`, `PolicyLearningOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/policy-learning`, audit log `POLICY_LEARNING_EVALUATED`.
+- Thêm types trong `survey.ts`, API client method `runPolicyLearning` trong `client.ts`, component `PolicyLearningCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 118 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,103 modules transformed, 0 errors in 1.19s**.
+- Backend tests mới: **5 passed, 0 failed in 1.44s**.
+- Git commit cho Iteration 137.
+
+
+
 
