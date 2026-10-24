@@ -4603,3 +4603,43 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
     - Panel B: Biểu đồ thanh tỷ trọng phân lớp và hộp đo chỉ số Entropy phân tách.
   - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Rost (1990) và von Davier & Rost (2007).
 - **Niêm phong kiểm toán:** Tự động ghi nhận `FINITE_MIXTURE_RASCH_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 111. Động Cơ Học Máy Khử Thiên Lệch Hai Bước Ước Lượng Tác Động Nhân Quả (Double / Debiased Machine Learning (DML) for Causal Inference Engine - Chernozhukov et al. 2018; Robinson 1988)
+- **Nền tảng lý thuyết:**
+  1. **Vấn Đề Thiên Lệch Chính Quy Hóa trong Học Máy Nhân Quả (Regularization Bias in Causal Machine Learning; Chernozhukov et al. 2018):**
+     Khi ước lượng hiệu ứng can thiệp nhân quả $\theta_0$ của một chính sách / tính năng khảo sát $D$ lên kết quả $Y$ trong bối cảnh có nhiều biến kiểm soát gây nhiễu chiều cao $X \in \mathbb{R}^p$ (Mô hình Bán tham số Tuyến tính từng phần Partially Linear Regression - PLR):
+     $$Y = D \theta_0 + g_0(X) + U, \quad \mathbb{E}[U \mid D, X] = 0$$
+     $$D = m_0(X) + V, \quad \mathbb{E}[V \mid X] = 0$$
+     Nếu trực tiếp cắm (plug-in) các mô hình học máy chính quy hóa (Lasso, Ridge, Random Forest, Gradient Boosting) để ước lượng hàm phụ trợ $g_0(X) = \mathbb{E}[Y \mid X]$ và đưa vào OLS, sai số làm mịn / co tham số (regularization bias) sẽ làm sai lệch ước lượng $\hat{\theta}$, phá hủy tính hội tụ $\sqrt{N}$-consistent và khiến khoảng tin cậy tiệm cận thất bại nghiêm trọng.
+  2. **Hai Trụ Cột Đột Phá Của Chernozhukov et al. (2018):**
+     - **Trụ Cột 1: Điểm Trực Giao Neyman (Neyman Orthogonal Scores; Robinson 1988):**
+       Thiết lập điều kiện mô-men $\psi(W; \theta, \eta)$ thỏa mãn đạo hàm Gateaux theo các hàm phụ trợ $\eta = (g, m)$ triệt tiêu tại giá trị thực:
+       $$\partial_\eta \mathbb{E}[\psi(W; \theta_0, \eta_0)] = 0$$
+       Hàm điểm trực giao thặng dư Robinson (1988):
+       $$\psi(W; \theta, g, m) = (Y - g(X) - \theta (D - m(X))) (D - m(X))$$
+       Đưa đến công thức ước lượng DML giải tích đóng:
+       $$\hat{\theta}_{\text{DML}} = \frac{\sum_{i=1}^N (D_i - \hat{m}(X_i)) (Y_i - \hat{g}(X_i))}{\sum_{i=1}^N (D_i - \hat{m}(X_i))^2}$$
+     - **Trụ Cột 2: Phân Mẫu Chéo Ngoài Mẫu (K-Fold Cross-Fitting):**
+       Chia ngẫu nhiên tập dữ liệu thành $K$ phần (ví dụ $K = 5$). Với mỗi phần $k$, các hàm phụ trợ $\hat{g}_{-k}$ và $\hat{m}_{-k}$ được huấn luyện trên $K-1$ phần còn lại, sau đó dự báo thặng dư trên phần $k$. Điều này triệt tiêu hoàn toàn hiện tượng overfitting và bảo đảm phân phối chuẩn tiệm cận:
+       $$\sqrt{N} (\hat{\theta}_{\text{DML}} - \theta_0) \xrightarrow{d} \mathcal{N}\left(0, \frac{\mathbb{E}[\psi^2]}{(\mathbb{E}[(D - m(X))^2])^2}\right)$$
+       ngay cả khi các mô hình học máy phi tham số $g, m$ chỉ hội tụ ở tốc độ chậm $N^{-1/4}$.
+  3. **Phân Tích So Sánh Khử Thiên Lệch (Debiasing Decomposition):**
+     So sánh trực diện $\hat{\theta}_{\text{DML}}$ với hồi quy OLS ngây thơ $\hat{\theta}_{\text{naive}}$ (chưa kiểm soát trực giao) để đo lường định lượng mức độ thiên lệch gây nhiễu (Confounding Bias $\Delta = \hat{\theta}_{\text{naive}} - \hat{\theta}_{\text{DML}}$) đã được làm sạch khỏi ước lượng chính sách.
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/double-machine-learning`
+- **Request Body (`DoubleMachineLearningRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả $Y$.
+  - `treatment_question_id`: UUID câu hỏi can thiệp $D$ (nhị phân 1 vs 0 hoặc liên tục).
+  - `covariate_question_ids`: Danh sách UUID các biến kiểm soát $X_1, \dots, X_p$.
+  - `n_folds`: Số lượng folds cross-fitting (Mặc định 5, dải 2-10).
+  - `alpha_penalty`: Hệ số phạt chính quy hóa L2 Ridge (Mặc định 1.0).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`DoubleMachineLearningOut`):**
+  - `status`: `"SUCCESS"` hoặc `"INSUFFICIENT_SAMPLE"`.
+  - `model_type`: `"DOUBLE_MACHINE_LEARNING_CHERNOZHUKOV_2018"`.
+  - `diagnostics`: Quy mô mẫu hợp lệ $N$, số biến kiểm soát $P$, số folds $K$, Ước lượng tác động DML $\hat{\theta}_{\text{DML}}$, Sai số chuẩn SE, Thống kê $z$-statistic, $p$-value, Khoảng tin cậy 95% CI, Hệ số OLS ngây thơ $\hat{\theta}_{\text{naive}}$, Mức thiên lệch gây nhiễu được triệt tiêu, $R^2(Y \mid X)$ và $R^2(D \mid X)$ của các mô hình học máy phụ trợ, Cờ ý nghĩa thống kê (`is_statistically_significant`).
+  - `confounding_covariates`: Bảng xếp hạng các biến gây nhiễu mạnh nhất theo tích số tương quan với $Y$ và $D$.
+  - `svg_visualization`: Đồ thị SVG khoa học kép:
+    - Panel A: Đám mây thặng dư trực giao Robinson $(Y - \hat{g}(X))$ vs $(D - \hat{m}(X))$ với đường dốc hồi quy DML $\hat{\theta}_{\text{DML}}$ màu xanh ngọc Emerald phát sáng.
+    - Panel B: Biểu đồ Forest Plot so sánh khoảng tin cậy 95% của $\hat{\theta}_{\text{DML}}$ vs $\hat{\theta}_{\text{naive}}$ kèm hộp làm nổi bật độ chệch được loại bỏ.
+  - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Chernozhukov et al. (2018) và Robinson (1988).
+- **Niêm phong kiểm toán:** Tự động ghi nhận `DOUBLE_MACHINE_LEARNING_EVALUATED` vào chuỗi sổ cái SHA-256.

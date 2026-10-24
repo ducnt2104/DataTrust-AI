@@ -108,6 +108,7 @@ import { StochasticDominanceCard } from '../components/StochasticDominanceCard';
 import { ManskiBoundsCard } from '../components/ManskiBoundsCard';
 import { DynamicTreatmentRegimesCard } from '../components/DynamicTreatmentRegimesCard';
 import { FiniteMixtureRaschCard } from '../components/FiniteMixtureRaschCard';
+import { DoubleMachineLearningCard } from '../components/DoubleMachineLearningCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1244,6 +1245,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Finite Mixture Rasch Models (FMRM) & Latent Class IRT Engine (Rost 1990; von Davier & Rost 2007) */}
       <FiniteMixtureRaschCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Double / Debiased Machine Learning (DML) for Causal Inference (Chernozhukov et al. 2018) */}
+      <DoubleMachineLearningCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

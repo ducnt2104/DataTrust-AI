@@ -173,7 +173,9 @@ import {
   DynamicTreatmentRegimesRequest,
   DynamicTreatmentRegimesResult,
   FiniteMixtureRaschRequest,
-  FiniteMixtureRaschResult
+  FiniteMixtureRaschResult,
+  DoubleMachineLearningRequest,
+  DoubleMachineLearningResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2161,5 +2163,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<FiniteMixtureRaschResult>(res);
+  },
+
+  // --- Double / Debiased Machine Learning (DML) for Causal Inference (Chernozhukov et al. 2018) ---
+  async runDoubleMachineLearning(
+    surveyId: string,
+    payload: DoubleMachineLearningRequest
+  ): Promise<DoubleMachineLearningResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/double-machine-learning`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<DoubleMachineLearningResult>(res);
   }
 };

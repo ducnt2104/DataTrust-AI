@@ -1,3 +1,4 @@
+from app.engine.double_machine_learning_engine import DoubleMachineLearningEngine
 from app.engine.finite_mixture_rasch_engine import FiniteMixtureRaschEngine
 from app.engine.dynamic_treatment_regimes_engine import DynamicTreatmentRegimesEngine
 from app.engine.manski_bounds_engine import ManskiBoundsEngine
@@ -36,6 +37,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Response
 from app.database import get_db, record_audit_log
 from app.schemas import (
+    DoubleMachineLearningRequest,
+    DoubleMachineLearningOut,
     FiniteMixtureRaschRequest,
     FiniteMixtureRaschOut,
     DynamicTreatmentRegimesRequest,
@@ -12500,6 +12503,154 @@ def run_finite_mixture_rasch_analysis(
                 "n_samples": len(valid_rows),
                 "entropy": res.get("diagnostics", {}).get("entropy"),
                 "log_likelihood": res.get("diagnostics", {}).get("log_likelihood"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Double / Debiased Machine Learning (DML) for Causal Inference (Chernozhukov et al. 2018) ---
+@router.post("/double-machine-learning", response_model=DoubleMachineLearningOut)
+def run_double_machine_learning_analysis(
+    survey_id: str,
+    payload: DoubleMachineLearningRequest
+):
+    """
+    Evaluates causal treatment effects in high-dimensional partially linear models (PLR)
+    using Double/Debiased Machine Learning (DML) with Neyman-orthogonal scores and K-fold cross-fitting
+    (Chernozhukov et al. 2018; Robinson 1988).
+    Eliminates regularization bias and delivers valid sqrt(N)-consistent confidence intervals.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy cuộc khảo sát.")
+
+        if not payload.covariate_question_ids:
+            raise HTTPException(status_code=400, detail="Cần chọn ít nhất 1 biến kiểm soát để khử thiên lệch bằng DML.")
+
+        all_qids = [payload.outcome_question_id, payload.treatment_question_id] + payload.covariate_question_ids
+        placeholders_q = ",".join(["?"] * len(all_qids))
+        q_rows = conn.execute(
+            f"SELECT id, title, question_type FROM questions WHERE id IN ({placeholders_q}) AND survey_id = ?",
+            (*all_qids, survey_id)
+        ).fetchall()
+        q_map = {q["id"]: q for q in q_rows}
+
+        if payload.outcome_question_id not in q_map or payload.treatment_question_id not in q_map:
+            raise HTTPException(status_code=400, detail="Câu hỏi kết quả (Outcome) hoặc câu hỏi can thiệp (Treatment) không tồn tại.")
+
+        outcome_title = q_map[payload.outcome_question_id]["title"]
+        treatment_title = q_map[payload.treatment_question_id]["title"]
+        cov_titles = [q_map[qid]["title"] for qid in payload.covariate_question_ids if qid in q_map]
+
+        if payload.scope == "verified_clean":
+            resp_rows = conn.execute("""
+                SELECT id FROM responses
+                WHERE survey_id = ? AND review_status NOT IN ('verified_fraud', 'quota_screened_out')
+                  AND (risk_level != 'high' OR review_status = 'verified_valid')
+            """, (survey_id,)).fetchall()
+        else:
+            resp_rows = conn.execute("SELECT id FROM responses WHERE survey_id = ?", (survey_id,)).fetchall()
+
+        if not resp_rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Không tìm thấy phản hồi trong phạm vi khảo sát đã chọn."}
+
+        resp_ids = [r["id"] for r in resp_rows]
+        placeholders_r = ",".join(["?"] * len(resp_ids))
+
+        ans_rows = conn.execute(f"""
+            SELECT response_id, question_id, answer_value
+            FROM response_answers
+            WHERE response_id IN ({placeholders_r}) AND question_id IN ({placeholders_q})
+        """, (*resp_ids, *all_qids)).fetchall()
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {rid: {} for rid in resp_ids}
+        for a in ans_rows:
+            rid = a["response_id"]
+            qid = a["question_id"]
+            data_by_resp[rid][qid] = a["answer_value"]
+
+        import numpy as np
+
+        y_list = []
+        d_list = []
+        x_list = []
+
+        for rid in resp_ids:
+            ans_dict = data_by_resp.get(rid, {})
+            y_raw = ans_dict.get(payload.outcome_question_id)
+            d_raw = ans_dict.get(payload.treatment_question_id)
+
+            if y_raw is None or d_raw is None:
+                continue
+
+            try:
+                y_val = float(y_raw)
+            except (ValueError, TypeError):
+                continue
+
+            # Treatment numeric or binary parse
+            try:
+                d_val = float(d_raw)
+            except (ValueError, TypeError):
+                s = str(d_raw).strip().lower()
+                if s in ("1", "true", "yes", "treatment", "can thiệp", "có"):
+                    d_val = 1.0
+                elif s in ("0", "false", "no", "control", "đối chứng", "không"):
+                    d_val = 0.0
+                else:
+                    continue
+
+            # Covariates
+            row_x = []
+            has_missing_cov = False
+            for qid in payload.covariate_question_ids:
+                c_raw = ans_dict.get(qid)
+                if c_raw is None or str(c_raw).strip() == "":
+                    has_missing_cov = True
+                    break
+                try:
+                    row_x.append(float(c_raw))
+                except (ValueError, TypeError):
+                    has_missing_cov = True
+                    break
+
+            if not has_missing_cov and len(row_x) == len(payload.covariate_question_ids):
+                y_list.append(y_val)
+                d_list.append(d_val)
+                x_list.append(row_x)
+
+        if len(y_list) < 30:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng quan sát hợp lệ đầy đủ biến (N={len(y_list)}) không đủ. Cần tối thiểu 30 quan sát."
+            }
+
+        res = DoubleMachineLearningEngine.evaluate_dml(
+            y_outcome=np.array(y_list, dtype=float),
+            d_treatment=np.array(d_list, dtype=float),
+            x_covariates=np.array(x_list, dtype=float),
+            covariate_names=cov_titles,
+            n_folds=payload.n_folds,
+            alpha_penalty=payload.alpha_penalty,
+            outcome_label=outcome_title,
+            treatment_label=treatment_title
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="DOUBLE_MACHINE_LEARNING_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "n_covariates": len(payload.covariate_question_ids),
+                "n_samples": len(y_list),
+                "theta_dml": res.get("diagnostics", {}).get("theta_dml"),
+                "p_value": res.get("diagnostics", {}).get("p_value"),
                 "status": res.get("status")
             }
         )

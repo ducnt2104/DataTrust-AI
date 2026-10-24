@@ -6819,3 +6819,48 @@ export interface FiniteMixtureRaschRequest {
   n_classes?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+// --- Double / Debiased Machine Learning (DML) Types ---
+export interface DMLDiagnostics {
+  sample_size: number;
+  n_covariates: number;
+  n_folds: number;
+  theta_dml: number;
+  se_dml: number;
+  z_statistic: number;
+  p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  theta_naive_ols: number;
+  se_naive_ols: number;
+  confounding_bias: number;
+  r2_nuisance_y: number;
+  r2_nuisance_d: number;
+  is_statistically_significant: boolean;
+}
+
+export interface DMLConfoundingCovariate {
+  covariate: string;
+  corr_outcome: number;
+  corr_treatment: number;
+  confounding_score: number;
+}
+
+export interface DoubleMachineLearningResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: DMLDiagnostics;
+  confounding_covariates?: DMLConfoundingCovariate[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface DoubleMachineLearningRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids: string[];
+  n_folds?: number;
+  alpha_penalty?: number;
+  scope?: 'all' | 'verified_clean';
+}
