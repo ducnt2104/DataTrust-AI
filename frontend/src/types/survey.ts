@@ -6711,3 +6711,62 @@ export interface ManskiBoundsRequest {
   confidence_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+// --- Dynamic Treatment Regimes (DTR) & Sequential Q-Learning Types ---
+export interface DTRDiagnostics {
+  sample_size: number;
+  v_optimal: number;
+  v_always_treated: number;
+  v_never_treated: number;
+  v_observed: number;
+  policy_value_gain: number;
+  policy_value_gain_pct: number;
+  pct_stage1_treated: number;
+  pct_stage2_treated: number;
+  stage1_threshold: number;
+  stage2_threshold: number;
+}
+
+export interface DTRStage1Model {
+  intercept: number;
+  main_x1: number;
+  main_a1: number;
+  interaction_a1_x1: number;
+  se_interaction: number;
+  t_stat: number;
+  p_value: number;
+  r_squared: number;
+}
+
+export interface DTRStage2Model {
+  intercept: number;
+  main_x1: number;
+  main_a1: number;
+  main_x2: number;
+  main_a2: number;
+  interaction_a2_x2: number;
+  se_interaction: number;
+  t_stat: number;
+  p_value: number;
+  r_squared: number;
+}
+
+export interface DynamicTreatmentRegimesResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: DTRDiagnostics;
+  stage1_model?: DTRStage1Model;
+  stage2_model?: DTRStage2Model;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface DynamicTreatmentRegimesRequest {
+  outcome_question_id: string;
+  stage1_action_question_id: string;
+  stage2_action_question_id: string;
+  baseline_covariate_question_id: string;
+  interim_state_question_id: string;
+  scope?: 'all' | 'verified_clean';
+}

@@ -106,6 +106,7 @@ import { MaxDiffCard } from '../components/MaxDiffCard';
 import { BayesianNetworkCard } from '../components/BayesianNetworkCard';
 import { StochasticDominanceCard } from '../components/StochasticDominanceCard';
 import { ManskiBoundsCard } from '../components/ManskiBoundsCard';
+import { DynamicTreatmentRegimesCard } from '../components/DynamicTreatmentRegimesCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1222,6 +1223,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Manski Non-Parametric Partial Identification & Worst-Case Bounds (Manski 1990, 2000; Imbens & Manski 2004) */}
       <ManskiBoundsCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Dynamic Treatment Regimes (DTR) & Sequential Q-Learning Decision Engine (Murphy 2003, Robins 2004) */}
+      <DynamicTreatmentRegimesCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

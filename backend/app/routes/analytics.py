@@ -1,3 +1,4 @@
+from app.engine.dynamic_treatment_regimes_engine import DynamicTreatmentRegimesEngine
 from app.engine.manski_bounds_engine import ManskiBoundsEngine
 from app.engine.stochastic_dominance_engine import StochasticDominanceEngine
 from app.engine.zero_inflated_engine import ZeroInflatedEngine
@@ -34,6 +35,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Response
 from app.database import get_db, record_audit_log
 from app.schemas import (
+    DynamicTreatmentRegimesRequest,
+    DynamicTreatmentRegimesOut,
     ManskiBoundsRequest,
     ManskiBoundsOut,
     StochasticDominanceRequest,
@@ -12204,6 +12207,157 @@ def run_manski_bounds_analysis(
                 "worst_case_ub": res.get("diagnostics", {}).get("worst_case_upper"),
                 "joint_lb": res.get("diagnostics", {}).get("joint_mts_mtr_lower"),
                 "joint_ub": res.get("diagnostics", {}).get("joint_mts_mtr_upper"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Dynamic Treatment Regimes (DTR) & Sequential Q-Learning Decision Engine (Murphy 2003, Robins 2004) ---
+@router.post("/dynamic-treatment-regimes", response_model=DynamicTreatmentRegimesOut)
+def run_dynamic_treatment_regimes_analysis(
+    survey_id: str,
+    payload: DynamicTreatmentRegimesRequest
+):
+    """
+    Evaluates multi-stage adaptive intervention policies (Dynamic Treatment Regimes - DTR)
+    using Sequential Q-Learning Backward Induction (Murphy 2003; Robins 2004; Schulte et al. 2014).
+    Estimates optimal tailoring thresholds, expected policy values V(d*), and policy value gain Delta V*.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy cuộc khảo sát.")
+
+        needed_qids = [
+            payload.outcome_question_id,
+            payload.stage1_action_question_id,
+            payload.stage2_action_question_id,
+            payload.baseline_covariate_question_id,
+            payload.interim_state_question_id
+        ]
+
+        placeholders_q = ",".join(["?"] * len(needed_qids))
+        q_rows = conn.execute(
+            f"SELECT id, title, question_type FROM questions WHERE id IN ({placeholders_q}) AND survey_id = ?",
+            (*needed_qids, survey_id)
+        ).fetchall()
+        q_map = {q["id"]: q for q in q_rows}
+
+        for qid in needed_qids:
+            if qid not in q_map:
+                raise HTTPException(status_code=400, detail=f"Câu hỏi với ID {qid} không tồn tại trong khảo sát.")
+
+        out_title = q_map[payload.outcome_question_id]["title"]
+        x1_title = q_map[payload.baseline_covariate_question_id]["title"]
+        x2_title = q_map[payload.interim_state_question_id]["title"]
+
+        if payload.scope == "verified_clean":
+            resp_rows = conn.execute("""
+                SELECT id FROM responses
+                WHERE survey_id = ? AND review_status NOT IN ('verified_fraud', 'quota_screened_out')
+                  AND (risk_level != 'high' OR review_status = 'verified_valid')
+            """, (survey_id,)).fetchall()
+        else:
+            resp_rows = conn.execute("SELECT id FROM responses WHERE survey_id = ?", (survey_id,)).fetchall()
+
+        if not resp_rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Không tìm thấy phản hồi trong phạm vi khảo sát đã chọn."}
+
+        resp_ids = [r["id"] for r in resp_rows]
+        placeholders_r = ",".join(["?"] * len(resp_ids))
+
+        ans_rows = conn.execute(f"""
+            SELECT response_id, question_id, answer_value
+            FROM response_answers
+            WHERE response_id IN ({placeholders_r}) AND question_id IN ({placeholders_q})
+        """, (*resp_ids, *needed_qids)).fetchall()
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {rid: {} for rid in resp_ids}
+        for a in ans_rows:
+            rid = a["response_id"]
+            qid = a["question_id"]
+            data_by_resp[rid][qid] = a["answer_value"]
+
+        import numpy as np
+
+        def parse_binary(val: Any) -> Optional[int]:
+            if val is None:
+                return None
+            s = str(val).strip().lower()
+            if s in ("1", "true", "yes", "có", "treatment", "can thiệp"):
+                return 1
+            if s in ("0", "false", "no", "không", "control", "đối chứng"):
+                return 0
+            try:
+                num = float(s)
+                return 1 if num >= 1.0 else 0
+            except ValueError:
+                return None
+
+        y_list = []
+        a1_list = []
+        a2_list = []
+        x1_list = []
+        x2_list = []
+
+        for rid in resp_ids:
+            ans_dict = data_by_resp.get(rid, {})
+            y_raw = ans_dict.get(payload.outcome_question_id)
+            a1_raw = ans_dict.get(payload.stage1_action_question_id)
+            a2_raw = ans_dict.get(payload.stage2_action_question_id)
+            x1_raw = ans_dict.get(payload.baseline_covariate_question_id)
+            x2_raw = ans_dict.get(payload.interim_state_question_id)
+
+            if any(v is None for v in (y_raw, a1_raw, a2_raw, x1_raw, x2_raw)):
+                continue
+
+            try:
+                y_val = float(y_raw)
+                x1_val = float(x1_raw)
+                x2_val = float(x2_raw)
+                a1_val = parse_binary(a1_raw)
+                a2_val = parse_binary(a2_raw)
+                if a1_val is None or a2_val is None:
+                    continue
+                y_list.append(y_val)
+                a1_list.append(a1_val)
+                a2_list.append(a2_val)
+                x1_list.append(x1_val)
+                x2_list.append(x2_val)
+            except (ValueError, TypeError):
+                continue
+
+        if len(y_list) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng quan sát hợp lệ đầy đủ hai giai đoạn (N={len(y_list)}) không đủ. Cần tối thiểu 25 quan sát."
+            }
+
+        res = DynamicTreatmentRegimesEngine.evaluate_dtr(
+            y_outcome=np.array(y_list, dtype=float),
+            a1_stage1=np.array(a1_list, dtype=int),
+            a2_stage2=np.array(a2_list, dtype=int),
+            x1_baseline=np.array(x1_list, dtype=float),
+            x2_interim=np.array(x2_list, dtype=float),
+            x1_label=x1_title,
+            x2_label=x2_title,
+            outcome_label=out_title
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="DYNAMIC_TREATMENT_REGIMES_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "n_samples": len(y_list),
+                "v_optimal": res.get("diagnostics", {}).get("v_optimal"),
+                "v_always": res.get("diagnostics", {}).get("v_always_treated"),
+                "v_never": res.get("diagnostics", {}).get("v_never_treated"),
+                "policy_gain": res.get("diagnostics", {}).get("policy_value_gain"),
                 "status": res.get("status")
             }
         )

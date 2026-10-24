@@ -4511,3 +4511,54 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
     - Panel B: Đồ thị diện tích chuyển sắc biểu diễn đường ống phong bì xác định (Envelope $[LB(p), UB(p)]$) và vòng tròn vàng đánh dấu Điểm gãy dấu (Sign Breakdown Point).
   - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Manski (1990, 2000) và Imbens & Manski (2004).
 - **Niêm phong kiểm toán:** Tự động ghi nhận `MANSKI_BOUNDS_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 109. Động Cơ Chế Độ Can Thiệp Động Đa Giai Đoạn & Q-Learning Tối Ưu Hóa Chính Sách Thích Ứng (Dynamic Treatment Regimes (DTR) & Sequential Q-Learning Decision Engine - Murphy 2003; Robins 2004; Schulte et al. 2014)
+- **Nền tảng lý thuyết:**
+  1. **Quy Trình Quyết Định Chuỗi Thích Ứng Cá Nhân Hóa (Sequential Adaptive Decisions in Longitudinal Campaigns; Murphy 2003):**
+     Trong các chiến dịch khảo sát kéo dài, nghiên cứu can thiệp xã hội, hay chương trình giữ chân người dùng nhiều giai đoạn, các can thiệp không diễn ra đồng thời một lần mà phân bổ nối tiếp:
+     - Giai đoạn 1 (Stage 1): Can thiệp ban đầu $A_1 \in \{0, 1\}$ dựa trên đặc điểm nền tảng $H_1 = (1, X_1)$.
+     - Giai đoạn chuyển tiếp (Interim State): Đo lường sự thay đổi hành vi/tiến độ $X_2$ (ví dụ: mức độ tương tác giữa kỳ, độ trễ phản hồi, hoặc điểm số hài lòng sơ bộ). Lịch sử giai đoạn 2 trở thành $H_2 = (1, X_1, A_1, X_2)$.
+     - Giai đoạn 2 (Stage 2): Can thiệp thích ứng tiếp theo $A_2 \in \{0, 1\}$ dựa trên toàn bộ lịch sử $H_2$.
+     - Kết quả cuối kỳ (Terminal Outcome): $Y$ đo lường tại thời điểm hoàn tất (chỉ số tin cậy số, lòng trung thành, hay hiệu quả chính sách dài hạn).
+     Một Chế Độ Can Thiệp Động (Dynamic Treatment Regime - DTR) là một chuỗi quy tắc quyết định $d = (d_1, d_2)$ trong đó $d_1: \mathcal{H}_1 \to \mathcal{A}_1$ và $d_2: \mathcal{H}_2 \to \mathcal{A}_2$.
+  2. **Thuật Toán Q-Learning Quy Nạp Ngược (Backward Induction; Watkins 1989; Murphy 2003; Schulte et al. 2014):**
+     - **Bước 1: Hồi quy Hàm Q Giai đoạn 2 ($Q_2$-function):**
+       $$Q_2(H_2, A_2; \beta_2) = \mathbb{E}[Y \mid H_2, A_2] = H_2^\top \gamma_2 + A_2 (\beta_{21} + \theta_{21} X_2)$$
+       Quy tắc quyết định tối ưu giai đoạn 2:
+       $$d_2^*(H_2) = \arg\max_{a_2 \in \{0, 1\}} Q_2(H_2, a_2) = \mathbb{I}(\beta_{21} + \theta_{21} X_2 > 0)$$
+       Ngưỡng thích ứng giai đoạn 2: $X_2^* = -\beta_{21} / \theta_{21}$.
+       Giá trị tiềm năng phản thực tối ưu cho giai đoạn 1 (Pseudo-Outcome):
+       $$\tilde{Y}_1 = \max_{a_2 \in \{0, 1\}} Q_2(H_2, a_2)$$
+     - **Bước 2: Hồi quy Hàm Q Giai đoạn 1 ($Q_1$-function):**
+       Hồi quy biến kết quả ảo $\tilde{Y}_1$ lên lịch sử ban đầu $H_1$ và hành động $A_1$:
+       $$Q_1(H_1, A_1; \beta_1) = \mathbb{E}[\tilde{Y}_1 \mid H_1, A_1] = H_1^\top \gamma_1 + A_1 (\beta_{11} + \theta_{11} X_1)$$
+       Quy tắc quyết định tối ưu giai đoạn 1:
+       $$d_1^*(H_1) = \arg\max_{a_1 \in \{0, 1\}} Q_1(H_1, a_1) = \mathbb{I}(\beta_{11} + \theta_{11} X_1 > 0)$$
+       Ngưỡng phân bổ ban đầu: $X_1^* = -\beta_{11} / \theta_{11}$.
+  3. **Ước Lượng Giá Trị Kỳ Vọng Của Chính Sách (Policy Value $V(d)$) & Thặng Dư Giá Trị ($\Delta V^*$):**
+     - Giá trị của chính sách thích ứng tối ưu:
+       $$\hat{V}(d^*) = \frac{1}{N} \sum_{i=1}^N \max_{a_1} Q_1(H_{1i}, a_1)$$
+     - So sánh đối chứng với các chính sách tĩnh truyền thống:
+       - Luôn can thiệp cả hai kỳ: $\hat{V}(1, 1) = \frac{1}{N} \sum Q_1(H_{1i}, 1)$.
+       - Không can thiệp cả hai kỳ: $\hat{V}(0, 0) = \frac{1}{N} \sum Q_1(H_{1i}, 0)$.
+       - Trung bình quan sát thực tế: $\hat{V}_{\text{obs}} = \frac{1}{N} \sum Y_i$.
+     - Mức thặng dư giá trị chính sách: $\Delta V^* = \hat{V}(d^*) - \hat{V}(0, 0)$.
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/dynamic-treatment-regimes`
+- **Request Body (`DynamicTreatmentRegimesRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả cuối kỳ $Y$.
+  - `stage1_action_question_id`: UUID câu hỏi hành động can thiệp $A_1$ (nhị phân 1 vs 0).
+  - `stage2_action_question_id`: UUID câu hỏi hành động can thiệp $A_2$ (nhị phân 1 vs 0).
+  - `baseline_covariate_question_id`: UUID biến đo lường nền tảng $X_1$ (điều chỉnh Stage 1).
+  - `interim_state_question_id`: UUID biến trạng thái giữa kỳ $X_2$ (điều chỉnh Stage 2).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`DynamicTreatmentRegimesOut`):**
+  - `status`: `"SUCCESS"` hoặc `"INSUFFICIENT_SAMPLE"`.
+  - `model_type`: `"DYNAMIC_TREATMENT_REGIMES_Q_LEARNING_2003"`.
+  - `diagnostics`: Quy mô mẫu hợp lệ $N$, Giá trị chính sách tối ưu $V(d^*)$, $V(1,1)$, $V(0,0)$, $V_{\text{obs}}$, Thặng dư giá trị chính sách $\Delta V^*$, Tỷ lệ phần trăm thặng dư $\Delta V^*\%$, Tỷ lệ can thiệp khuyến nghị ở Stage 1 và Stage 2, Ngưỡng quyết định $X_1^*$ và $X_2^*$.
+  - `stage1_model`: Hệ số chặn Intercept, Main $X_1$, Main $A_1$, Hệ số tương tác $A_1 \times X_1$, Sai số chuẩn SE, Thống kê $t$-stat, $p$-value, $R^2$.
+  - `stage2_model`: Hệ số chặn Intercept, Main $X_1$, Main $A_1$, Main $X_2$, Main $A_2$, Hệ số tương tác $A_2 \times X_2$, Sai số chuẩn SE, Thống kê $t$-stat, $p$-value, $R^2$.
+  - `svg_visualization`: Đồ thị SVG khoa học kép:
+    - Panel A: Sơ đồ Cây Quyết Định Thích Ứng (DTR Flowchart Tree) nối từ nút gốc Stage 1 $X_1$ sang hai nhánh $A_1$, qua trạng thái giữa kỳ $X_2$, rẽ nhánh Stage 2 $A_2$, và hội tụ tại 4 điểm payoff cuối cùng.
+    - Panel B: Biểu đồ thanh ngang so sánh Giá trị Kỳ vọng Chính sách ($V(d^*)$ xanh ngọc Emerald nổi bật vs $V(1,1)$ Indigo, $V_{\text{obs}}$ Sky Blue, và $V(0,0)$ Slate) kèm hộp nổi bật $\Delta V^*$.
+  - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Murphy (2003), Robins (2004), và Schulte et al. (2014).
+- **Niêm phong kiểm toán:** Tự động ghi nhận `DYNAMIC_TREATMENT_REGIMES_EVALUATED` vào chuỗi sổ cái SHA-256.

@@ -169,7 +169,9 @@ import {
   StochasticDominanceRequest,
   StochasticDominanceResult,
   ManskiBoundsRequest,
-  ManskiBoundsResult
+  ManskiBoundsResult,
+  DynamicTreatmentRegimesRequest,
+  DynamicTreatmentRegimesResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2131,5 +2133,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ManskiBoundsResult>(res);
+  },
+
+  // --- Dynamic Treatment Regimes (DTR) & Sequential Q-Learning Decision Engine (Murphy 2003, Robins 2004) ---
+  async runDynamicTreatmentRegimes(
+    surveyId: string,
+    payload: DynamicTreatmentRegimesRequest
+  ): Promise<DynamicTreatmentRegimesResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/dynamic-treatment-regimes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<DynamicTreatmentRegimesResult>(res);
   }
 };
