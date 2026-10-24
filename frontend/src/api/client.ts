@@ -167,7 +167,9 @@ import {
   BayesianNetworkRequest,
   BayesianNetworkResult,
   StochasticDominanceRequest,
-  StochasticDominanceResult
+  StochasticDominanceResult,
+  ManskiBoundsRequest,
+  ManskiBoundsResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2116,5 +2118,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<StochasticDominanceResult>(res);
+  },
+
+  // --- Manski Non-Parametric Partial Identification & Worst-Case Bounds (Manski 1990, 2000; Imbens & Manski 2004) ---
+  async runManskiBounds(
+    surveyId: string,
+    payload: ManskiBoundsRequest
+  ): Promise<ManskiBoundsResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/manski-bounds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ManskiBoundsResult>(res);
   }
 };

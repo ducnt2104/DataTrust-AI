@@ -1,3 +1,4 @@
+from app.engine.manski_bounds_engine import ManskiBoundsEngine
 from app.engine.stochastic_dominance_engine import StochasticDominanceEngine
 from app.engine.zero_inflated_engine import ZeroInflatedEngine
 from app.engine.tmle_engine import TMLEEngine
@@ -33,6 +34,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Response
 from app.database import get_db, record_audit_log
 from app.schemas import (
+    ManskiBoundsRequest,
+    ManskiBoundsOut,
     StochasticDominanceRequest,
     StochasticDominanceOut,
     QuestionOption,
@@ -12045,6 +12048,162 @@ def run_stochastic_dominance_analysis(
                 "n_group_b": len(vals_b),
                 "fsd_conclusion": res.get("diagnostics", {}).get("fsd_conclusion"),
                 "ssd_conclusion": res.get("diagnostics", {}).get("ssd_conclusion"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Manski Non-Parametric Partial Identification & Worst-Case Bounds (Manski 1990, 2000; Imbens & Manski 2004) ---
+@router.post("/manski-bounds", response_model=ManskiBoundsOut)
+def run_manski_bounds_analysis(
+    survey_id: str,
+    payload: ManskiBoundsRequest
+):
+    """
+    Evaluates Manski Non-Parametric Partial Identification Bounds on Treatment Effects under missing/attrited survey data.
+    Computes Worst-Case bounds, Monotone Treatment Selection (MTS), Monotone Treatment Response (MTR),
+    Joint MTS+MTR bounds, Imbens-Manski (2004) uniform 95% confidence intervals, and Sign Breakdown Points.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy cuộc khảo sát.")
+
+        needed_qids = [payload.outcome_question_id, payload.treatment_question_id]
+        if payload.response_indicator_question_id:
+            needed_qids.append(payload.response_indicator_question_id)
+
+        placeholders_q = ",".join(["?"] * len(needed_qids))
+        q_rows = conn.execute(
+            f"SELECT id, title, question_type, options_json FROM questions WHERE id IN ({placeholders_q}) AND survey_id = ?",
+            (*needed_qids, survey_id)
+        ).fetchall()
+        q_map = {q["id"]: q for q in q_rows}
+
+        if payload.outcome_question_id not in q_map or payload.treatment_question_id not in q_map:
+            raise HTTPException(status_code=400, detail="Câu hỏi kết quả (Outcome) hoặc câu hỏi can thiệp (Treatment) không tồn tại.")
+
+        outcome_title = q_map[payload.outcome_question_id]["title"]
+        treatment_title = q_map[payload.treatment_question_id]["title"]
+
+        # Scope filter
+        if payload.scope == "verified_clean":
+            resp_rows = conn.execute("""
+                SELECT id FROM responses
+                WHERE survey_id = ? AND review_status NOT IN ('verified_fraud', 'quota_screened_out')
+                  AND (risk_level != 'high' OR review_status = 'verified_valid')
+            """, (survey_id,)).fetchall()
+        else:
+            resp_rows = conn.execute("SELECT id FROM responses WHERE survey_id = ?", (survey_id,)).fetchall()
+
+        if not resp_rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Không tìm thấy phản hồi trong phạm vi khảo sát đã chọn."}
+
+        resp_ids = [r["id"] for r in resp_rows]
+        placeholders_r = ",".join(["?"] * len(resp_ids))
+
+        ans_rows = conn.execute(f"""
+            SELECT response_id, question_id, answer_value
+            FROM response_answers
+            WHERE response_id IN ({placeholders_r}) AND question_id IN ({placeholders_q})
+        """, (*resp_ids, *needed_qids)).fetchall()
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {rid: {} for rid in resp_ids}
+        for a in ans_rows:
+            rid = a["response_id"]
+            qid = a["question_id"]
+            data_by_resp[rid][qid] = a["answer_value"]
+
+        # Treatment mapping
+        treat_vals_raw = []
+        for rid, ans_dict in data_by_resp.items():
+            if payload.treatment_question_id in ans_dict and ans_dict[payload.treatment_question_id] is not None:
+                tv = str(ans_dict[payload.treatment_question_id]).strip()
+                if tv != "":
+                    treat_vals_raw.append(tv)
+
+        from collections import Counter
+        t_counts = Counter(treat_vals_raw)
+        top_two_t = [k for k, _ in t_counts.most_common(2)]
+        if len(top_two_t) < 2:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": "Cần ít nhất 2 nhóm can thiệp khác nhau (Treatment vs Control) để ước lượng Manski bounds."
+            }
+
+        # Normalize treatment to 1 (treatment) and 0 (control)
+        if "1" in top_two_t and "0" in top_two_t:
+            treated_val = "1"
+        else:
+            treated_val = top_two_t[0]
+
+        import numpy as np
+        y_list = []
+        d_list = []
+        r_list = []
+
+        for rid in resp_ids:
+            ans_dict = data_by_resp.get(rid, {})
+            t_raw = ans_dict.get(payload.treatment_question_id)
+            if t_raw is None or str(t_raw).strip() not in top_two_t:
+                continue
+
+            d_i = 1 if str(t_raw).strip() == treated_val else 0
+
+            # Response indicator
+            if payload.response_indicator_question_id:
+                resp_ind_raw = ans_dict.get(payload.response_indicator_question_id)
+                r_i = 1 if str(resp_ind_raw).strip() in ("1", "true", "True", "yes", "Yes") else 0
+            else:
+                y_raw = ans_dict.get(payload.outcome_question_id)
+                r_i = 1 if y_raw is not None and str(y_raw).strip() != "" else 0
+
+            if r_i == 1:
+                y_raw = ans_dict.get(payload.outcome_question_id)
+                try:
+                    y_val = float(y_raw)
+                except (ValueError, TypeError):
+                    r_i = 0
+                    y_val = np.nan
+            else:
+                y_val = np.nan
+
+            y_list.append(y_val)
+            d_list.append(d_i)
+            r_list.append(r_i)
+
+        if len(y_list) < 20:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng quan sát hợp lệ (N={len(y_list)}) không đủ. Cần tối thiểu 20 quan sát."
+            }
+
+        res = ManskiBoundsEngine.evaluate_bounds(
+            y_observed=np.array(y_list, dtype=float),
+            d_treatment=np.array(d_list, dtype=int),
+            r_response=np.array(r_list, dtype=int),
+            support_min=payload.support_min,
+            support_max=payload.support_max,
+            confidence_level=payload.confidence_level,
+            outcome_label=outcome_title,
+            treatment_label=treatment_title
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="MANSKI_BOUNDS_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "n_total": len(y_list),
+                "worst_case_lb": res.get("diagnostics", {}).get("worst_case_lower"),
+                "worst_case_ub": res.get("diagnostics", {}).get("worst_case_upper"),
+                "joint_lb": res.get("diagnostics", {}).get("joint_mts_mtr_lower"),
+                "joint_ub": res.get("diagnostics", {}).get("joint_mts_mtr_upper"),
                 "status": res.get("status")
             }
         )

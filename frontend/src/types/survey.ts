@@ -6652,3 +6652,62 @@ export interface StochasticDominanceRequest {
   n_grid_points?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+// --- Manski Non-Parametric Partial Identification & Worst-Case Bounds Types ---
+export interface ManskiBoundsDiagnostics {
+  sample_size_total: number;
+  n_treated: number;
+  n_control: number;
+  observed_count: number;
+  missing_rate: number;
+  support_min: number;
+  support_max: number;
+  naive_ate: number;
+  worst_case_lower: number;
+  worst_case_upper: number;
+  worst_case_width: number;
+  mts_lower: number;
+  mts_upper: number;
+  mtr_lower: number;
+  mtr_upper: number;
+  joint_mts_mtr_lower: number;
+  joint_mts_mtr_upper: number;
+  ci_joint_lower_95: number;
+  ci_joint_upper_95: number;
+  breakdown_rate?: number | null;
+  is_sign_identified: boolean;
+}
+
+export interface ManskiBoundsTier {
+  tier: string;
+  lower: number;
+  upper: number;
+  width: number;
+}
+
+export interface ManskiSensitivityPoint {
+  missing_rate: number;
+  lower_bound: number;
+  upper_bound: number;
+}
+
+export interface ManskiBoundsResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: ManskiBoundsDiagnostics;
+  tiers?: ManskiBoundsTier[];
+  sensitivity_grid?: ManskiSensitivityPoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ManskiBoundsRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  response_indicator_question_id?: string;
+  support_min?: number;
+  support_max?: number;
+  confidence_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

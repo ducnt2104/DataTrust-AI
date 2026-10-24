@@ -105,6 +105,7 @@ import { PlackettLuceCard } from '../components/PlackettLuceCard';
 import { MaxDiffCard } from '../components/MaxDiffCard';
 import { BayesianNetworkCard } from '../components/BayesianNetworkCard';
 import { StochasticDominanceCard } from '../components/StochasticDominanceCard';
+import { ManskiBoundsCard } from '../components/ManskiBoundsCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1169,28 +1170,58 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
         }))}
       />
 
-      {/* MaxDiff Best-Worst Scaling Case 1 (Finn & Louviere 1992; Marley & Louviere 2005) */}
-      <MaxDiffCard
-        surveyId={surveyId}
-        questions={analytics.questions_analytics.map((q) => ({
-          id: q.question_id,
-          title: q.question_title,
-          question_type: q.question_type
-        }))}
-      />
-
-      {/* Gaussian Bayesian Network DAG Structure Learning (Heckerman 1995; Scutari 2010) */}
-      <BayesianNetworkCard
-        surveyId={surveyId}
-        questions={analytics.questions_analytics.map((q) => ({
-          id: q.question_id,
-          title: q.question_title,
-          question_type: q.question_type
-        }))}
-      />
-
+      {/* MaxDiff Best-Worst Scaling Case 1 (Finn & Louviere 1992; Marley & Louviere 2005) */}
+
+      <MaxDiffCard
+
+        surveyId={surveyId}
+
+        questions={analytics.questions_analytics.map((q) => ({
+
+          id: q.question_id,
+
+          title: q.question_title,
+
+          question_type: q.question_type
+
+        }))}
+
+      />
+
+
+
+      {/* Gaussian Bayesian Network DAG Structure Learning (Heckerman 1995; Scutari 2010) */}
+
+      <BayesianNetworkCard
+
+        surveyId={surveyId}
+
+        questions={analytics.questions_analytics.map((q) => ({
+
+          id: q.question_id,
+
+          title: q.question_title,
+
+          question_type: q.question_type
+
+        }))}
+
+      />
+
+
+
       {/* Stochastic Dominance & Distributional Inequality (Davidson & Duclos 2000; Hadar & Russell 1969) */}
       <StochasticDominanceCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Manski Non-Parametric Partial Identification & Worst-Case Bounds (Manski 1990, 2000; Imbens & Manski 2004) */}
+      <ManskiBoundsCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

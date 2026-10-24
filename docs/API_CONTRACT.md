@@ -4462,3 +4462,52 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
     - Panel B: Đường cong chênh lệch tích phân bậc 2 $\Delta D^{(2)}(y) = D_B^{(2)}(y) - D_A^{(2)}(y)$ với vùng bóng tô chuyển sắc màu xanh lục biểu thị miền thống trị né tránh rủi ro.
   - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Hadar & Russell (1969), Davidson & Duclos (2000), và Barrett & Donald (2003).
 - **Niêm phong kiểm toán:** Tự động ghi nhận `STOCHASTIC_DOMINANCE_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 108. Động Cơ Ước Lượng Cận Manski & Xác Định Bán Phần Không Tham Số (Manski Non-Parametric Partial Identification & Worst-Case Bounds Engine - Manski 1990, 1995, 2003; Manski & Pepper 2000; Imbens & Manski 2004)
+- **Nền tảng lý thuyết:**
+  1. **Vấn Đề Cơ Bản của Suy Diễn Nhân Quả & Dữ Liệu Khuyết (Fundamental Problem of Causal Inference & Missing Data; Manski 1990):**
+     Xét hiệu ứng can thiệp trung bình $ATE = \mathbb{E}[Y(1) - Y(0)]$. Trong các cuộc khảo sát thực tế, người trả lời thường bỏ qua câu hỏi nhạy cảm hoặc bỏ dở khảo sát (attrition / non-response), dẫn đến cơ chế khuyết không ngẫu nhiên (Not Missing At Random - NMAR).
+     Các phương pháp truyền thống (hồi quy OLS, ghép cặp PSM, nội suy Mean/MICE) đều phải dựa vào giả định MAR bất khả kiểm chứng ($Y \perp R \mid X$). Nếu giả định này vi phạm, ước lượng điểm ngây thơ $\text{Naive } ATE = \mathbb{E}[Y \mid D=1, R=1] - \mathbb{E}[Y \mid D=0, R=1]$ sẽ bị chệch nghiêm trọng.
+  2. **Phân Cấp Xác Định Bán Phần 4 Bậc (4-Tier Identification Hierarchy):**
+     - **Bậc 1: Cận Tồi Tệ Nhất Không Giả Định (Worst-Case / No-Assumption Bounds; Manski 1990):**
+       Giả sử biến kết quả bị chặn trong miền hữu hạn $Y \in [y_{\min}, y_{\max}]$. Với xác suất phản hồi $P(R=1 \mid D=d) = p_d$:
+       $$\mathbb{E}[Y(d)] \in [p_d \mathbb{E}[Y \mid D=d, R=1] + (1 - p_d) y_{\min}, \; p_d \mathbb{E}[Y \mid D=d, R=1] + (1 - p_d) y_{\max}]$$
+       Hiệu ứng can thiệp $ATE = \mathbb{E}[Y(1)] - \mathbb{E}[Y(0)]$ được chặn bởi:
+       $$LB_{\text{worst}} = \mathbb{E}[Y(1)]_{\min} - \mathbb{E}[Y(0)]_{\max}, \quad UB_{\text{worst}} = \mathbb{E}[Y(1)]_{\max} - \mathbb{E}[Y(0)]_{\min}$$
+     - **Bậc 2: Tiên Đề Lựa Chọn Điều Trị Đơn Điệu (Monotone Treatment Selection - MTS; Manski & Pepper 2000):**
+       Giả định nhóm tự nguyện tham gia can thiệp có giá trị tiềm năng trung bình không thấp hơn nhóm đối chứng: $\mathbb{E}[Y(d) \mid D=1] \ge \mathbb{E}[Y(d) \mid D=0]$.
+       Hệ quả: $ATE \le \mathbb{E}[Y \mid D=1] - \mathbb{E}[Y \mid D=0]$, thu hẹp cận trên xuống bằng Naive ATE:
+       $$[LB_{\text{worst}}, \; \text{Naive } ATE]$$
+     - **Bậc 3: Tiên Đề Đáp Ứng Đơn Điệu (Monotone Treatment Response - MTR; Manski 1997):**
+       Giả định can thiệp chính sách chỉ mang lại tác động tích cực hoặc trung tính lên từng cá thể: $Y_i(1) \ge Y_i(0) \implies ATE \ge 0$.
+       Hệ quả: Cận dưới được nâng lên $\max(0, LB_{\text{worst}})$:
+       $$[\max(0, LB_{\text{worst}}), \; UB_{\text{worst}}]$$
+     - **Bậc 4: Cận Hợp Nhất MTS + MTR (Joint Bounds; Manski & Pepper 2000):**
+       Kết hợp đồng thời hai tiên đề MTS và MTR:
+       $$ATE \in [0, \; \min(UB_{\text{worst}}, \text{Naive } ATE)]$$
+  3. **Khoảng Tin Cậy Đồng Nhất Imbens & Manski (2004):**
+     Khoảng tin cậy cho tham số được xác định bán phần $\theta \in [\theta_L, \theta_U]$ giải phương trình chuẩn hóa với bậc tin cậy $1 - \alpha$:
+     $$\Phi\left(c_\alpha + \frac{\sqrt{N}(\hat{\theta}_U - \hat{\theta}_L)}{\max(\hat{\sigma}_L, \hat{\sigma}_U)}\right) - \Phi(-c_\alpha) = 1 - \alpha$$
+     Được giải chính xác bằng phương pháp chia đôi (Bisection Search), tạo ra khoảng $CI_{1-\alpha} = [\hat{\theta}_L - c_\alpha \frac{\hat{\sigma}_L}{\sqrt{N}}, \; \hat{\theta}_U + c_\alpha \frac{\hat{\sigma}_U}{\sqrt{N}}]$.
+  4. **Điểm Gãy Dấu (Sign Breakdown Point Analysis; Horowitz & Manski 2000):**
+     Mô phỏng quỹ đạo biên dưới $[LB(p), UB(p)]$ khi tỷ lệ mất mẫu $p$ quét từ $0\%$ đến $50\%$. Điểm gãy dấu $p^*$ là ngưỡng tỷ lệ mất mẫu tối đa mà tại đó dấu của hiệu ứng can thiệp ($LB(p) > 0$) vẫn được khẳng định chắc chắn.
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/manski-bounds`
+- **Request Body (`ManskiBoundsRequest`):**
+  - `outcome_question_id`: UUID của câu hỏi đo lường kết quả $Y$.
+  - `treatment_question_id`: UUID của câu hỏi can thiệp $D$ (phân loại nhóm 1 vs 0).
+  - `response_indicator_question_id`: UUID của câu hỏi chỉ thị phản hồi $R$ (tùy chọn, hệ thống tự động phát hiện câu trả lời khuyết).
+  - `support_min`: Cận dưới lý thuyết $y_{\min}$ (tùy chọn, tự động tính từ min mẫu).
+  - `support_max`: Cận trên lý thuyết $y_{\max}$ (tùy chọn, tự động tính từ max mẫu).
+  - `confidence_level`: Mức tin cậy (Mặc định 0.95).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`ManskiBoundsOut`):**
+  - `status`: `"SUCCESS"` hoặc `"INSUFFICIENT_SAMPLE"`.
+  - `model_type`: `"MANSKI_PARTIAL_IDENTIFICATION_BOUNDS_2000"`.
+  - `diagnostics`: Quy mô mẫu tổng $N$, $N_{\text{treated}}$, $N_{\text{control}}$, số quan sát non-missing, tỷ lệ khuyết mẫu $p$, Naive ATE, các cận dưới/trên Worst-Case, MTS, MTR, Joint MTS+MTR, khoảng tin cậy Imbens-Manski 95%, Điểm gãy dấu (Breakdown Rate), cờ xác định dấu (`is_sign_identified`).
+  - `tiers`: Danh sách 4 bậc phân cấp xác định (Tên bậc, Cận dưới, Cận trên, Độ rộng biên).
+  - `sensitivity_grid`: 15 điểm quét tỷ lệ mất mẫu $p \in [0, 0.50]$ với cận trên và cận dưới tương ứng.
+  - `svg_visualization`: Đồ thị SVG khoa học kép:
+    - Panel A: Các thanh ngang phân cấp biên Manski (Worst-Case, MTS, MTR, Joint) và vạch đỏ ngắt quãng chỉ Naive ATE.
+    - Panel B: Đồ thị diện tích chuyển sắc biểu diễn đường ống phong bì xác định (Envelope $[LB(p), UB(p)]$) và vòng tròn vàng đánh dấu Điểm gãy dấu (Sign Breakdown Point).
+  - `apa_narrative`: Thuyết minh học thuật định dạng chuẩn APA 7th Edition theo lý thuyết Manski (1990, 2000) và Imbens & Manski (2004).
+- **Niêm phong kiểm toán:** Tự động ghi nhận `MANSKI_BOUNDS_EVALUATED` vào chuỗi sổ cái SHA-256.
