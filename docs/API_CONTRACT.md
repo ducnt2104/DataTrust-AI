@@ -4760,3 +4760,49 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép bản đồ nhiệt ma trận và biểu đồ Scree Plot.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition giải thích kết quả hoàn thiện ma trận và hiệu ứng can thiệp.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `MATRIX_COMPLETION_CAUSAL_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 115. Synthetic Difference-in-Differences (SDID) Advanced Engine (Arkhangelsky, Athey, Hirshberg, Imbens, & Wager 2021; Doudchenko & Imbens 2016)
+- **Lý thuyết nền tảng:**
+  1. **Hạn chế của DiD truyền thống và Synthetic Control cổ điển:**
+     - DiD truyền thống (Ashenfelter & Card 1985) dựa vào giả định xu hướng song song nghiêm ngặt (Parallel Trends Assumption). Nếu đơn vị can thiệp và nhóm đối chứng có xu hướng thời gian trước can thiệp khác nhau, DiD sẽ ước lượng chệch nghiêm trọng.
+     - Synthetic Control cổ điển (Abadie, Diamond, & Hainmueller 2010) giải quyết bài toán bằng cách tìm tổ hợp lồi các đơn vị đối chứng $\omega$ để mô phỏng chính xác đơn vị can thiệp, nhưng SC không cho phép dịch chuyển mức nền (level shift) $\omega_0$ và không gán trọng số tối ưu cho các mốc thời gian $\lambda_t$.
+  2. **Ước lượng Kép Vững SDID (Double-Robust Synthetic DiD):**
+     - Arkhangelsky et al. (2021) kết hợp trọn vẹn hai phương pháp thông qua ước lượng:
+       $$\hat{\tau}_{\text{SDID}} = (\bar{Y}_{\text{tr}, \text{post}} - \sum_{t=1}^{T_{\text{pre}}} \hat{\lambda}_t \bar{Y}_{\text{tr}, t}) - \sum_{i=1}^{N_{\text{co}}} \hat{\omega}_i (Y_{i, \text{post}} - \sum_{t=1}^{T_{\text{pre}}} \hat{\lambda}_t Y_{it})$$
+       tương đương với việc tìm hệ số $\tau$ trong hồi quy WLS hai chiều:
+       $$\min_{\tau, \mu, \alpha, \beta} \sum_{i=1}^N \sum_{t=1}^T (Y_{it} - \mu - \alpha_i - \beta_t - W_{it} \tau)^2 \hat{\Omega}_i \hat{\Lambda}_t$$
+  3. **Tối ưu hóa Trọng số Đơn vị có Phạt L2 ($\hat{\omega}$ & $\zeta$):**
+     - Tối ưu hóa lồi có ràng buộc với phạt điều hòa L2 phân tán (SLSQP Quadratic Programming):
+       $$\min_{\omega_0, \omega} \sum_{t=1}^{T_{\text{pre}}} \left( \omega_0 + \sum_{i \in \text{co}} \omega_i Y_{it} - \bar{Y}_{\text{tr}, t} \right)^2 + \zeta^2 T_{\text{pre}} \|\omega\|_2^2$$
+       ràng buộc: $\sum_{i \in \text{co}} \omega_i = 1, \omega_i \ge 0$.
+       Hệ số phạt $\zeta$ được tự động tính toán dựa trên độ phân tán sai phân thời gian $\Delta_{it} = Y_{i, t+1} - Y_{it}$.
+  4. **Tối ưu hóa Trọng số Thời gian ($\hat{\lambda}$):**
+     - Căn chỉnh xu hướng thời gian trước can thiệp để mô phỏng chính xác giai đoạn hậu can thiệp của nhóm đối chứng:
+       $$\min_{\lambda_0, \lambda} \sum_{i \in \text{co}} \left( \lambda_0 + \sum_{t=1}^{T_{\text{pre}}} \lambda_t Y_{it} - \bar{Y}_{i, \text{post}} \right)^2$$
+       ràng buộc: $\sum_{t=1}^{T_{\text{pre}}} \lambda_t = 1, \lambda_t \ge 0$.
+  5. **Sai số Chuẩn và So sánh Trực diện (Placebo/Jackknife & Bias Gap):**
+     - Ước lượng sai số chuẩn SE và khoảng tin cậy 95% CI.
+     - So sánh đối chiếu trực diện giữa $\hat{\tau}_{\text{SDID}}$, $\hat{\tau}_{\text{DiD}}$ và $\hat{\tau}_{\text{SC}}$, định lượng chính xác độ lệch thiên lệch DiD ($\Delta = \hat{\tau}_{\text{SDID}} - \hat{\tau}_{\text{DiD}}$).
+  6. **Đồ thị SVG Kép Khoa Học:**
+     - Panel A: Quỹ đạo chuỗi thời gian so sánh giữa Can thiệp thực tế $Y(1)$, Phản sự kiện $\text{SDID } \hat{Y}(0)$, Synthetic Control chuẩn và Đối chứng thô unweighted.
+     - Panel B: Biểu đồ thanh ngang phân bổ tỷ lệ trọng số đơn vị $\hat{\omega}_i$ của nhóm donor pool.
+  7. **Đoạn Thuyết minh Học thuật Chuẩn APA 7th Edition:**
+     - Tự động biên soạn theo chuẩn mực Arkhangelsky et al. (2021) và Doudchenko & Imbens (2016).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/sdid-advanced`
+- **Request Body (`SDIDAdvancedRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả $Y$.
+  - `unit_question_id`: UUID biến định danh đơn vị quan sát $U$.
+  - `time_question_id`: UUID biến đo lường đợt / mốc thời gian $T$.
+  - `treatment_question_id`: UUID biến chỉ báo can thiệp $W$ (1: Can thiệp, 0: Đối chứng).
+  - `zeta_regularization`: Hệ số phạt điều hòa L2 phân tán $\zeta$ (Tùy chọn).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`SDIDAdvancedOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, `"INSUFFICIENT_UNITS"`, `"INSUFFICIENT_TIME_PERIODS"`, hoặc `"NO_TREATED_OR_CONTROL_UNITS"`.
+  - `model_type`: `"SYNTHETIC_DIFFERENCE_IN_DIFFERENCES_ARKHANGELSKY_2021"`.
+  - `diagnostics`: Số đơn vị $N$, số can thiệp $N_{\text{tr}}$, số đối chứng $N_{\text{co}}$, số mốc thời gian $T$, số kỳ tiền can thiệp $T_{\text{pre}}$, số kỳ hậu can thiệp $T_{\text{post}}$, hệ số phạt $\zeta$, độ dịch chuyển mức nền $\omega_0$, ước lượng tác động $\hat{\tau}_{\text{SDID}}$, sai số chuẩn SE, $z$-statistic, $p$-value, khoảng tin cậy 95% CI, cờ ý nghĩa thống kê, ước lượng DiD truyền thống $\hat{\tau}_{\text{DiD}}$, ước lượng SC truyền thống $\hat{\tau}_{\text{SC}}$, độ lệch thiên lệch DiD $\Delta$.
+  - `unit_weights`: Danh sách tỷ lệ và giá trị trọng số đơn vị $\hat{\omega}_i$ cho từng đơn vị đối chứng.
+  - `time_weights`: Danh sách tỷ lệ và giá trị trọng số thời gian $\hat{\lambda}_t$ cho các kỳ tiền can thiệp.
+  - `trajectories`: Bảng chi tiết từng mốc thời gian so sánh giá trị can thiệp thực tế, đối chứng thô, synthetic control chuẩn và phản sự kiện SDID.
+  - `svg_visualization`: Đồ thị SVG khoa học kép quỹ đạo chuỗi thời gian và phân bổ trọng số đơn vị đối chứng.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition phân tích tác động chính sách và so sánh với DiD / SC cổ điển.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `SDID_ADVANCED_EVALUATED` vào chuỗi sổ cái SHA-256.

@@ -7057,3 +7057,66 @@ export interface MatrixCompletionCausalRequest {
   max_rank?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+export interface SDIDAdvancedDiagnostics {
+  n_units: number;
+  n_treated_units: number;
+  n_control_units: number;
+  n_time_periods: number;
+  n_pre_periods: number;
+  n_post_periods: number;
+  zeta_regularization: number;
+  unit_intercept_omega0: number;
+  tau_sdid: number;
+  se_sdid: number;
+  z_statistic: number;
+  p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_statistically_significant: boolean;
+  tau_standard_did: number;
+  tau_standard_sc: number;
+  did_bias_gap: number;
+}
+
+export interface SDIDUnitWeight {
+  unit_id: string;
+  weight: number;
+  percentage: number;
+}
+
+export interface SDIDTimeWeight {
+  time_period: number;
+  weight: number;
+  percentage: number;
+}
+
+export interface SDIDTrajectoryItem {
+  time_period: number;
+  is_post_treatment: boolean;
+  treated_actual: number;
+  control_unweighted: number;
+  synthetic_control: number;
+  sdid_counterfactual: number;
+}
+
+export interface SDIDAdvancedResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: SDIDAdvancedDiagnostics;
+  unit_weights?: SDIDUnitWeight[];
+  time_weights?: SDIDTimeWeight[];
+  trajectories?: SDIDTrajectoryItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface SDIDAdvancedRequest {
+  outcome_question_id: string;
+  unit_question_id: string;
+  time_question_id: string;
+  treatment_question_id: string;
+  zeta_regularization?: number | null;
+  scope?: 'all' | 'verified_clean';
+}

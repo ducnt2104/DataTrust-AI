@@ -1,3 +1,4 @@
+from app.engine.sdid_advanced_engine import SDIDAdvancedEngine
 from app.engine.matrix_completion_causal_engine import MatrixCompletionCausalEngine
 from app.engine.staggered_did_engine import StaggeredDIDEngine
 from app.engine.regression_kink_engine import RegressionKinkEngine
@@ -44,6 +45,8 @@ from app.schemas import (
     RegressionKinkRequest,
     StaggeredDIDRequest,
     MatrixCompletionCausalRequest,
+    SDIDAdvancedRequest,
+    SDIDAdvancedOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -13045,6 +13048,134 @@ def run_matrix_completion_causal_analysis(
                 "treatment_qid": payload.treatment_question_id,
                 "n_samples": len(y_list),
                 "overall_att": res.get("diagnostics", {}).get("overall_att") if res.get("diagnostics") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+# --- Synthetic Difference-in-Differences (Arkhangelsky, Athey, Hirshberg, Imbens, & Wager 2021) ---
+@router.post("/sdid-advanced", response_model=SDIDAdvancedOut)
+def run_sdid_advanced_analysis(
+    survey_id: str,
+    payload: SDIDAdvancedRequest
+):
+    """
+    Synthetic Difference-in-Differences (SDID) Engine (Arkhangelsky et al. 2021).
+    Combines unit weights, time weights, and two-way fixed effects for double-robust causal inference.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        if payload.outcome_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến kết quả (QID: {payload.outcome_question_id}) không tồn tại.")
+        if payload.unit_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến đơn vị quan sát (Unit QID: {payload.unit_question_id}) không tồn tại.")
+        if payload.time_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến mốc thời gian (Time QID: {payload.time_question_id}) không tồn tại.")
+        if payload.treatment_question_id not in q_map:
+            raise HTTPException(status_code=400, detail=f"Biến can thiệp (Treatment QID: {payload.treatment_question_id}) không tồn tại.")
+
+        scope_sql = ""
+        if payload.scope == "verified_clean":
+            scope_sql = " AND r.is_verified = 1 AND r.is_flagged = 0 "
+
+        target_qids = [
+            payload.outcome_question_id,
+            payload.unit_question_id,
+            payload.time_question_id,
+            payload.treatment_question_id
+        ]
+        placeholders = ",".join(["?"] * len(target_qids))
+        query = f"""
+            SELECT ra.response_id, ra.question_id, ra.answer_value
+            FROM response_answers ra
+            JOIN responses r ON ra.response_id = r.id
+            WHERE r.survey_id = ? {scope_sql}
+              AND ra.question_id IN ({placeholders})
+        """
+        rows = conn.execute(query, [survey_id] + target_qids).fetchall()
+
+        resp_data: Dict[int, Dict[int, str]] = {}
+        for r in rows:
+            resp_id = r["response_id"]
+            if resp_id not in resp_data:
+                resp_data[resp_id] = {}
+            resp_data[resp_id][r["question_id"]] = r["answer_value"]
+
+        y_list = []
+        u_list = []
+        t_list = []
+        w_list = []
+
+        for resp_id, answers in resp_data.items():
+            if (payload.outcome_question_id not in answers or
+                payload.unit_question_id not in answers or
+                payload.time_question_id not in answers or
+                payload.treatment_question_id not in answers):
+                continue
+
+            try:
+                y_val = float(answers[payload.outcome_question_id])
+                u_val = str(answers[payload.unit_question_id]).strip()
+                t_val = float(answers[payload.time_question_id])
+                w_raw = answers[payload.treatment_question_id]
+                try:
+                    w_val = float(w_raw)
+                except (ValueError, TypeError):
+                    w_val = 1.0 if str(w_raw).strip() in ["1", "true", "True", "yes", "treated"] else 0.0
+            except (ValueError, TypeError):
+                continue
+
+            y_list.append(y_val)
+            u_list.append(u_val)
+            t_list.append(t_val)
+            w_list.append(w_val)
+
+        if len(y_list) < 20:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng quan sát hợp lệ (N={len(y_list)}) không đủ cho SDID. Cần tối thiểu 20 quan sát dạng bảng.",
+                "model_type": "SYNTHETIC_DID_ARKHANGELSKY_2021",
+                "diagnostics": None,
+                "unit_weights": None,
+                "time_weights": None,
+                "trajectories": None,
+                "svg_visualization": None,
+                "apa_narrative": None
+            }
+
+        res = SDIDAdvancedEngine.evaluate_sdid(
+            y_matrix_flat=np.array(y_list, dtype=float),
+            unit_indices=np.array(u_list),
+            time_indices=np.array(t_list, dtype=float),
+            treatment_indicator=np.array(w_list, dtype=float),
+            zeta_regularization=payload.zeta_regularization,
+            outcome_label=q_map.get(payload.outcome_question_id, "Biến kết quả"),
+            unit_label=q_map.get(payload.unit_question_id, "Đơn vị quan sát"),
+            time_label=q_map.get(payload.time_question_id, "Mốc thời gian")
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="SDID_ADVANCED_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "unit_qid": payload.unit_question_id,
+                "time_qid": payload.time_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "n_samples": len(y_list),
+                "tau_sdid": res.get("diagnostics", {}).get("tau_sdid") if res.get("diagnostics") else None,
                 "status": res.get("status")
             }
         )

@@ -571,3 +571,22 @@
 - Frontend build: **2,099 modules transformed, 0 errors in 1.50s**.
 - Backend tests mới: **5 passed, 0 failed in 1.32s**.
 - Git commit cho Iteration 133.
+
+
+### Mốc 04:11:00 — Hoàn thành Iteration 134: Synthetic Difference-in-Differences (SDID) Advanced Engine (Arkhangelsky, Athey, Hirshberg, Imbens, & Wager 2021; Doudchenko & Imbens 2016)
+- Xây dựng `backend/app/engine/sdid_advanced_engine.py` (Phương pháp luận Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens & Stefan Wager 2021 American Economic Review; Nikolay Doudchenko & Guido Imbens 2016; kết hợp tối ưu giữa Difference-in-Differences và Synthetic Control tạo thành bộ ước lượng kép vững Double-Robust SDID):
+  1. Tối ưu hóa trọng số đơn vị đối chứng $\hat{\omega}$ có điều hòa phạt phân tán L2 $\zeta^2 T_{\text{pre}} \|\omega\|_2^2$ bằng thuật toán quy hoạch toàn phương có ràng buộc SLSQP, cho phép dịch chuyển mức nền intercept $\omega_0$;
+  2. Tối ưu hóa trọng số thời gian tiền kỳ $\hat{\lambda}$ nhằm căn chỉnh chính xác quỹ đạo xu hướng thời gian trước can thiệp với giai đoạn hậu can thiệp của nhóm đối chứng;
+  3. Ước lượng tác động can thiệp trung bình kép vững $\hat{\tau}_{\text{SDID}}$ và kiểm định giả thuyết thống kê với sai số chuẩn vững Jackknife/placebo;
+  4. So sánh trực diện với DiD truyền thống và Synthetic Control cổ điển, định lượng chính xác độ lệch thiên lệch DiD Bias Gap ($\Delta = \hat{\tau}_{\text{SDID}} - \hat{\tau}_{\text{DiD}}$);
+  5. Dual-panel SVG: Panel A Quỹ đạo thời gian thực tế $Y(1)$, đối chứng phản sự kiện SDID $\hat{Y}(0)$, synthetic control chuẩn và đối chứng thô + Panel B Phân bổ trọng số đơn vị đối chứng donor pool $\hat{\omega}_i$;
+  6. APA 7th narrative khoa học giải thích chi tiết tác động và độ lệch thiên lệch DiD.
+- Viết unit tests `backend/tests/test_sdid_advanced_engine.py` (3 passed) và route tests `backend/tests/test_sdid_advanced_routes.py` (2 passed).
+- Thêm schemas `SDIDAdvancedRequest`, `SDIDAdvancedOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/sdid-advanced`, audit log `SDID_ADVANCED_EVALUATED`.
+- Thêm types trong `survey.ts`, API client method `runSDIDAdvanced` trong `client.ts`, component `SDIDAdvancedCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 115 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,100 modules transformed, 0 errors in 1.16s**.
+- Backend tests mới: **5 passed, 0 failed in 1.39s**.
+- Git commit cho Iteration 134.
+

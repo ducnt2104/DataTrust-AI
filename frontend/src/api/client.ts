@@ -181,7 +181,9 @@ import {
   StaggeredDIDRequest,
   StaggeredDIDResult,
   MatrixCompletionCausalRequest,
-  MatrixCompletionCausalResult
+  MatrixCompletionCausalResult,
+  SDIDAdvancedRequest,
+  SDIDAdvancedResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2221,5 +2223,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<MatrixCompletionCausalResult>(res);
+  },
+
+  // --- Synthetic Difference-in-Differences Advanced (Arkhangelsky et al. 2021) ---
+  async runSDIDAdvanced(
+    surveyId: string,
+    payload: SDIDAdvancedRequest
+  ): Promise<SDIDAdvancedResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/sdid-advanced`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<SDIDAdvancedResult>(res);
   }
 };
