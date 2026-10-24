@@ -7001,3 +7001,59 @@ export interface StaggeredDIDRequest {
   control_group_type?: 'never_treated' | 'not_yet_treated';
   scope?: 'all' | 'verified_clean';
 }
+
+export interface MatrixCompletionDiagnostics {
+  n_units: number;
+  n_time_periods: number;
+  total_cells: number;
+  n_treated_cells: number;
+  n_control_cells: number;
+  lambda_penalty: number;
+  iterations_count: number;
+  is_converged: boolean;
+  effective_rank: number;
+  rmse_control_fit: number;
+  overall_att: number;
+  att_se: number;
+  z_statistic: number;
+  p_value: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  is_statistically_significant: boolean;
+  top_factor_variance_share: number;
+}
+
+export interface CellTreatmentEffect {
+  unit_id: string;
+  time_period: number;
+  realized_outcome_y1: number;
+  imputed_counterfactual_y0: number;
+  treatment_effect_tau: number;
+}
+
+export interface SingularSpectrumItem {
+  rank_component: number;
+  singular_value: number;
+  variance_explained_ratio: number;
+}
+
+export interface MatrixCompletionCausalResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: MatrixCompletionDiagnostics;
+  cell_treatment_effects?: CellTreatmentEffect[];
+  singular_value_spectrum?: SingularSpectrumItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface MatrixCompletionCausalRequest {
+  outcome_question_id: string;
+  unit_question_id: string;
+  time_question_id: string;
+  treatment_question_id: string;
+  lambda_penalty?: number | null;
+  max_rank?: number;
+  scope?: 'all' | 'verified_clean';
+}

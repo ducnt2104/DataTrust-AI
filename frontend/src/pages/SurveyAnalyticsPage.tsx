@@ -111,6 +111,7 @@ import { FiniteMixtureRaschCard } from '../components/FiniteMixtureRaschCard';
 import { DoubleMachineLearningCard } from '../components/DoubleMachineLearningCard';
 import { RegressionKinkCard } from '../components/RegressionKinkCard';
 import { StaggeredDIDCard } from '../components/StaggeredDIDCard';
+import { MatrixCompletionCausalCard } from '../components/MatrixCompletionCausalCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1282,6 +1283,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           question_type: q.question_type
         }))}
       />
+      {/* Matrix Completion for Causal Panel Data (Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021) */}
+      <MatrixCompletionCausalCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
 
 
 

@@ -541,3 +541,33 @@
 - Frontend build: **2,098 modules transformed, 0 errors in 1.24s**.
 - Backend tests mới: **6 passed, 0 failed in 1.36s**.
 - Git commit cho Iteration 132.
+
+
+### Mốc 04:00:00 — Heartbeat 11 Fired [task-14026]
+- Thời gian thực tế: `2026-10-25T04:00:00+07:00` (Elapsed: 5h 23m 24s / Cần &ge; 6h 00m 00s).
+- Trạng thái hệ thống:
+  - Frontend: 2,098 modules transformed, 0 errors in 1.24s.
+  - Backend: 100% test pass rate qua toàn bộ các module kinh tế lượng và suy diễn nhân quả.
+  - Các mốc hoàn thành:
+    - Iteration 130: Double / Debiased Machine Learning (DML) Engine (Section 111).
+    - Iteration 131: Regression Kink Design (RKD) Engine (Section 112).
+    - Iteration 132: Staggered Difference-in-Differences Engine (Section 113).
+  - Tiếp tục thực thi liên tục không dừng theo đúng chỉ thị tự chủ.
+
+
+### Mốc 04:04:00 — Hoàn thành Iteration 133: Matrix Completion for Causal Panel Data with Nuclear Norm Regularization (Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021)
+- Xây dựng `backend/app/engine/matrix_completion_causal_engine.py` (Phương pháp luận Susan Athey, Mohsen Bayati, Nikolay Doudchenko, Guido Imbens & Khashayar Khosravi 2021 JASA; Rahul Mazumder, Trevor Hastie & Robert Tibshirani 2010 JMLR; Emmanuel Candès & Benjamin Recht 2009; định hình suy diễn nhân quả dữ liệu bảng dọc như một bài toán khuyết dữ liệu đối chứng phản sự kiện $Y(0)$:
+  1. Phục dựng ma trận đối chứng phản sự kiện hạng thấp $L = Y(0)$ thông qua chương trình tối ưu hóa lồi với chuẩn hạt nhân Nuclear Norm Regularization $\min_L \sum_{(i,t) \in \mathcal{O}} (Y_{it} - L_{it})^2 + \lambda \|L\|_*$;
+  2. Thuật toán Soft-Impute SVT giải tích lặp với phép chiếu phân rã giá trị kỳ dị và toán tử thu nhỏ mềm $\mathcal{S}_\lambda(\sigma) = \max(0, \sigma - \lambda)$;
+  3. Tính toán tác động can thiệp tại từng ô bảng $\hat{\tau}_{it} = Y_{it} - \hat{L}_{it}$ và hiệu ứng gộp trung bình trên nhóm can thiệp (Overall ATT);
+  4. Đánh giá hạng ma trận hiệu dụng (effective rank), sai số khớp đối chứng RMSE và tỷ trọng phương sai của các nhân tố tiềm ẩn;
+  5. Dual-panel SVG: Panel A Bản đồ nhiệt ma trận $N \times T$ phân biệt trực quan các ô đối chứng đã quan sát và các ô can thiệp được phục dựng + Panel B Biểu đồ Scree Plot phân rã phổ giá trị kỳ dị và đường ngưỡng thu nhỏ $\lambda$;
+  6. APA 7th narrative).
+- Viết unit tests `backend/tests/test_matrix_completion_causal_engine.py` (3 passed) và route tests `backend/tests/test_matrix_completion_causal_routes.py` (2 passed).
+- Thêm schemas `MatrixCompletionCausalRequest`, `MatrixCompletionCausalOut` trong `backend/app/schemas.py`.
+- Thêm router endpoint `POST /api/surveys/{survey_id}/analytics/matrix-completion-causal`, audit log `MATRIX_COMPLETION_CAUSAL_EVALUATED`.
+- Thêm types trong `survey.ts`, API client method `runMatrixCompletionCausal` trong `client.ts`, component `MatrixCompletionCausalCard.tsx`, mount vào `SurveyAnalyticsPage.tsx`.
+- Ghi nhận Section 114 trong `docs/API_CONTRACT.md`.
+- Frontend build: **2,099 modules transformed, 0 errors in 1.50s**.
+- Backend tests mới: **5 passed, 0 failed in 1.32s**.
+- Git commit cho Iteration 133.

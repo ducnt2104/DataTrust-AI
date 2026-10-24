@@ -179,7 +179,9 @@ import {
   RegressionKinkRequest,
   RegressionKinkResult,
   StaggeredDIDRequest,
-  StaggeredDIDResult
+  StaggeredDIDResult,
+  MatrixCompletionCausalRequest,
+  MatrixCompletionCausalResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2206,5 +2208,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<StaggeredDIDResult>(res);
+  },
+
+  // --- Matrix Completion for Causal Panel Data (Athey et al. 2021) ---
+  async runMatrixCompletionCausal(
+    surveyId: string,
+    payload: MatrixCompletionCausalRequest
+  ): Promise<MatrixCompletionCausalResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/matrix-completion-causal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<MatrixCompletionCausalResult>(res);
   }
 };

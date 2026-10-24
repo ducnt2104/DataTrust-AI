@@ -4721,3 +4721,42 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép trực quan hóa quỹ đạo biến cố động và phân tán trọng số Bacon.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition giải thích kết quả Callaway-Sant'Anna, kiểm định xu hướng song song và so sánh với TWFE.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `STAGGERED_DID_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 114. Matrix Completion for Causal Panel Data with Nuclear Norm Regularization (Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021)
+- **Lý thuyết nền tảng:**
+  1. **Suy diễn Nhân quả Dữ liệu Bảng Dưới Dạng Bài Toán Khuyết Dữ liệu (Causal Inference as Missing Data Imputation):**
+     - Xét ma trận kết quả dữ liệu bảng / khảo sát dọc kích thước $N \times T$ ($N$ đơn vị khảo sát quan sát qua $T$ mốc thời gian). Với mỗi ô $(i, t)$, ký hiệu $W_{it} \in \{0, 1\}$ là chỉ báo can thiệp. Giá trị quan sát thực tế là:
+       $$Y_{it} = W_{it} Y_{it}(1) + (1 - W_{it}) Y_{it}(0)$$
+     - Dưới góc nhìn chuẩn tắc của Rubin (1974) và Athey et al. (2021), suy diễn nhân quả bản chất là bài toán khuyết dữ liệu: đối với mọi ô được can thiệp $(i, t)$ nơi $W_{it} = 1$, giá trị đối chứng phản sự kiện $Y_{it}(0)$ là **chưa quan sát được (missing)**.
+  2. **Chính quy hóa Chuẩn Hạt nhân & Phục dựng Hạng Thấp (Nuclear Norm Regularization):**
+     - Khác với TWFE (áp đặt cấu trúc cộng rank-2 $\alpha_i + \beta_t$) hoặc Synthetic Control (yêu cầu đối chứng bất biến), Athey et al. (2021) thiết lập mô hình ma trận phản sự kiện $L = Y(0)$ thông qua chương trình tối ưu hóa lồi:
+       $$\min_{L \in \mathbb{R}^{N \times T}} \left\{ \frac{1}{|\mathcal{O}|} \sum_{(i, t) \in \mathcal{O}} (Y_{it} - L_{it})^2 + \lambda \|L\|_* \right\}$$
+       trong đó $\mathcal{O} = \{(i, t) : W_{it} = 0\}$ là tập hợp các ô đối chứng đã quan sát, và $\|L\|_* = \sum_k \sigma_k(L)$ là chuẩn hạt nhân (tổng các giá trị kỳ dị của $L$, bao lồi chặt nhất của hàm hạng ma trận $\operatorname{rank}(L)$).
+  3. **Thuật toán Soft-Impute SVT (Mazumder, Hastie, & Tibshirani 2010):**
+     - Lặp lại bước tính SVD trên ma trận $Z^{(k)} = P_{\mathcal{O}}(Y) + P_{\mathcal{O}}^\perp(L^{(k)})$ và áp dụng toán tử thu nhỏ giá trị kỳ dị mềm (soft-thresholding operator $\mathcal{S}_\lambda(\sigma) = \max(0, \sigma - \lambda)$).
+     - Hội tụ tiệm cận về ma trận phản sự kiện không chệch $\hat{L} = \hat{Y}(0)$.
+  4. **Ước lượng Hiệu ứng Can thiệp Cục bộ và Toàn cục:**
+     - Tác động can thiệp tại từng ô cụ thể: $\hat{\tau}_{it} = Y_{it} - \hat{L}_{it}$.
+     - Hiệu ứng trung bình trên nhóm can thiệp (Overall ATT):
+       $$\hat{\tau}_{\text{MC}} = \frac{1}{|\mathcal{T}|} \sum_{(i, t) \in \mathcal{T}} (Y_{it} - \hat{L}_{it})$$
+  5. **Đồ thị SVG Kép Khoa Học:**
+     - Panel A: Bản đồ nhiệt ma trận $N \times T$ phân định trực quan các ô đối chứng đã quan sát (xanh dương) và các ô can thiệp được phục dựng phản sự kiện (xanh ngọc Emerald).
+     - Panel B: Biểu đồ Scree Plot phân rã phổ giá trị kỳ dị và đường ngưỡng thu nhỏ $\lambda$.
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/matrix-completion-causal`
+- **Request Body (`MatrixCompletionCausalRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả $Y$.
+  - `unit_question_id`: UUID biến định danh đơn vị quan sát $U$.
+  - `time_question_id`: UUID biến đo lường đợt / mốc thời gian $T$.
+  - `treatment_question_id`: UUID biến chỉ báo can thiệp $W$ (1: Can thiệp, 0: Đối chứng).
+  - `lambda_penalty`: Hệ số phạt chuẩn hạt nhân $\lambda$ (Tùy chọn, tự động tối ưu hóa SVT nếu bỏ trống).
+  - `max_rank`: Hạng ma trận tối đa cho phép (Mặc định 5).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`MatrixCompletionCausalOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, `"INSUFFICIENT_DIMENSIONS"`, `"NO_TREATED_CELLS"`, hoặc `"INSUFFICIENT_CONTROLS"`.
+  - `model_type`: `"CAUSAL_MATRIX_COMPLETION_ATHEY_2021"`.
+  - `diagnostics`: Kích thước $N \times T$, tổng số ô, số ô can thiệp được phục dựng, số ô đối chứng, hệ số phạt $\lambda$, số vòng lặp hội tụ, hạng hiệu dụng $r$, sai số RMSE khớp ô đối chứng, Ước lượng gộp ATT $\hat{\tau}_{\text{MC}}$, Sai số chuẩn SE, $p$-value, 95% CI, tỷ trọng phương sai nhân tố hàng đầu.
+  - `cell_treatment_effects`: Danh sách chi tiết từng ô can thiệp (mã đơn vị, mốc thời gian, $Y(1)$ quan sát, $Y(0)$ phục dựng, hiệu ứng $\hat{\tau}_{it}$).
+  - `singular_value_spectrum`: Bảng phổ các giá trị kỳ dị và tỷ lệ phương sai giải thích.
+  - `svg_visualization`: Đồ thị SVG khoa học kép bản đồ nhiệt ma trận và biểu đồ Scree Plot.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition giải thích kết quả hoàn thiện ma trận và hiệu ứng can thiệp.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `MATRIX_COMPLETION_CAUSAL_EVALUATED` vào chuỗi sổ cái SHA-256.
