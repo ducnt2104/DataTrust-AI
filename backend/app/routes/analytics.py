@@ -1,3 +1,4 @@
+from app.engine.stochastic_dominance_engine import StochasticDominanceEngine
 from app.engine.zero_inflated_engine import ZeroInflatedEngine
 from app.engine.tmle_engine import TMLEEngine
 from app.engine.stochastic_frontier_engine import StochasticFrontierEngine
@@ -32,6 +33,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Response
 from app.database import get_db, record_audit_log
 from app.schemas import (
+    StochasticDominanceRequest,
+    StochasticDominanceOut,
     QuestionOption,
     LogicRule,
     QuestionBase,
@@ -11903,6 +11906,145 @@ def run_gps_dose_response_analysis(
                 "n_samples": len(data_rows),
                 "scope": payload.scope,
                 "optimal_dosage": res.get("diagnostics", {}).get("optimal_dosage_peak"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+# --- Stochastic Dominance & Distributional Inequality (Davidson & Duclos 2000; Hadar & Russell 1969) ---
+@router.post("/stochastic-dominance", response_model=StochasticDominanceOut)
+def run_stochastic_dominance_analysis(
+    survey_id: str,
+    payload: StochasticDominanceRequest
+):
+    """
+    Executes non-parametric First-, Second-, and Third-Order Stochastic Dominance Tests (FSD, SSD, TSD),
+    Kolmogorov-Smirnov supremum statistics, Gini coefficient inequality profiling, and Lorenz curves.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy cuộc khảo sát.")
+
+        # Verify questions
+        q_rows = conn.execute(
+            "SELECT id, title, question_type, options_json FROM questions WHERE id IN (?, ?) AND survey_id = ?",
+            (payload.outcome_question_id, payload.group_question_id, survey_id)
+        ).fetchall()
+        q_map = {q["id"]: q for q in q_rows}
+
+        if payload.outcome_question_id not in q_map or payload.group_question_id not in q_map:
+            raise HTTPException(status_code=400, detail="Câu hỏi kết quả (Outcome) hoặc câu hỏi phân nhóm (Group) không tồn tại.")
+
+        outcome_title = q_map[payload.outcome_question_id]["title"]
+        group_title = q_map[payload.group_question_id]["title"]
+
+        # Parse option labels if available
+        opt_labels = {}
+        try:
+            opts = json.loads(q_map[payload.group_question_id]["options_json"] or "[]")
+            for o in opts:
+                if isinstance(o, dict):
+                    opt_labels[str(o.get("value", ""))] = str(o.get("label", o.get("value", "")))
+                    opt_labels[str(o.get("id", ""))] = str(o.get("label", o.get("id", "")))
+        except Exception:
+            pass
+
+        # Filter scope
+        if payload.scope == "verified_clean":
+            resp_rows = conn.execute("""
+                SELECT id FROM responses
+                WHERE survey_id = ? AND review_status NOT IN ('verified_fraud', 'quota_screened_out')
+                  AND (risk_level != 'high' OR review_status = 'verified_valid')
+            """, (survey_id,)).fetchall()
+        else:
+            resp_rows = conn.execute("SELECT id FROM responses WHERE survey_id = ?", (survey_id,)).fetchall()
+
+        if not resp_rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Không tìm thấy phản hồi trong phạm vi khảo sát đã chọn."}
+
+        resp_ids = [r["id"] for r in resp_rows]
+        placeholders_r = ",".join(["?"] * len(resp_ids))
+
+        ans_rows = conn.execute(f"""
+            SELECT response_id, question_id, answer_value
+            FROM response_answers
+            WHERE response_id IN ({placeholders_r}) AND question_id IN (?, ?)
+        """, (*resp_ids, payload.outcome_question_id, payload.group_question_id)).fetchall()
+
+        data_by_resp = {}
+        for row in ans_rows:
+            rid = row["response_id"]
+            qid = row["question_id"]
+            val = row["answer_value"]
+            if rid not in data_by_resp:
+                data_by_resp[rid] = {}
+            data_by_resp[rid][qid] = val
+
+        # Collect paired responses
+        pairs = []
+        for rid, ans_dict in data_by_resp.items():
+            if payload.outcome_question_id in ans_dict and payload.group_question_id in ans_dict:
+                try:
+                    out_val = float(ans_dict[payload.outcome_question_id])
+                    grp_val = str(ans_dict[payload.group_question_id]).strip()
+                    if grp_val:
+                        pairs.append((out_val, grp_val))
+                except (ValueError, TypeError):
+                    continue
+
+        if len(pairs) < 20:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Chỉ có {len(pairs)} phản hồi hợp lệ cho cả hai câu hỏi (yêu cầu tối thiểu 20)."
+            }
+
+        # Identify Group A and Group B values
+        from collections import Counter
+        grp_counts = Counter([p[1] for p in pairs])
+        
+        target_a = payload.group_a_value.strip() if payload.group_a_value else None
+        target_b = payload.group_b_value.strip() if payload.group_b_value else None
+
+        if not target_a or not target_b:
+            common = grp_counts.most_common(2)
+            if len(common) < 2:
+                return {
+                    "status": "INSUFFICIENT_SAMPLE",
+                    "message": "Không tìm thấy đủ 2 nhóm phân loại khác nhau trong dữ liệu khảo sát."
+                }
+            target_a = target_a or common[0][0]
+            target_b = target_b or common[1][0]
+
+        vals_a = [p[0] for p in pairs if p[1] == target_a]
+        vals_b = [p[0] for p in pairs if p[1] == target_b]
+
+        lbl_a = payload.group_a_label or opt_labels.get(target_a, f"Nhóm {target_a}")
+        lbl_b = payload.group_b_label or opt_labels.get(target_b, f"Nhóm {target_b}")
+
+        import numpy as np
+        res = StochasticDominanceEngine.evaluate_dominance(
+            values_a=np.array(vals_a, dtype=float),
+            values_b=np.array(vals_b, dtype=float),
+            label_a=lbl_a,
+            label_b=lbl_b,
+            outcome_label=outcome_title,
+            n_grid_points=max(20, min(100, payload.n_grid_points))
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="STOCHASTIC_DOMINANCE_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "group_qid": payload.group_question_id,
+                "n_group_a": len(vals_a),
+                "n_group_b": len(vals_b),
+                "fsd_conclusion": res.get("diagnostics", {}).get("fsd_conclusion"),
+                "ssd_conclusion": res.get("diagnostics", {}).get("ssd_conclusion"),
                 "status": res.get("status")
             }
         )

@@ -10,12 +10,123 @@ import {
   HelpCircle,
   FileText,
   FileCheck,
-  RefreshCw
+  RefreshCw,
+  TrendingDown,
+  CheckCircle,
+  Sparkles,
+  BookOpen,
+  BarChart2,
+  Scale,
+  PieChart,
+  ShieldCheck,
+  Network
 } from 'lucide-react';
 import { api } from '../api/client';
 import { SurveyAnalytics } from '../types/survey';
 import { QualityAuditReportModal } from '../components/QualityAuditReportModal';
 import { BenfordAnalysisCard } from '../components/BenfordAnalysisCard';
+import { AIQualitativeInsightsCard } from '../components/AIQualitativeInsightsCard';
+import { CrossTabulationCard } from '../components/CrossTabulationCard';
+import { ScaleReliabilityCard } from '../components/ScaleReliabilityCard';
+import { EFAAnalysisCard } from '../components/EFAAnalysisCard';
+import { CorrelationMatrixCard } from '../components/CorrelationMatrixCard';
+import { HypothesisTTestCard } from '../components/HypothesisTTestCard';
+import { ANOVAAnalysisCard } from '../components/ANOVAAnalysisCard';
+import { LinearRegressionCard } from '../components/LinearRegressionCard';
+import { MediationAnalysisCard } from '../components/MediationAnalysisCard';
+import { ModerationAnalysisCard } from '../components/ModerationAnalysisCard';
+import { ModeratedMediationCard } from '../components/ModeratedMediationCard';
+import { ComplexSamplingCard } from '../components/ComplexSamplingCard';
+import { PropensityMatchingCard } from '../components/PropensityMatchingCard';
+import { TopicModelingCard } from '../components/TopicModelingCard';
+import { PsychometricNetworkCard } from '../components/PsychometricNetworkCard';
+import { IRT2PLCard } from '../components/IRT2PLCard';
+import { SurvivalDropOffCard } from '../components/SurvivalDropOffCard';
+import { MultilevelModelingCard } from '../components/MultilevelModelingCard';
+import { ConjointAnalysisCard } from '../components/ConjointAnalysisCard';
+import { LatentClassAnalysisCard } from '../components/LatentClassAnalysisCard';
+import { DifferenceInDifferencesCard } from '../components/DifferenceInDifferencesCard';
+import { SEMPathAnalysisCard } from '../components/SEMPathAnalysisCard';
+import { CompetingRisksFrailtyCard } from '../components/CompetingRisksFrailtyCard';
+import { IRT4PLAnalysisCard } from '../components/IRT4PLAnalysisCard';
+import { IPWDoublyRobustCard } from '../components/IPWDoublyRobustCard';
+import { GAMSplineRegressionCard } from '../components/GAMSplineRegressionCard';
+import { QuantileRegressionCard } from '../components/QuantileRegressionCard';
+import { GTheoryCard } from '../components/GTheoryCard';
+import { RDDCard } from '../components/RDDCard';
+import { SyntheticControlCard } from '../components/SyntheticControlCard';
+import { SmallAreaEstimationCard } from '../components/SmallAreaEstimationCard';
+import { EventStudyCard } from '../components/EventStudyCard';
+import { BSTSCausalImpactCard } from '../components/BSTSCausalImpactCard';
+import { AIPWCATECard } from '../components/AIPWCATECard';
+import { IV2SLSCard } from '../components/IV2SLSCard';
+import { BifactorCard } from '../components/BifactorCard';
+import { PanelVARCard } from '../components/PanelVARCard';
+import { LatentGrowthCard } from '../components/LatentGrowthCard';
+import { QTECard } from '../components/QTECard';
+import { CausalDAGCard } from '../components/CausalDAGCard';
+import { MSMCard } from '../components/MSMCard';
+import { GEECard } from '../components/GEECard';
+import { RandomizationInferenceCard } from '../components/RandomizationInferenceCard';
+import { EVTCard } from '../components/EVTCard';
+import { JointModelCard } from '../components/JointModelCard';
+import { ConformalPredictionCard } from '../components/ConformalPredictionCard';
+import { MSEMCard } from '../components/MSEMCard';
+import { TMLECard } from '../components/TMLECard';
+import { SDIDCard } from '../components/SDIDCard';
+import { CausalForestCard } from '../components/CausalForestCard';
+import { CausalMediationSensitivityCard } from '../components/CausalMediationSensitivityCard';
+import { DTWClusteringCard } from '../components/DTWClusteringCard';
+import { CausalTreeCard } from '../components/CausalTreeCard';
+import { MultipleTestingFDRCard } from '../components/MultipleTestingFDRCard';
+import { BSEMCard } from '../components/BSEMCard';
+import { GaussianCopulaCard } from '../components/GaussianCopulaCard';
+import { DynamicFactorModelCard } from '../components/DynamicFactorModelCard';
+import { ExtremeBoundsAnalysisCard } from '../components/ExtremeBoundsAnalysisCard';
+import { SpatialEconometricsCard } from '../components/SpatialEconometricsCard';
+import { IVQuantileRegressionCard } from '../components/IVQuantileRegressionCard';
+import { ConjointHBCard } from '../components/ConjointHBCard';
+import { FractionalResponseCard } from '../components/FractionalResponseCard';
+import { MIRTCard } from '../components/MIRTCard';
+import { HeckmanSelectionCard } from '../components/HeckmanSelectionCard';
+import { StochasticFrontierCard } from '../components/StochasticFrontierCard';
+import { ZeroInflatedCountCard } from '../components/ZeroInflatedCountCard';
+import { LatentModerationCard } from '../components/LatentModerationCard';
+import { EndogenousSwitchingCard } from '../components/EndogenousSwitchingCard';
+import { GPSDoseResponseCard } from '../components/GPSDoseResponseCard';
+import { CausalDiscoveryCard } from '../components/CausalDiscoveryCard';
+import { BARTCausalCard } from '../components/BARTCausalCard';
+import { ConjointChoiceCard } from '../components/ConjointChoiceCard';
+import { MGSEMInvarianceCard } from '../components/MGSEMInvarianceCard';
+import { GAMSplineCard } from '../components/GAMSplineCard';
+import { LatentProfileCard } from '../components/LatentProfileCard';
+import { ShapleyDriverCard } from '../components/ShapleyDriverCard';
+import { PlackettLuceCard } from '../components/PlackettLuceCard';
+import { MaxDiffCard } from '../components/MaxDiffCard';
+import { BayesianNetworkCard } from '../components/BayesianNetworkCard';
+import { StochasticDominanceCard } from '../components/StochasticDominanceCard';
+import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
+import { MissingDataCard } from '../components/MissingDataCard';
+import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
+import { MeasurementInvarianceCard } from '../components/MeasurementInvarianceCard';
+import { CommonMethodBiasCard } from '../components/CommonMethodBiasCard';
+import { SamplePowerAnalysisCard } from '../components/SamplePowerAnalysisCard';
+import { LongitudinalComparisonCard } from '../components/LongitudinalComparisonCard';
+import { SamplingQuotaCard } from '../components/SamplingQuotaCard';
+import { CognitivePacingCard } from '../components/CognitivePacingCard';
+import { MultivariateOutlierCard } from '../components/MultivariateOutlierCard';
+import { DemographicRakingModal } from '../components/DemographicRakingModal';
+import { DIFAnalysisModal } from '../components/DIFAnalysisModal';
+import { DataCleansingModal } from '../components/DataCleansingModal';
+import { CodebookModal } from '../components/CodebookModal';
+import { AcademicChartExportModal } from '../components/AcademicChartExportModal';
+import { AcademicManuscriptModal } from '../components/AcademicManuscriptModal';
+import { SurveyLogicSimulatorModal } from '../components/SurveyLogicSimulatorModal';
+import { SplitBallotExperimentCard } from '../components/SplitBallotExperimentCard';
+import { RaschWrightMapCard } from '../components/RaschWrightMapCard';
+import { RespondentClusterCard } from '../components/RespondentClusterCard';
+import { PairwiseSimilarityCard } from '../components/PairwiseSimilarityCard';
+import { SpatialGeoAuditCard } from '../components/SpatialGeoAuditCard';
 
 interface Props {
   surveyId: string;
@@ -26,22 +137,55 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
   const [analytics, setAnalytics] = useState<SurveyAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [isCleansingOpen, setIsCleansingOpen] = useState(false);
+  const [isCodebookOpen, setIsCodebookOpen] = useState(false);
+  const [isChartExportOpen, setIsChartExportOpen] = useState(false);
+  const [isManuscriptOpen, setIsManuscriptOpen] = useState(false);
+  const [isLogicSimulatorOpen, setIsLogicSimulatorOpen] = useState(false);
+  const [isRakingOpen, setIsRakingOpen] = useState(false);
+  const [isDIFOpen, setIsDIFOpen] = useState(false);
+  const [chartExportQuestionId, setChartExportQuestionId] = useState<string | null>(null);
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [autoRefreshSecs, setAutoRefreshSecs] = useState<number>(0);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
+  const [refreshingSilent, setRefreshingSilent] = useState<boolean>(false);
 
   useEffect(() => {
     loadAnalytics();
   }, [surveyId]);
+
+  useEffect(() => {
+    if (autoRefreshSecs <= 0) return;
+    const timer = setInterval(() => {
+      refreshAnalyticsSilent();
+    }, autoRefreshSecs * 1000);
+    return () => clearInterval(timer);
+  }, [surveyId, autoRefreshSecs]);
 
   const loadAnalytics = async () => {
     try {
       setLoading(true);
       const data = await api.getSurveyAnalytics(surveyId);
       setAnalytics(data);
+      setLastRefreshedAt(new Date());
     } catch (err) {
       console.error(err);
       alert('Không thể tải báo cáo phân tích.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshAnalyticsSilent = async () => {
+    try {
+      setRefreshingSilent(true);
+      const data = await api.getSurveyAnalytics(surveyId);
+      setAnalytics(data);
+      setLastRefreshedAt(new Date());
+    } catch (err) {
+      console.warn('Lỗi làm mới tự động:', err);
+    } finally {
+      setRefreshingSilent(false);
     }
   };
 
@@ -107,6 +251,104 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Live Auto-Refresh Controller */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-600 shadow-2xs">
+            <span className={`w-2 h-2 rounded-full ${autoRefreshSecs > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+            <span className="text-[11px] font-medium text-slate-500">Live Sync:</span>
+            <select
+              value={autoRefreshSecs}
+              onChange={(e) => setAutoRefreshSecs(Number(e.target.value))}
+              className="bg-transparent font-bold text-slate-800 text-[11px] focus:outline-hidden cursor-pointer"
+            >
+              <option value={0}>Tắt</option>
+              <option value={15}>15s</option>
+              <option value={30}>30s</option>
+              <option value={60}>60s</option>
+            </select>
+            {refreshingSilent ? (
+              <RefreshCw className="w-3 h-3 text-indigo-500 animate-spin" />
+            ) : (
+              <span className="text-[10px] text-slate-400 font-mono ml-0.5">
+                {lastRefreshedAt.toLocaleTimeString('vi-VN')}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={() => {
+              setChartExportQuestionId(null);
+              setIsChartExportOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-violet-600 text-white hover:bg-violet-700 shadow-xs transition-all"
+            title="Xuất biểu đồ nghiên cứu chất lượng cao định dạng Vector SVG và PNG 300 DPI"
+          >
+            <BarChart2 className="w-4 h-4" />
+            <span>Xuất Biểu Đồ (SVG/PNG)</span>
+          </button>
+
+          <button
+            onClick={() => setIsLogicSimulatorOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
+            title="Mô phỏng đồ thị luồng rẽ nhánh DAG và kiểm định chu trình logic"
+          >
+            <Network className="w-4 h-4 text-indigo-600" />
+            <span>Logic DAG</span>
+          </button>
+
+          <button
+            onClick={() => setIsManuscriptOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-white hover:bg-slate-900 shadow-xs transition-all"
+            title="Mở Studio xem trước, in ấn và xuất bản thảo nghiên cứu khoa học (HTML / Markdown / LaTeX)"
+          >
+            <FileText className="w-4 h-4 text-violet-400" />
+            <span>Bản Thảo Studio</span>
+          </button>
+
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/export/academic-dossier?scope=verified_clean`, '_blank')}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs transition-all"
+            title="Tải trọn gói 8 tệp hồ sơ nghiên cứu học thuật (.ZIP)"
+          >
+            <Download className="w-4 h-4" />
+            <span>Xuất Dossier (.ZIP)</span>
+          </button>
+
+          <button
+            onClick={() => onNavigate(`/surveys/${surveyId}/export`)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-all shadow-xs"
+            title="Tùy chỉnh phạm vi lọc và định dạng xuất nhập dữ liệu"
+          >
+            <FileText className="w-4 h-4 text-indigo-600" />
+            <span>Xuất/Nhập dữ liệu</span>
+          </button>
+
+          <button
+            onClick={() => setIsCleansingOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs transition-all"
+            title="Quy trình lọc loại bỏ speeders, straightlining và tính hệ số Cronbach's Alpha"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-200" />
+            <span>Làm sạch dữ liệu</span>
+          </button>
+
+          <button
+            onClick={() => setIsRakingOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-all shadow-xs"
+            title="Cân bằng trọng số sau thu thập (Demographic Raking / Iterative Proportional Fitting)"
+          >
+            <Scale className="w-4 h-4 text-indigo-600" />
+            <span>Cân bằng mẫu (Raking/IPF)</span>
+          </button>
+
+          <button
+            onClick={() => setIsDIFOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 transition-all shadow-xs"
+            title="Kiểm định bất biến đo lường và sai lệch câu hỏi (Mantel-Haenszel DIF & ETS Classification)"
+          >
+            <ShieldCheck className="w-4 h-4 text-violet-600" />
+            <span>Kiểm định sai lệch (DIF)</span>
+          </button>
+
           <button
             onClick={handleReanalyze}
             disabled={reanalyzing}
@@ -114,7 +356,7 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
             title="Tái chạy động cơ Quality Engine đa tầng trên toàn bộ phản hồi"
           >
             <RefreshCw className={`w-4 h-4 text-violet-600 ${reanalyzing ? 'animate-spin' : ''}`} />
-            <span>{reanalyzing ? 'Đang phân tích...' : 'Tái phân tích chất lượng'}</span>
+            <span>{reanalyzing ? 'Đang phân tích...' : 'Tái phân tích'}</span>
           </button>
           <button
             onClick={() => setIsAuditModalOpen(true)}
@@ -122,6 +364,14 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           >
             <FileCheck className="w-4 h-4 text-emerald-600" />
             <span>Báo cáo kiểm định độc lập</span>
+          </button>
+          <button
+            onClick={() => setIsCodebookOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-all shadow-xs"
+            title="Mở từ điển dữ liệu, nhãn biến và cú pháp SPSS/Stata/R"
+          >
+            <BookOpen className="w-4 h-4 text-indigo-600" />
+            <span>Từ điển biến & Cú pháp</span>
           </button>
           <button
             onClick={() => onNavigate(`/surveys/${surveyId}/enumerators`)}
@@ -135,13 +385,6 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
             className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
           >
             Xem danh sách phản hồi ({total_responses})
-          </button>
-          <button
-            onClick={() => onNavigate(`/surveys/${surveyId}/export`)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all"
-          >
-            <Download className="w-4 h-4" />
-            <span>Xuất dữ liệu</span>
           </button>
         </div>
       </div>
@@ -160,7 +403,7 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
       )}
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng phản hồi đã lưu</span>
@@ -185,6 +428,19 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
         <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div className="space-y-1">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tỷ lệ hoàn thành toàn bài</span>
+            <div className="text-3xl font-extrabold text-emerald-600">
+              {analytics.overall_completion_rate ?? 100}%
+            </div>
+            <span className="text-xs text-slate-400">Trả lời đủ câu hỏi bắt buộc</span>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+            <CheckCircle className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phân loại rủi ro</span>
             <div className="flex items-center gap-2 pt-1 text-sm font-bold">
               <span className="text-emerald-600">{risk_distribution['low'] || 0} thấp</span>
@@ -204,6 +460,876 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
       {/* Benford's Law First-Digit Statistical Analysis */}
       <BenfordAnalysisCard surveyId={surveyId} />
 
+      {/* AI Qualitative Analysis & Sentiment Insights */}
+      <AIQualitativeInsightsCard surveyId={surveyId} />
+
+      {/* Cross-Tabulation & Chi-Square Independence Test */}
+      <CrossTabulationCard surveyId={surveyId} questions={analytics.questions_analytics} />
+
+      {/* Psychometric Scale Reliability Analysis (Cronbach's Alpha & Item-Total Statistics) */}
+      <ScaleReliabilityCard surveyId={surveyId} />
+
+      {/* Exploratory Factor Analysis (EFA), Scree Plot & Varimax Orthogonal Rotation */}
+      <EFAAnalysisCard surveyId={surveyId} />
+
+      {/* Bivariate Correlation Matrix (Pearson r & Spearman rho) & Interactive Heatmap */}
+      <CorrelationMatrixCard surveyId={surveyId} />
+
+      {/* Hypothesis Testing T-Test (Independent & Paired Pre-Post) & Effect Sizes */}
+      <HypothesisTTestCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type,
+          options: q.option_distribution ? Object.keys(q.option_distribution) : []
+        }))}
+      />
+
+      {/* One-Way ANOVA & Post-Hoc Tukey HSD Pairwise Analysis */}
+      <ANOVAAnalysisCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type,
+          options: q.option_distribution ? Object.keys(q.option_distribution) : []
+        }))}
+      />
+
+      {/* Multiple Linear Regression OLS & Multicollinearity VIF Diagnostic */}
+      <LinearRegressionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Statistical Mediation & Path Analysis (Baron & Kenny 1986, Sobel 1982, Hayes 2018) */}
+      <MediationAnalysisCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Statistical Moderation & Interaction Effects (PROCESS Model 1 - Hayes 2018, Aiken & West 1991) */}
+      <ModerationAnalysisCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Moderated Mediation Analysis (PROCESS Model 7 - Hayes 2018) */}
+      <ModeratedMediationCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Two-Stage Complex Survey Sampling & Taylor Series Linearization (Cochran 1977, Kish 1965) */}
+      <ComplexSamplingCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Propensity Score Matching & IPW Causal Inference Engine (Rosenbaum & Rubin 1983, Austin 2011) */}
+      <PropensityMatchingCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Structural Topic Modeling & Latent Dirichlet Allocation (Blei et al. 2003, Roberts et al. 2014) */}
+      <TopicModelingCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Psychometric Network Analysis & Gaussian Graphical Model (Borsboom & Cramer 2013, Epskamp et al. 2018) */}
+      <PsychometricNetworkCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Item Response Theory 2-Parameter Logistic & Item Characteristic Curves (Birnbaum 1968, Reckase 2009) */}
+      <IRT2PLCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Survival Analysis & Time-to-Drop-off (Kaplan-Meier & Cox Proportional Hazards) */}
+      <SurvivalDropOffCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Multilevel Modeling & Hierarchical Linear Models (HLM / MLM; Raudenbush & Bryk 2002) */}
+      <MultilevelModelingCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Choice-Based Conjoint (CBC / DCE) & Market Simulator (McFadden 1974, Green & Srinivasan 1990) */}
+      <ConjointAnalysisCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Latent Class Analysis (LCA) & Finite Mixture Segmentation (Goodman 1974, McLachlan 2000) */}
+      <LatentClassAnalysisCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Difference-in-Differences (DiD) & Policy Impact Evaluation (Card & Krueger 1994, Angrist & Pischke 2009) */}
+      <DifferenceInDifferencesCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Structural Equation Modeling (SEM) & Path Analysis (Wright 1934, Jöreskog 1970, Hu & Bentler 1999) */}
+      <SEMPathAnalysisCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Competing Risks & Shared Frailty Survival Engine (Fine & Gray 1999, Hougaard 2000, Wienke 2010) */}
+      <CompetingRisksFrailtyCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Item Response Theory (IRT) 3PL & 4PL Models & CAT Simulation (Birnbaum 1968, Lord 1980, Magis 2013) */}
+      <IRT4PLAnalysisCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Propensity Score Weighting (IPW) & Doubly Robust Estimation (Rosenbaum & Rubin 1983, Robins 1994, Austin 2015) */}
+      <IPWDoublyRobustCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Generalized Additive Models (GAM) & Spline Regression (Hastie & Tibshirani 1990, Wood 2017) */}
+      <GAMSplineRegressionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Quantile Regression & Conditional Distributional Effects (Koenker & Bassett 1978, Koenker 2005) */}
+      <QuantileRegressionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Generalizability Theory (G-Theory & D-Study; Cronbach et al. 1972, Brennan 2001) */}
+      <GTheoryCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Regression Discontinuity Design (Sharp RDD; Thistlethwaite & Campbell 1960, Hahn et al. 2001, Imbens & Kalyanaraman 2012) */}
+      <RDDCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Synthetic Control Method (SCM; Abadie et al. 2010, Abadie 2021) */}
+      <SyntheticControlCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Small Area Estimation (SAE & Fay-Herriot Empirical Bayes; Fay & Herriot 1979, Rao & Molina 2015) */}
+      <SmallAreaEstimationCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Dynamic Event-Study & Staggered DiD (Hausman & Rapson 2018, Sun & Abraham 2021) */}
+      <EventStudyCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Bayesian Structural Time Series (BSTS) & Causal Impact (Brodersen et al. 2015, Harvey 1989) */}
+      <BSTSCausalImpactCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Doubly Robust AIPW & Heterogeneous Treatment Effects CATE (Robins et al. 1994, Chernozhukov et al. 2018) */}
+      <AIPWCATECard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Instrumental Variables Two-Stage Least Squares (2SLS) & Weak Instruments (Stock & Yogo 2005) */}
+      <IV2SLSCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Bifactor Psychometric Modeling & Essential Unidimensionality (Reise 2012, Rodriguez et al. 2016) */}
+      <BifactorCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Panel Vector Autoregression (Panel VAR) & Granger Causality (Holtz-Eakin et al. 1988, Abrigo & Love 2016) */}
+      <PanelVARCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Latent Growth Curve Modeling (LGCM) Engine (Meredith & Tisak 1990, Bollen & Curran 2006) */}
+      <LatentGrowthCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Quantile Treatment Effects (QTE) & Distributional Treatment Effects (Firpo 2007, Koenker & Bassett 1978) */}
+      <QTECard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Causal DAG & Structure Learning Engine (Spirtes et al. 2000, Pearl 2009, Meek 1995) */}
+      <CausalDAGCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Marginal Structural Models (MSM) with Stabilized IPTW (Robins et al. 2000, Hernán & Robins 2024) */}
+      <MSMCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Generalized Estimating Equations (GEE) - Population-Averaged Longitudinal Models (Liang & Zeger 1986) */}
+      <GEECard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Exact Permutation & Randomization Inference (Fisher's Sharp Null 1935, Rosenbaum 2002) */}
+      <RandomizationInferenceCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Extreme Value Theory (EVT) & Survey Tail Risk Modeling (Pickands 1975, McNeil & Frey 2000) */}
+      <EVTCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Joint Modeling (JM) of Longitudinal Trajectories & Panel Drop-off Survival (Wulfsohn & Tsiatis 1997, Rizopoulos 2012) */}
+      <JointModelCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Conformal Prediction & Distribution-Free Risk Intervals (Vovk et al. 2005, Angelopoulos & Bates 2023) */}
+      <ConformalPredictionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Multilevel Structural Equation Modeling (MSEM; Preacher, Zyphur & Zhang 2010, Muthén 1994) */}
+      <MSEMCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Targeted Maximum Likelihood Estimation (TMLE; van der Laan & Rose 2011) */}
+      <TMLECard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Synthetic Difference-in-Differences (SDID; Arkhangelsky, Athey, Imbens & Wager 2021) */}
+      <SDIDCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Generalized Causal Forest (GRF; Athey, Tibshirani & Wager 2019) */}
+      <CausalForestCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Causal Mediation Analysis with Sensitivity Analysis (Imai, Keele & Tingley 2010) */}
+      <CausalMediationSensitivityCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Dynamic Time Warping (DTW) Trajectory Clustering (Sakoe & Chiba 1978; Petitjean et al. 2011) */}
+      <DTWClusteringCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Causal Interaction Trees & Honest Subgroup Identification (Athey & Imbens 2016) */}
+      <CausalTreeCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Multiple Testing Correction & False Discovery Rate (FDR Matrix) (Benjamini & Hochberg 1995, Storey 2002) */}
+      <MultipleTestingFDRCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Bayesian Structural Equation Modeling (BSEM) (Muthén & Asparouhov 2012) */}
+      <BSEMCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Endogeneity Control via Gaussian Copula (Park & Gupta 2012) */}
+      <GaussianCopulaCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Dynamic Factor Modeling (DFM) with Kalman Filter & RTS State-Space Smoothing (Stock & Watson 2002, Durbin & Koopman 2012) */}
+      <DynamicFactorModelCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Extreme Bound Analysis (EBA) Specification Curve Engine (Leamer 1983, Sala-i-Martin 1997) */}
+      <ExtremeBoundsAnalysisCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Spatial Econometrics & Moran's I Autoregressive Models (SAR / SEM; Anselin 1988, LeSage & Pace 2009) */}
+      <SpatialEconometricsCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005, 2008) */}
+      <IVQuantileRegressionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Choice-Based Conjoint with Hierarchical Bayes (HB-CBC; Rossi et al. 2005, McFadden 1974) */}
+      <ConjointHBCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Fractional Response Regression QMLE (Papke & Wooldridge 1996, 2008) */}
+      <FractionalResponseCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Multidimensional Item Response Theory (MIRT; Reckase 2009) */}
+      <MIRTCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Heckman Two-Step Sample Selection Model (Heckman 1979 Nobel Prize) */}
+      <HeckmanSelectionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Stochastic Frontier Analysis (SFA) & Technical Efficiency (Aigner et al. 1977, JLMS 1982) */}
+      <StochasticFrontierCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Zero-Inflated Count Regression Models (ZIP & ZINB; Lambert 1992, Greene 1994, Vuong 1989) */}
+      <ZeroInflatedCountCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Latent Moderated Structural Equations (LMS / QML; Klein & Moosbrugger 2000, Marsh et al. 2004) */}
+      <LatentModerationCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Endogenous Switching Regression (ESR - FIML; Maddala 1983, Lokshin & Sajaia 2004) */}
+      <EndogenousSwitchingCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Generalized Propensity Score & Dose-Response Analysis (Hirano & Imbens 2004) */}
+      <GPSDoseResponseCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Causal Discovery DAG Engine (LiNGAM & ANM; Shimizu et al. 2006, Hoyer et al. 2009) */}
+      <CausalDiscoveryCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Bayesian Additive Regression Trees (BART) Causal Engine (Chipman et al. 2010, Hill 2011) */}
+      <BARTCausalCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Choice-Based Conjoint (CBC) & Discrete Choice Experiment (DCE; McFadden 1974, Train 2009) */}
+      <ConjointChoiceCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Multi-Group SEM Invariance & Latent Means Difference (Meredith 1993, Byrne 2013) */}
+      <MGSEMInvarianceCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Generalized Additive Models (GAM) & Penalized Splines (Hastie & Tibshirani 1990; Wood 2017) */}
+      <GAMSplineCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Latent Profile Analysis (LPA) & Gaussian Finite Mixture Models (McLachlan & Peel 2000; Collins & Lanza 2010) */}
+      <LatentProfileCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Shapley Value Regression & Key Driver Analysis (Lipovetsky & Conklin 2001; Lundberg & Lee 2017) */}
+      <ShapleyDriverCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Plackett-Luce Choice Model & Rank-Ordered Logit (Luce 1959; Plackett 1975; Hunter 2004 MM) */}
+      <PlackettLuceCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* MaxDiff Best-Worst Scaling Case 1 (Finn & Louviere 1992; Marley & Louviere 2005) */}
+      <MaxDiffCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Gaussian Bayesian Network DAG Structure Learning (Heckerman 1995; Scutari 2010) */}
+      <BayesianNetworkCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Stochastic Dominance & Distributional Inequality (Davidson & Duclos 2000; Hadar & Russell 1969) */}
+      <StochasticDominanceCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Non-Parametric Hypothesis Tests (Mann-Whitney U, Wilcoxon Signed-Rank, Kruskal-Wallis & Dunn Post-Hoc) */}
+      <NonParametricTestsCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Missing Data Pattern Diagnostics & Multiple Imputation Engine (Little's MCAR 1988, EM, PMM) */}
+      <MissingDataCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Scale Equating & Concordance Transformation Engine (Linear & Equipercentile Equating) */}
+      <ScaleEquatingCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Multi-Group Measurement Invariance Testing (Configural, Metric, Scalar, Strict Invariance) */}
+      <MeasurementInvarianceCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Common Method Bias / Variance (CMB/CMV) Diagnostics (Harman, Marker Variable, ULMCF) */}
+      <CommonMethodBiasCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Statistical Power Analysis & Sample Size Estimator (Cohen 1988 & Cochran 1977) */}
+      <SamplePowerAnalysisCard surveyId={surveyId} />
+
+      {/* Split-Ballot & Question Wording Experimentation (Schuman & Presser) */}
+      <SplitBallotExperimentCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type,
+          options: q.option_distribution ? Object.keys(q.option_distribution) : []
+        }))}
+      />
+
+      {/* Rasch Model 1-PL & Wright Map (Item Response Theory) */}
+      <RaschWrightMapCard surveyId={surveyId} />
+
+      {/* Respondent Clustering & Typology Segmentation (K-Means & Silhouette) */}
+      <RespondentClusterCard surveyId={surveyId} />
+
+      {/* Pairwise Response Similarity Matrix & Collusion Syndicate Rings (AAPOR & ISO 20252) */}
+      <PairwiseSimilarityCard surveyId={surveyId} />
+
+      {/* Geographic Spatial Clustering & Geo-Fencing Compliance (DBSCAN & ISO 20252 §4.5.3) */}
+      <SpatialGeoAuditCard surveyId={surveyId} />
+
+      {/* Longitudinal Wave-over-Wave Comparative Analytics & Cohen's d Effect Size */}
+      <LongitudinalComparisonCard currentSurveyId={surveyId} currentSurveyTitle={survey_title} />
+
+      {/* Sampling Quotas & Demographic Stratification Control */}
+      <SamplingQuotaCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type,
+          options: q.option_distribution ? Object.keys(q.option_distribution) : []
+        }))}
+      />
+
+      {/* Cognitive Burden & Inattention Pacing Analyzer */}
+      <CognitivePacingCard surveyId={surveyId} />
+
+      {/* Multivariate Outlier & Mahalanobis Distance Detection */}
+      <MultivariateOutlierCard surveyId={surveyId} />
+
+      {/* Survey Drop-Off Funnel & Completion Card */}
+      {analytics.funnel_analytics && analytics.funnel_analytics.length > 1 && (
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="w-5 h-5 text-indigo-600" />
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Phễu Hoàn Thành & Điểm Nghẽn Rơi Rụng (Drop-Off Funnel)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Đo lường mức độ mệt mỏi nhận thức và tỷ lệ bỏ dở giữa chừng qua từng câu hỏi (Phương pháp luận Don Dillman)
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg self-start sm:self-auto">
+              Hoàn thành toàn bài: {analytics.overall_completion_rate ?? 100}%
+            </span>
+          </div>
+
+          <div className="space-y-3 pt-1">
+            {analytics.funnel_analytics.map((step) => {
+              const isHighDrop = (step.drop_off_pct || 0) >= 15;
+              return (
+                <div key={step.question_id} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs font-medium text-slate-700">
+                    <span className="line-clamp-1 max-w-[70%]">
+                      <strong className="text-slate-900">Câu #{step.step}:</strong> {step.question_title}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isHighDrop && (
+                        <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                          ⚠️ Rơi rụng {step.drop_off_pct}%
+                        </span>
+                      )}
+                      <span className="text-slate-500 font-mono">
+                        {step.total_answers} trả lời ({step.completion_rate_pct}%)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isHighDrop ? 'bg-amber-500' : 'bg-indigo-600'
+                      }`}
+                      style={{ width: `${step.completion_rate_pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Per-Question Analytics */}
       <div className="space-y-6">
         <h2 className="text-lg font-bold text-slate-900">Chi tiết phân bố theo từng câu hỏi</h2>
@@ -220,9 +1346,27 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
                 </span>
                 <h3 className="text-base font-bold text-slate-900">{q.question_title}</h3>
               </div>
-              <span className="text-xs text-slate-500 font-medium whitespace-nowrap bg-slate-100 px-2.5 py-1 rounded-full">
-                {q.total_answers} câu trả lời
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setChartExportQuestionId(q.question_id);
+                    setIsChartExportOpen(true);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-lg transition-all"
+                  title="Xuất biểu đồ phân bố cho câu hỏi này (SVG / PNG 300 DPI)"
+                >
+                  <BarChart2 className="w-3.5 h-3.5 text-violet-600" />
+                  <span>Xuất đồ thị</span>
+                </button>
+                {q.drop_off_rate && q.drop_off_rate > 10 ? (
+                  <span className="text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                    Rơi rụng {q.drop_off_rate}%
+                  </span>
+                ) : null}
+                <span className="text-xs text-slate-500 font-medium whitespace-nowrap bg-slate-100 px-2.5 py-1 rounded-full">
+                  {q.total_answers} câu trả lời ({q.completion_rate ?? 100}%)
+                </span>
+              </div>
             </div>
 
             {/* Option distribution bars */}
@@ -341,6 +1485,62 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
         isOpen={isAuditModalOpen}
         onClose={() => setIsAuditModalOpen(false)}
         onRefreshAnalytics={loadAnalytics}
+      />
+
+      {/* Automated Data Cleansing Modal */}
+      <DataCleansingModal
+        surveyId={surveyId}
+        isOpen={isCleansingOpen}
+        onClose={() => setIsCleansingOpen(false)}
+        onSuccess={loadAnalytics}
+      />
+
+      {/* Academic Codebook & Statistical Syntax Modal */}
+      <CodebookModal
+        isOpen={isCodebookOpen}
+        onClose={() => setIsCodebookOpen(false)}
+        surveyId={surveyId}
+        surveyTitle={analytics?.survey_title || 'Khảo sát'}
+      />
+
+      {/* Academic Manuscript Studio Modal */}
+      <AcademicManuscriptModal
+        isOpen={isManuscriptOpen}
+        onClose={() => setIsManuscriptOpen(false)}
+        surveyId={surveyId}
+        surveyTitle={analytics?.survey_title || 'Khảo sát'}
+      />
+
+      {/* Survey Logic DAG & Branching Simulator Modal */}
+      <SurveyLogicSimulatorModal
+        isOpen={isLogicSimulatorOpen}
+        onClose={() => setIsLogicSimulatorOpen(false)}
+        surveyId={surveyId}
+        surveyTitle={analytics?.survey_title || 'Khảo sát'}
+      />
+
+      {/* High-Resolution Academic Chart Export Modal */}
+      <AcademicChartExportModal
+        isOpen={isChartExportOpen}
+        onClose={() => setIsChartExportOpen(false)}
+        analytics={analytics}
+        initialQuestionId={chartExportQuestionId}
+      />
+
+      {/* Demographic Raking (IPF) Scientific Weighting Modal */}
+      <DemographicRakingModal
+        isOpen={isRakingOpen}
+        onClose={() => setIsRakingOpen(false)}
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
+      />
+
+      {/* Differential Item Functioning (DIF) Analysis Modal */}
+      <DIFAnalysisModal
+        isOpen={isDIFOpen}
+        onClose={() => setIsDIFOpen(false)}
+        surveyId={surveyId}
+        questions={analytics.questions_analytics}
       />
     </div>
   );

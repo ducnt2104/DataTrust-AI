@@ -53,6 +53,7 @@ export interface Survey {
   updated_at: string;
   closed_at?: string | null;
   questions: Question[];
+  settings?: Record<string, any>;
   responses_count?: number;
 }
 
@@ -185,6 +186,7 @@ export interface PaperScanResult {
   question_confidences: Record<string, number>;
   overlay_image_base64?: string | null;
   warnings: string[];
+  orientation_corrected?: number;
 }
 
 export interface PaperIngestPayload {
@@ -202,6 +204,18 @@ export interface PaperIngestPayload {
 }
 
 // --- Enumerator Analytics Types ---
+export interface GPSPoint {
+  response_id: string;
+  lat: number;
+  lon: number;
+  submitted_at: string;
+  risk_score: number;
+  speed_to_next_kmh?: number | null;
+  is_speed_anomaly?: boolean;
+  is_geofence_breach?: boolean;
+  distance_from_center_km?: number;
+}
+
 export interface EnumeratorMetrics {
   enumerator_id: string;
   total_responses: number;
@@ -214,12 +228,27 @@ export interface EnumeratorMetrics {
   variance_z_score: number;
   is_anomaly: boolean;
   anomaly_reasons: string[];
+  gps_coverage_rate?: number;
+  impossible_speed_detected?: boolean;
+  max_speed_kmh?: number | null;
+  stationary_cluster_detected?: boolean;
+  radius_of_gyration_km?: number | null;
+  spatial_coverage_sqkm?: number | null;
+  geofence_breach_count?: number;
+  gps_points?: GPSPoint[];
 }
 
 export interface EnumeratorAnalytics {
   survey_id: string;
   total_enumerators: number;
   total_field_responses: number;
+  geofence_setting?: {
+    enabled?: boolean;
+    target_lat?: number;
+    target_lon?: number;
+    max_radius_km?: number;
+    location_name?: string;
+  } | null;
   enumerators: EnumeratorMetrics[];
 }
 
@@ -228,6 +257,8 @@ export interface QuestionStats {
   question_title: string;
   question_type: QuestionType;
   total_answers: number;
+  completion_rate?: number | null;
+  drop_off_rate?: number | null;
   option_distribution?: Record<string, number> | null;
   stats_summary?: {
     min?: number;
@@ -247,6 +278,16 @@ export interface SurveyAnalytics {
   is_sample_size_sufficient: boolean;
   sample_size_notice?: string | null;
   avg_duration_seconds: number;
+  overall_completion_rate?: number | null;
+  funnel_analytics?: {
+    step: number;
+    question_id: string;
+    question_title: string;
+    question_type: string;
+    total_answers: number;
+    completion_rate_pct: number;
+    drop_off_pct: number;
+  }[] | null;
   risk_distribution: Record<string, number>;
   review_distribution: Record<string, number>;
   questions_analytics: QuestionStats[];
@@ -281,4 +322,6333 @@ export interface QualityAuditReport {
   };
   methodology_citations: string[];
   audit_hash: string;
+  cronbach_alpha?: number | null;
+  ledger_head_hash?: string | null;
+  is_ledger_valid?: boolean;
+}
+
+// --- Tamper-Evident SHA-256 Audit Trail Types ---
+export interface AuditLogEntry {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  details_json: string;
+  details?: Record<string, any>;
+  created_at: string;
+  prev_hash: string;
+  entry_hash: string;
+  is_valid_hash: boolean;
+}
+
+export interface AuditTrail {
+  survey_id: string;
+  is_chain_valid: boolean;
+  chain_status: 'VALID' | 'TAMPERED' | 'EMPTY';
+  total_records: number;
+  genesis_hash?: string;
+  head_hash?: string;
+  tampered_at_index?: number;
+  tampered_record_id?: string;
+  verification_message: string;
+  verified_at: string;
+  events: AuditLogEntry[];
+}
+
+// --- AI Survey Engine Types ---
+export interface AIGenerateSurveyOptions {
+  topic: string;
+  audience?: string;
+  research_objectives?: string;
+  expected_time_minutes?: number;
+  preferred_question_types?: string[];
+  target_question_count?: number;
+  language?: string;
+  strict_scientific_mode?: boolean;
+}
+
+export interface AIGenerationMetadata {
+  session_id: string;
+  status: string;
+  provider: string;
+  model_used: string;
+  validation: {
+    is_valid: boolean;
+    coverage_score: number;
+    adherence_score: number;
+    objectivity_score: number;
+    issues: any[];
+    repaired: boolean;
+    repair_attempts: number;
+  };
+  duration_ms: number;
+  error_detail?: string;
+}
+
+export interface AIAuditIssue {
+  question_id?: string;
+  question_title?: string;
+  issue_type: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  explanation: string;
+  suggestion: string;
+  auto_fix_title?: string;
+}
+
+export interface AIAuditResponse {
+  audit_id?: string;
+  total_questions: number;
+  total_issues: number;
+  scientific_readiness: 'READY' | 'WARNINGS_PRESENT' | 'CRITICAL_ISSUES';
+  issues: AIAuditIssue[];
+}
+
+export interface AIStatus {
+  ai_active: boolean;
+  provider_available: string;
+  configured_model: string;
+  fallback_model: string;
+  security_mode: string;
+  supported_question_types_count: number;
+  description: string;
+}
+
+export interface AIQualitativeAnalysis {
+  total_analyzed: number;
+  sentiment_distribution: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  key_themes: {
+    theme_name: string;
+    sentiment: string;
+    prevalence_percent: number;
+    sample_quotes: string[];
+  }[];
+  anomaly_flags: string[];
+  methodology_summary: string;
+}
+
+export interface CodebookVariable {
+  variable_name: string;
+  question_id: string;
+  variable_label: string;
+  question_type: string;
+  measurement_level: string;
+  is_required: boolean;
+  value_labels: Record<string, string>;
+  missing_values: Record<string, string>;
+}
+
+export interface CodebookData {
+  survey_id: string;
+  title: string;
+  variables_count: number;
+  variables: CodebookVariable[];
+  spss_syntax: string;
+  r_script: string;
+  stata_syntax: string;
+  sas_syntax?: string;
+}
+
+// --- Adversarial Red-Team Security Simulation Types ---
+export interface AttackDefenseItem {
+  id: string;
+  name: string;
+  category: string;
+  threat_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  payload_sample: string;
+  result: 'DEFENDED' | 'VULNERABLE';
+  defense_layer: string;
+  latency_ms: number;
+  technical_detail: string;
+}
+
+export interface RedTeamSimulationResult {
+  survey_id: string;
+  timestamp: string;
+  overall_status: 'SECURE' | 'VULNERABLE';
+  compliance_score: number;
+  attacks_tested: number;
+  attacks_deflected: number;
+  total_duration_ms: number;
+  standards_verified: string[];
+  attack_results: AttackDefenseItem[];
+}
+
+// --- Cross-Tabulation & Chi-Square Heatmap Types ---
+export interface CrosstabCell {
+  observed: number;
+  expected: number;
+  row_percentage: number;
+  column_percentage: number;
+  total_percentage: number;
+  pearson_residual?: number;
+}
+
+export interface CrosstabAnalysisResult {
+  total_valid_samples: number;
+  is_sample_sufficient: boolean;
+  notice?: string | null;
+  variable_row: {
+    question_id: string;
+    title: string;
+    categories: string[];
+    totals: Record<string, number>;
+  };
+  variable_col: {
+    question_id: string;
+    title: string;
+    categories: string[];
+    totals: Record<string, number>;
+  };
+  row_categories: string[];
+  col_categories: string[];
+  matrix: Record<string, Record<string, CrosstabCell>>;
+  chi_square_statistic: number;
+  degrees_of_freedom: number;
+  p_value: number;
+  cramers_v: number;
+  association_strength: string;
+  is_statistically_significant: boolean;
+  interpretation: string;
+}
+
+// --- Psychometric Scale Reliability Types ---
+export interface ScaleItemStatistic {
+  item_index: number;
+  item_id: string;
+  item_title: string;
+  item_mean: number;
+  item_variance: number;
+  item_std_dev: number;
+  scale_mean_if_deleted: number;
+  scale_variance_if_deleted: number;
+  corrected_item_total_correlation: number;
+  alpha_if_item_deleted: number | null;
+  status: 'GOOD' | 'ACCEPTABLE' | 'CONSIDER_REVISE';
+  recommendation: string;
+}
+
+export interface ScaleReliabilityResult {
+  survey_id: string;
+  scope: string;
+  is_sufficient: boolean;
+  notice?: string | null;
+  cronbach_alpha: number | null;
+  standardized_alpha: number | null;
+  n_samples: number;
+  k_items: number;
+  scale_mean: number;
+  scale_variance: number;
+  scale_std_dev: number;
+  academic_rating: string;
+  interpretation: string;
+  item_statistics: ScaleItemStatistic[];
+}
+
+export interface PublicCertificateVerification {
+  query: string;
+  is_valid: boolean;
+  status: 'VERIFIED_VALID' | 'TAMPERED' | 'NOT_FOUND';
+  certificate_id: string;
+  survey_id: string;
+  survey_title: string;
+  survey_description?: string | null;
+  public_slug?: string | null;
+  issued_at: string;
+  total_responses: number;
+  clean_responses: number;
+  excluded_responses: number;
+  trust_index: number;
+  cronbach_alpha?: number | null;
+  reliability_verdict?: string | null;
+  ledger_chain_valid: boolean;
+  ledger_head_hash?: string | null;
+  ledger_genesis_hash?: string | null;
+  total_audit_events: number;
+  verification_verdict: string;
+  compliance_standards: string[];
+  printable_certificate_url: string;
+}
+
+export interface LongitudinalItemComparison {
+  question_id_1?: string | null;
+  question_id_2?: string | null;
+  title: string;
+  question_type: string;
+  is_scale: boolean;
+  n_wave1: number;
+  n_wave2: number;
+  mean_wave1?: number | null;
+  mean_wave2?: number | null;
+  std_wave1?: number | null;
+  std_wave2?: number | null;
+  mean_shift?: number | null;
+  percent_change?: number | null;
+  cohens_d?: number | null;
+  effect_size: string;
+  t_statistic?: number | null;
+  degrees_of_freedom?: number | null;
+  p_value?: number | null;
+  is_statistically_significant: boolean;
+  significance_label: string;
+  trend_direction: 'INCREASED' | 'DECREASED' | 'STABLE' | 'SHIFTED';
+  category_shifts?: Array<{
+    option: string;
+    count_wave1: number;
+    pct_wave1: number;
+    count_wave2: number;
+    pct_wave2: number;
+    delta_pct: number;
+  }> | null;
+  apa_summary: string;
+}
+
+export interface LongitudinalWaveComparisonResult {
+  wave1_survey: {
+    survey_id: string;
+    title: string;
+    version: number;
+    total_responses: number;
+    trust_index: number;
+    avg_duration: number;
+  };
+  wave2_survey: {
+    survey_id: string;
+    title: string;
+    version: number;
+    total_responses: number;
+    trust_index: number;
+    avg_duration: number;
+  };
+  matched_questions_count: number;
+  overall_scale_mean_wave1?: number | null;
+  overall_scale_mean_wave2?: number | null;
+  overall_scale_delta?: number | null;
+  items_increased_count: number;
+  items_decreased_count: number;
+  items_stable_count: number;
+  comparative_summary: string;
+  items: LongitudinalItemComparison[];
+}
+
+export interface StressTestReport {
+  status: string;
+  total_requests: number;
+  successful_requests: number;
+  failed_requests: number;
+  concurrency_workers: number;
+  total_time_seconds: number;
+  throughput_rps: number;
+  latency_mean_ms: number;
+  latency_median_p50_ms: number;
+  latency_p90_ms: number;
+  latency_p95_ms: number;
+  latency_p99_ms: number;
+  latency_min_ms: number;
+  latency_max_ms: number;
+  database_lock_errors: number;
+  audit_chain_valid_post_stress: boolean;
+  audit_chain_head_hash?: string | null;
+  wal_size_bytes_after: number;
+}
+
+// --- Sampling Quotas & Demographic Raking Types ---
+export interface SamplingQuotaRule {
+  id?: string;
+  name: string;
+  question_id: string;
+  target_value: string;
+  max_target: number;
+  action?: 'flag_overflow' | 'screen_out';
+}
+
+export interface SamplingQuotaCellProgress {
+  cell_id: string;
+  name: string;
+  question_id: string;
+  target_value: string;
+  max_target: number;
+  achieved_count: number;
+  remaining_count: number;
+  completion_pct: number;
+  status: 'open' | 'almost_full' | 'filled';
+  action: 'flag_overflow' | 'screen_out';
+}
+
+export interface SamplingQuotaReport {
+  survey_id: string;
+  total_quota_cells: number;
+  filled_cells: number;
+  open_cells: number;
+  overall_target_sum: number;
+  overall_achieved_sum: number;
+  overall_completion_pct: number;
+  cells: SamplingQuotaCellProgress[];
+}
+
+export interface RakingMarginalCategory {
+  category: string;
+  unweighted_count: number;
+  unweighted_pct: number;
+  target_benchmark_pct: number;
+  weighted_pct: number;
+  absolute_bias_reduction_pct: number;
+}
+
+export interface RakingMarginalComparison {
+  variable: string;
+  categories: RakingMarginalCategory[];
+}
+
+export interface DemographicRakingResult {
+  survey_id: string;
+  converged: boolean;
+  iterations: number;
+  max_discrepancy: number;
+  sample_size: number;
+  design_effect_deff: number;
+  effective_sample_size_neff: number;
+  statistical_efficiency_pct: number;
+  weight_stats: {
+    min: number;
+    max: number;
+    mean: number;
+    std: number;
+    trim_bounds: [number, number];
+  };
+  marginal_comparisons: RakingMarginalComparison[];
+  summary: string;
+}
+
+export interface DemographicRakingRequest {
+  target_margins: Record<string, Record<string, number>>;
+  scope?: 'verified_clean' | 'all';
+  max_iterations?: number;
+  convergence_tol?: number;
+  trim_min?: number;
+  trim_max?: number;
+}
+
+// --- Differential Item Functioning (DIF) Types ---
+export interface DIFItemResult {
+  question_id: string;
+  question_title: string;
+  median_threshold: number;
+  active_strata_count: number;
+  chi2_mh: number;
+  p_value: number;
+  alpha_odds_ratio: number;
+  delta_ets: number;
+  abs_delta_ets: number;
+  ets_class: 'A' | 'B' | 'C';
+  ets_label: string;
+  favored_group: string;
+  action_recommendation: string;
+  is_statistically_significant: boolean;
+}
+
+export interface DIFReport {
+  survey_id: string;
+  grouping_variable_id: string;
+  grouping_variable_title: string;
+  reference_group: string;
+  focal_group: string;
+  sample_reference: number;
+  sample_focal: number;
+  total_eval_sample: number;
+  strata_count: number;
+  class_a_count: number;
+  class_b_count: number;
+  class_c_count: number;
+  overall_verdict: string;
+  summary: string;
+  items: DIFItemResult[];
+}
+
+export interface QuestionPacingAnalysis {
+  id: string;
+  order_index: number;
+  title: string;
+  question_type: string;
+  title_words: number;
+  options_word_count: number;
+  total_words: number;
+  num_options: number;
+  expected_reading_seconds: number;
+  cognitive_burden_score: number;
+  burden_tier: 'Low' | 'Moderate' | 'High' | 'Critical';
+  risk_factors: string[];
+  redesign_recommendation: string;
+}
+
+export interface SurveyPacingReport {
+  survey_level: {
+    survey_title: string;
+    total_questions: number;
+    total_survey_words: number;
+    expected_reading_seconds: number;
+    expected_reading_minutes: number;
+    actual_sample_size: number;
+    actual_median_seconds: number;
+    actual_mean_seconds: number;
+    overall_pacing_ratio: number;
+    engagement_level: string;
+    engagement_desc: string;
+    respondent_pacing_distribution: {
+      severe_speeding: number;
+      rushed: number;
+      optimal: number;
+      deliberate: number;
+    };
+    average_question_burden: number;
+    high_burden_questions_count: number;
+    fatigue_slope: number;
+    fatigue_risk: boolean;
+    fatigue_note: string;
+    apa_interpretation: string;
+  };
+  question_analyses: QuestionPacingAnalysis[];
+}
+
+export interface MultivariateOutlierItem {
+  response_id: string;
+  d2_mahalanobis: number;
+  distance_d: number;
+  p_value: number;
+  degrees_of_freedom: number;
+  is_outlier: boolean;
+  outlier_tier: 'Extreme Anomaly' | 'Moderate Outlier' | 'Normal Multivariate Range';
+  duration_seconds: number;
+  risk_score: number;
+  review_status: string;
+  answers_vector: number[];
+}
+
+export interface MultivariateOutlierReport {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'INSUFFICIENT_VARIABLES' | 'SINGULAR_MATRIX';
+  message?: string;
+  sample_size?: number;
+  degrees_of_freedom?: number;
+  scale_variables_count?: number;
+  scale_variable_ids?: string[];
+  scale_variable_titles?: string[];
+  mean_d2?: number;
+  median_d2?: number;
+  max_d2?: number;
+  critical_chi2_001?: number;
+  total_outliers_count?: number;
+  extreme_outliers_count?: number;
+  moderate_outliers_count?: number;
+  outlier_rate_pct?: number;
+  apa_interpretation?: string;
+  outliers_summary?: MultivariateOutlierItem[];
+  all_records_count?: number;
+}
+
+export interface EFAEigenvalueStat {
+  factor_index: number;
+  eigenvalue: number;
+  variance_pct: number;
+  cumulative_variance_pct: number;
+  retained_kaiser: boolean;
+}
+
+export interface EFAScreePlotPoint {
+  factor: number;
+  eigenvalue: number;
+  threshold: number;
+}
+
+export interface EFARotatedVariance {
+  factor_name: string;
+  factor_index: number;
+  ss_loadings: number;
+  variance_pct: number;
+}
+
+export interface EFAItemResult {
+  question_id: string;
+  question_title?: string;
+  order_index?: number;
+  msa_index: number;
+  communality: number;
+  factor_loadings: number[];
+  primary_factor: string;
+  primary_factor_index: number;
+  max_loading: number;
+  is_acceptable: boolean;
+}
+
+export interface EFAReport {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'INSUFFICIENT_VARIABLES' | 'ERROR';
+  message?: string;
+  sample_size?: number;
+  variables_count?: number;
+  variable_ids?: string[];
+  scale_variable_titles?: string[];
+  kmo_overall?: number;
+  kmo_verdict?: string;
+  is_kmo_acceptable?: boolean;
+  bartlett_chi2?: number;
+  bartlett_df?: number;
+  bartlett_p_value?: number;
+  is_bartlett_significant?: boolean;
+  factors_extracted_count?: number;
+  rotation_method?: string;
+  cumulative_variance_extracted_pct?: number;
+  is_variance_sufficient?: boolean;
+  eigenvalue_stats?: EFAEigenvalueStat[];
+  scree_plot_data?: EFAScreePlotPoint[];
+  factors?: string[];
+  rotated_factor_variance?: EFARotatedVariance[];
+  items?: EFAItemResult[];
+  weak_loadings_count?: number;
+  low_communalities_count?: number;
+  correlation_matrix?: number[][];
+  apa_interpretation?: string;
+}
+
+export interface TTestGroupStats {
+  label: string;
+  n: number;
+  mean: number;
+  var: number;
+  sd: number;
+  se: number;
+  median: number;
+  skew: number;
+  kurt: number;
+}
+
+export interface IndependentTTestReport {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  test_type: 'independent';
+  test_method: string;
+  variable_label: string;
+  group1: TTestGroupStats;
+  group2: TTestGroupStats;
+  mean_difference: number;
+  std_error_difference: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  levene_test: {
+    f_stat: number;
+    df1: number;
+    df2: number;
+    p_value: number;
+    equal_variances_assumed: boolean;
+  };
+  primary_test: {
+    t_stat: number;
+    df: number;
+    p_value: number;
+    is_significant_05: boolean;
+    is_significant_01: boolean;
+  };
+  student_test: {
+    t_stat: number;
+    df: number;
+    p_value: number;
+    se: number;
+  };
+  welch_test: {
+    t_stat: number;
+    df: number;
+    p_value: number;
+    se: number;
+  };
+  effect_size: {
+    cohen_d: number;
+    hedges_g: number;
+    magnitude: string;
+  };
+  apa_interpretation: string;
+}
+
+export interface PairedTTestReport {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  test_type: 'paired';
+  test_method: string;
+  sample_size: number;
+  mean_difference: number;
+  variable1: TTestGroupStats;
+  variable2: TTestGroupStats;
+  difference: TTestGroupStats;
+  pearson_r: number;
+  t_stat: number;
+  degrees_of_freedom: number;
+  p_value: number;
+  is_significant_05: boolean;
+  is_significant_01: boolean;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  effect_size: {
+    cohen_d: number;
+    hedges_g: number;
+    magnitude: string;
+  };
+  apa_interpretation: string;
+}
+
+// --- One-Way ANOVA & Tukey HSD Types ---
+export interface ANOVAGroupStat {
+  group_name: string;
+  n: number;
+  mean: number;
+  std: number;
+  median: number;
+  std_error: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+}
+
+export interface ANOVATable {
+  ss_between: number;
+  df_between: number;
+  ms_between: number;
+  ss_within: number;
+  df_within: number;
+  ms_within: number;
+  ss_total: number;
+  df_total: number;
+  f_stat: number;
+  p_value: number;
+  is_significant_05: boolean;
+  is_significant_01: boolean;
+}
+
+export interface ANOVATukeyPair {
+  comparison: string;
+  group1: string;
+  group2: string;
+  mean1: number;
+  mean2: number;
+  mean_difference: number;
+  std_error: number;
+  q_stat: number;
+  q_critical_05: number;
+  is_significant: boolean;
+  ci_95_lower: number;
+  ci_95_upper: number;
+}
+
+export interface OneWayANOVAReport {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  grouping_label: string;
+  variable_label: string;
+  total_sample_size: number;
+  groups_count: number;
+  grand_mean: number;
+  group_statistics: ANOVAGroupStat[];
+  levene_test: {
+    f_stat: number;
+    df1: number;
+    df2: number;
+    p_value: number;
+    equal_variances_assumed: boolean;
+  };
+  anova_table: ANOVATable;
+  effect_size: {
+    eta_squared: number;
+    omega_squared: number;
+    magnitude: string;
+  };
+  post_hoc_tukey: ANOVATukeyPair[];
+  apa_interpretation: string;
+}
+
+// --- Bivariate Correlation Matrix Types ---
+export interface CorrelationVariableSummary {
+  id: string;
+  title: string;
+  label: string;
+  n: number;
+  mean: number;
+  std: number;
+}
+
+export interface CorrelationMatrixCell {
+  var1_id: string;
+  var2_id: string;
+  correlation: number;
+  p_value: number;
+  is_significant_05: boolean;
+  is_significant_01: boolean;
+  is_significant_001: boolean;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  strength: string;
+  direction: string;
+}
+
+export interface CorrelationPairSummary {
+  var1_id: string;
+  var1_title: string;
+  var2_id: string;
+  var2_title: string;
+  correlation: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  strength: string;
+  direction: string;
+  n: number;
+  warning?: string;
+}
+
+export interface CorrelationMatrixReport {
+  status: 'SUCCESS' | 'INSUFFICIENT_VARIABLES' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  method: 'pearson' | 'spearman';
+  variables_count: number;
+  total_pairs_count: number;
+  significant_pairs_count: number;
+  variables: CorrelationVariableSummary[];
+  matrix: CorrelationMatrixCell[][];
+  high_correlations: CorrelationPairSummary[];
+  multicollinearity_warnings: CorrelationPairSummary[];
+  apa_interpretation: string;
+}
+
+// --- Multiple Linear Regression OLS Types ---
+export interface RegressionCoefficient {
+  term: string;
+  label: string;
+  title: string;
+  b_unstandardized: number;
+  std_error: number;
+  beta_standardized: number;
+  t_stat: number;
+  p_value: number;
+  is_significant_05: boolean;
+  is_significant_01: boolean;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  tolerance: number;
+  vif: number;
+}
+
+export interface RegressionModelSummary {
+  r_squared: number;
+  r_squared_adjusted: number;
+  std_error_of_estimate: number;
+  f_stat: number;
+  df_regression: number;
+  df_residual: number;
+  df_total: number;
+  p_value: number;
+  is_significant_05: boolean;
+  is_significant_01: boolean;
+}
+
+export interface RegressionANOVATable {
+  ss_regression: number;
+  df_regression: number;
+  ms_regression: number;
+  ss_residual: number;
+  df_residual: number;
+  ms_residual: number;
+  ss_total: number;
+  df_total: number;
+  f_stat: number;
+  p_value: number;
+}
+
+export interface LinearRegressionReport {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'SINGULAR_MATRIX' | 'ERROR';
+  message?: string;
+  sample_size: number;
+  predictors_count: number;
+  dependent_title: string;
+  model_summary: RegressionModelSummary;
+  anova_table: RegressionANOVATable;
+  coefficients: RegressionCoefficient[];
+  max_vif: number;
+  multicollinearity_risk: 'LOW' | 'MODERATE' | 'HIGH';
+  apa_interpretation: string;
+}
+
+// --- Survey Logic & Branching DAG Simulation ---
+export interface LogicIssue {
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO';
+  type: 'CYCLE' | 'ORDER_INVERSION' | 'DANGLING_REF' | 'UNREACHABLE' | 'CONTRADICTION';
+  title: string;
+  question_id: string;
+  question_title: string;
+  description: string;
+  recommendation: string;
+  cycle_path?: string[];
+}
+
+export interface LogicTopology {
+  node_count: number;
+  edge_count: number;
+  cyclomatic_complexity: number;
+  branch_points_count: number;
+  branch_points: string[];
+  unreachable_count: number;
+  all_paths_count: number;
+}
+
+export interface LogicNode {
+  id: string;
+  order_index: number;
+  title: string;
+  question_type: string;
+  is_required: boolean;
+  rule_count: number;
+  status: 'normal' | 'cycle' | 'unreachable' | 'inversion';
+  rules: any[];
+}
+
+export interface LogicEdge {
+  source: string;
+  target: string;
+  type: 'sequential' | 'conditional' | 'jump';
+  action?: string;
+  label: string;
+  condition?: any;
+}
+
+export interface LogicSamplePath {
+  path_id: string;
+  name: string;
+  length: number;
+  question_ids: string[];
+  completion_percentage: number;
+  description: string;
+}
+
+export interface SurveyLogicReport {
+  survey_id: string;
+  survey_title: string;
+  is_valid: boolean;
+  health_score: number;
+  status: 'OPTIMAL' | 'WARNING' | 'CRITICAL';
+  summary: string;
+  issues: LogicIssue[];
+  topology: LogicTopology;
+  nodes: LogicNode[];
+  edges: LogicEdge[];
+  paths: LogicSamplePath[];
+}
+
+export interface SurveySimulationReport {
+  survey_id: string;
+  survey_title: string;
+  total_questions: number;
+  visible_count: number;
+  hidden_count: number;
+  visible_questions: string[];
+  hidden_questions: string[];
+  skipped_reasons: Record<string, string>;
+  completion_ratio: number;
+}
+
+// --- Statistical Power Analysis & Sample Size Estimator ---
+export interface SampleAdequacyEvaluation {
+  current_n: number;
+  status: 'ADEQUATE' | 'MODERATE' | 'UNDERPOWERED' | 'CRITICAL_INSUFFICIENT';
+  rating: string;
+  badge_color: 'emerald' | 'amber' | 'red';
+  achieved_margin_of_error: number;
+  achieved_margin_of_error_pct: string;
+  ttest_power: {
+    small_d_02: number;
+    medium_d_05: number;
+    large_d_08: number;
+  };
+  correlation_power: {
+    small_r_01: number;
+    medium_r_03: number;
+    large_r_05: number;
+  };
+  minimum_n_required: {
+    ttest_medium_80pct: number;
+    ttest_large_80pct: number;
+    correlation_medium_80pct: number;
+  };
+  summary: string;
+  apa_narrative: string;
+}
+
+export interface CochranEstimation {
+  formula: string;
+  confidence_level: number;
+  z_critical: number;
+  margin_of_error: number;
+  margin_of_error_pct: string;
+  proportion: number;
+  population_size?: number | null;
+  unadjusted_sample_size: number;
+  required_sample_size: number;
+  fpc_applied: boolean;
+  recommendation: string;
+}
+
+export interface PowerCurvePoint {
+  n: number;
+  n_per_group?: number;
+  power: number;
+  power_pct: number;
+}
+
+export interface PowerAnalysisReport {
+  survey_id: string;
+  survey_title: string;
+  scope: string;
+  current_sample_size: number;
+  adequacy: SampleAdequacyEvaluation;
+  cochran_estimation: CochranEstimation;
+  power_curve: PowerCurvePoint[];
+  parameters: {
+    analysis_type: string;
+    confidence_level: number;
+    margin_of_error: number;
+    population_size?: number | null;
+    effect_size: number;
+    target_power: number;
+    alpha: number;
+  };
+}
+
+export interface SplitBallotArmSummary {
+  arm_id: string;
+  label: string;
+  total_responses: number;
+  answered_count: number;
+  response_rate_pct: number;
+}
+
+export interface SplitBallotNumericArmStats {
+  count: number;
+  mean: number;
+  variance: number;
+  std_dev: number;
+  standard_error: number;
+}
+
+export interface SplitBallotNumericDetails {
+  is_sufficient: boolean;
+  message?: string;
+  arm_a: SplitBallotNumericArmStats;
+  arm_b: SplitBallotNumericArmStats;
+  mean_difference: number;
+  t_statistic: number;
+  degrees_of_freedom: number;
+  p_value: number;
+  is_significant: boolean;
+  cohens_d: number;
+  confidence_interval_95: [number, number];
+}
+
+export interface SplitBallotCategoricalOption {
+  option: string;
+  count_a: number;
+  prop_a: number;
+  count_b: number;
+  prop_b: number;
+  difference_pct: number;
+}
+
+export interface SplitBallotCategoricalDetails {
+  is_sufficient: boolean;
+  message?: string;
+  arm_a_total: number;
+  arm_b_total: number;
+  chi_square: number;
+  degrees_of_freedom: number;
+  p_value: number;
+  is_significant: boolean;
+  cramer_v: number;
+  total_variation_distance: number;
+  option_comparison: SplitBallotCategoricalOption[];
+}
+
+export interface SplitBallotComparison {
+  comparison_type: 'numeric' | 'categorical';
+  details: SplitBallotNumericDetails | SplitBallotCategoricalDetails | any;
+}
+
+export interface SplitBallotDistortionIndex {
+  mwdi: number;
+  level: 'FRAME_ROBUST' | 'MODERATELY_SENSITIVE' | 'HIGHLY_PLASTIC';
+  badge_color: string;
+  classification_title: string;
+  scientific_interpretation: string;
+  methodological_recommendation: string;
+}
+
+export interface SplitBallotReport {
+  survey_id: string;
+  survey_title: string;
+  question_id: string;
+  question_title: string;
+  question_type: string;
+  scope: string;
+  total_responses: number;
+  arms_count: number;
+  arms_summary: SplitBallotArmSummary[];
+  comparison: SplitBallotComparison;
+  distortion_index: SplitBallotDistortionIndex;
+  apa_narrative: string;
+}
+
+export interface RaschItemCalibration {
+  question_id: string;
+  order_index: number;
+  item_code: string;
+  title: string;
+  question_type: string;
+  difficulty_logit: number;
+  standard_error: number;
+  infit_mnsq: number;
+  outfit_mnsq: number;
+  fit_status: 'OPTIMAL_FIT' | 'UNDERFIT_NOISY' | 'OVERFIT_REDUNDANT';
+  fit_badge: string;
+  fit_label: string;
+}
+
+export interface RaschWrightMapBucket {
+  logit_level: number;
+  person_count: number;
+  person_percent: number;
+  items: string[];
+}
+
+export interface RaschModelReport {
+  survey_id: string;
+  survey_title: string;
+  scope: string;
+  sample_size: number;
+  item_count: number;
+  convergence: {
+    converged: boolean;
+    iterations: number;
+  };
+  reliability: {
+    item_reliability: number;
+    item_separation_index: number;
+    person_reliability: number;
+    person_mean_theta: number;
+  };
+  targeting: {
+    targeting_gap_logit: number;
+    targeting_evaluation: string;
+    description: string;
+  };
+  item_calibrations: RaschItemCalibration[];
+  wright_map: RaschWrightMapBucket[];
+  apa_narrative: string;
+}
+
+export interface ClusterElbowPoint {
+  k: number;
+  wcss: number;
+  silhouette_score: number;
+}
+
+export interface ClusterPersona {
+  cluster_id: number;
+  cluster_code: string;
+  name: string;
+  archetype_description: string;
+  size: number;
+  percentage: number;
+  high_traits: string[];
+  low_traits: string[];
+}
+
+export interface ClusterFeatureImportance {
+  feature_index: number;
+  feature_name: string;
+  f_ratio: number;
+  eta_squared: number;
+  cluster_means: number[];
+  grand_mean: number;
+}
+
+export interface ClusterAnalysisReport {
+  survey_id: string;
+  survey_title: string;
+  scope: string;
+  sample_size: number;
+  features_count: number;
+  features: { id: string; title: string }[];
+  chosen_k: number;
+  wcss: number;
+  silhouette: {
+    overall_score: number;
+    cluster_scores: number[];
+    quality_level: 'STRONG_CLUSTERING' | 'ACCEPTABLE_CLUSTERING' | 'WEAK_CLUSTERING';
+    quality_badge: string;
+    description: string;
+  };
+  elbow_curve: ClusterElbowPoint[];
+  personas: ClusterPersona[];
+  feature_importance: ClusterFeatureImportance[];
+  apa_narrative: string;
+}
+
+// --- Pairwise Response Similarity & Collusion Ring Interfaces ---
+export interface PairwiseMatchMetric {
+  response_id_a: string;
+  response_id_b: string;
+  composite_similarity: number;
+  closed_similarity: number;
+  closed_matches: number;
+  closed_valid_comparisons: number;
+  open_similarity: number;
+  same_device: boolean;
+  same_ip: boolean;
+  same_enumerator: boolean;
+  time_delta_seconds?: number | null;
+  rapid_succession: boolean;
+  risk_category: 'IDENTICAL_DUPLICATE' | 'NEAR_DUPLICATE' | 'SUSPICIOUS_VARIANT' | 'NORMAL_VARIATION';
+  is_collusion_syndicate: boolean;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  badge: string;
+}
+
+export interface CollusionRing {
+  ring_id: string;
+  member_count: number;
+  response_ids: string[];
+  mean_internal_similarity: number;
+  shared_devices_count: number;
+  has_shared_device: boolean;
+  shared_ips_count: number;
+  has_shared_ip: boolean;
+  enumerators_involved: string[];
+  time_span_seconds?: number | null;
+  threat_level: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  recommended_action: string;
+}
+
+export interface SimilarityMatrixNode {
+  index: number;
+  id: string;
+  short_id: string;
+  review_status: string;
+  quality_score: number;
+  submitted_at: string;
+  is_in_collusion_ring: boolean;
+}
+
+export interface PairwiseSimilarityAnalysisReport {
+  survey_id: string;
+  survey_title: string;
+  scope: string;
+  total_responses: number;
+  matrix_size: number;
+  threshold: number;
+  high_risk_pairs: PairwiseMatchMetric[];
+  collusion_rings: CollusionRing[];
+  matrix_nodes: SimilarityMatrixNode[];
+  similarity_matrix: number[][];
+  summary: {
+    total_responses: number;
+    evaluated_pairs: number;
+    high_risk_pairs_count: number;
+    collusion_rings_count: number;
+    collusion_nodes_count: number;
+    highest_similarity: number;
+    average_similarity: number;
+    data_integrity_index: number;
+    status: string;
+  };
+  academic_narrative: string;
+}
+
+// --- Geographic Spatial Clustering & Geo-Fencing Interfaces ---
+export interface SpatialCluster {
+  cluster_id: string;
+  center_lat: number;
+  center_lon: number;
+  radius_meters: number;
+  member_count: number;
+  response_ids: string[];
+  enumerators_involved: string[];
+  devices_involved: string[];
+  time_span_seconds: number;
+  is_suspicious_coffee_shop: boolean;
+  threat_level: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  recommended_action: string;
+}
+
+export interface SpeedAnomaly {
+  actor_id: string;
+  response_id_from: string;
+  response_id_to: string;
+  from_lat: number;
+  from_lon: number;
+  to_lat: number;
+  to_lon: number;
+  distance_km: number;
+  time_delta_seconds: number;
+  speed_kmh: number;
+  max_allowed_speed_kmh: number;
+  threat_level: 'CRITICAL' | 'HIGH';
+  message: string;
+}
+
+export interface GeofenceBreach {
+  response_id: string;
+  lat: number;
+  lon: number;
+  submitted_at: string;
+  excess_distance_meters: number;
+  enumerator_id?: string;
+  severity: 'HIGH' | 'MEDIUM';
+}
+
+export interface SpatialDispersion {
+  total_gps_points: number;
+  center_lat: number;
+  center_lon: number;
+  standard_distance_meters: number;
+  standard_distance_km: number;
+  bounding_box?: {
+    min_lat: number;
+    max_lat: number;
+    min_lon: number;
+    max_lon: number;
+  } | null;
+  territory_spread: string;
+}
+
+export interface SpatialGpsPoint {
+  id: string;
+  lat: number;
+  lon: number;
+  enumerator_id: string;
+  device_id: string;
+  submitted_at: string;
+  review_status: string;
+  quality_score: number;
+  is_clustered: boolean;
+}
+
+export interface SpatialAnalysisReport {
+  survey_id: string;
+  survey_title: string;
+  scope: string;
+  total_responses: number;
+  total_gps_points: number;
+  gps_coverage_pct: number;
+  eps_meters: number;
+  min_samples: number;
+  max_speed_kmh: number;
+  has_geofence_polygon: boolean;
+  clusters: SpatialCluster[];
+  speed_anomalies: SpeedAnomaly[];
+  geofence_breaches: GeofenceBreach[];
+  dispersion: SpatialDispersion;
+  gps_points: SpatialGpsPoint[];
+  summary: {
+    total_responses: number;
+    total_gps_points: number;
+    clusters_count: number;
+    suspicious_nodes_count: number;
+    speed_anomalies_count: number;
+    geofence_breaches_count: number;
+    spatial_integrity_index: number;
+    status: string;
+  };
+  academic_narrative: string;
+}
+
+export interface CleansingCriteria {
+  exclude_speeders: boolean;
+  speeder_min_seconds: number;
+  exclude_straightlining: boolean;
+  straightlining_threshold: number;
+  exclude_logic_contradictions: boolean;
+  exclude_high_risk: boolean;
+  min_omr_confidence: number;
+  exclude_unverified_enumerator: boolean;
+  exclude_collusion_syndicates?: boolean;
+  exclude_coffee_shop_congregations?: boolean;
+  exclude_impossible_travel?: boolean;
+  exclude_geofence_violations?: boolean;
+}
+
+export interface CleansingReport {
+  survey_id: string;
+  total_responses: number;
+  clean_responses_count: number;
+  clean_percentage: number;
+  flagged_speeders: number;
+  flagged_straightlining: number;
+  flagged_contradictions: number;
+  flagged_high_risk: number;
+  flagged_low_omr: number;
+  overlap_count: number;
+  pre_avg_duration: number;
+  post_avg_duration: number;
+  pre_avg_risk: number;
+  post_avg_risk: number;
+  cronbach_alpha_pre?: number | null;
+  cronbach_alpha_post?: number | null;
+  applied_criteria: CleansingCriteria;
+  flagged_collusion_syndicates?: number;
+  flagged_coffee_shop?: number;
+  flagged_impossible_travel?: number;
+  flagged_geofence_violations?: number;
+}
+
+export interface BatchAnomalyQuarantineRequest {
+  quarantine_syndicates?: boolean;
+  quarantine_coffee_shop?: boolean;
+  quarantine_impossible_velocity?: boolean;
+  quarantine_geofence_violations?: boolean;
+  quarantine_speeders?: boolean;
+  quarantine_straightlining?: boolean;
+  min_risk_score?: number | null;
+  action?: 'verified_fraud' | 'quarantined';
+  custom_note?: string | null;
+  dry_run?: boolean;
+}
+
+export interface BatchAnomalyQuarantineItem {
+  response_id: string;
+  enumerator_id?: string | null;
+  duration_seconds: number;
+  risk_score: number;
+  reasons: string[];
+  previous_status: string;
+  new_status: string;
+}
+
+export interface BatchAnomalyQuarantineResult {
+  success: boolean;
+  survey_id: string;
+  dry_run: boolean;
+  total_evaluated: number;
+  quarantined_count: number;
+  reasons_breakdown: Record<string, number>;
+  items: BatchAnomalyQuarantineItem[];
+  audit_log_id?: string | null;
+  timestamp: string;
+}
+
+export interface BatchRestoreQuarantineRequest {
+  response_ids?: string[] | null;
+  restore_to_status?: string;
+  reason?: string;
+}
+
+export interface BatchRestoreQuarantineResult {
+  success: boolean;
+  survey_id: string;
+  restored_count: number;
+  restored_ids: string[];
+  audit_log_id: string;
+  timestamp: string;
+}
+
+// --- Survey Cognitive Pre-Testing & Ambiguity Diagnostics Interfaces ---
+export interface CognitiveIssue {
+  question_id: string;
+  question_order: number;
+  question_title: string;
+  issue_type: 'LEADING_QUESTION' | 'DOUBLE_BARRELED' | 'DOUBLE_NEGATIVE' | 'VAGUE_QUANTIFIER' | 'COGNITIVE_OVERLOAD' | 'INSUFFICIENT_OPTIONS' | 'SENSITIVE_UNPROTECTED';
+  severity: 'CRITICAL' | 'WARNING' | 'SUGGESTION';
+  cognitive_dimension: string;
+  explanation: string;
+  academic_rule: string;
+  auto_fix_title?: string | null;
+  suggested_options?: Array<{ id: string; label: string }> | null;
+}
+
+export interface PersonaSimulationResult {
+  persona_id: string;
+  persona_name: string;
+  persona_demographic: string;
+  cognitive_style: string;
+  overall_difficulty_rating: 'SMOOTH' | 'ACCEPTABLE' | 'CHALLENGING' | 'DROPOUT_RISK';
+  predicted_completion_time_sec: number;
+  predicted_dropout_probability: number;
+  bottleneck_question_ids: string[];
+  qualitative_feedback: string;
+}
+
+export interface CognitiveFatiguePoint {
+  question_index: number;
+  question_id: string;
+  question_title: string;
+  cumulative_time_seconds: number;
+  fatigue_percentage: number;
+  dropout_risk_percentage: number;
+}
+
+export interface CognitivePretestReport {
+  survey_id?: string | null;
+  survey_title: string;
+  total_questions: number;
+  total_words: number;
+  readability_score: number;
+  readability_level: 'EASY' | 'MODERATE' | 'DIFFICULT';
+  estimated_duration_minutes: number;
+  design_quality_score: number;
+  academic_grade: 'A+' | 'A' | 'B' | 'C';
+  total_issues_count: number;
+  critical_issues_count: number;
+  warning_issues_count: number;
+  issues: CognitiveIssue[];
+  personas: PersonaSimulationResult[];
+  fatigue_curve: CognitiveFatiguePoint[];
+  methodological_summary: string;
+  timestamp: string;
+}
+
+// --- Statistical Mediation & Path Analysis Types ---
+export interface MediationAnalysisRequest {
+  x_question_id: string;
+  m_question_id: string;
+  y_question_id: string;
+  scope?: 'all' | 'verified_clean';
+  bootstrap_samples?: number;
+}
+
+export interface MediationPathInfo {
+  id: string;
+  source: string;
+  target: string;
+  coeff: number;
+  std_beta: number;
+  se: number;
+  p_value: number;
+  stars: string;
+  is_significant: boolean;
+  label: string;
+}
+
+export interface MediationStep {
+  step: number;
+  title: string;
+  formula: string;
+  r_squared: number;
+  f_stat?: number;
+  f_p_value?: number;
+  coefficient?: number;
+  std_beta?: number;
+  se?: number;
+  t_stat?: number;
+  p_value?: number;
+  ci_95?: [number, number];
+  is_significant?: boolean;
+  delta_r_squared?: number;
+  path_c_prime?: {
+    coefficient: number;
+    std_beta: number;
+    se: number;
+    t_stat: number;
+    p_value: number;
+    is_significant: boolean;
+  };
+  path_b?: {
+    coefficient: number;
+    std_beta: number;
+    se: number;
+    t_stat: number;
+    p_value: number;
+    is_significant: boolean;
+  };
+}
+
+export interface MediationEffectsSummary {
+  total_effect_c: number;
+  direct_effect_c_prime: number;
+  indirect_effect_ab: number;
+  std_indirect_effect_ab: number;
+  indirect_to_direct_ratio?: number | null;
+  vaf_percent: number;
+}
+
+export interface MediationSignificanceTests {
+  sobel_test: {
+    z_stat: number;
+    p_value: number;
+    is_significant: boolean;
+  };
+  aroian_test: {
+    z_stat: number;
+    p_value: number;
+    is_significant: boolean;
+  };
+  goodman_test: {
+    z_stat: number;
+    p_value: number;
+    is_significant: boolean;
+  };
+  bootstrap_resampling: {
+    bootstrap_samples: number;
+    indirect_mean: number;
+    se_boot: number;
+    ci_lower: number;
+    ci_upper: number;
+    is_significant: boolean;
+  };
+}
+
+export interface MediationConclusion {
+  mediation_type: 'FULL_MEDIATION' | 'COMPLEMENTARY_PARTIAL_MEDIATION' | 'COMPETITIVE_PARTIAL_MEDIATION' | 'DIRECT_ONLY' | 'NO_EFFECT' | 'INCONCLUSIVE';
+  mediation_label_vn: string;
+  description: string;
+  apa_narrative: string;
+}
+
+export interface MediationDiagram {
+  nodes: Array<{
+    id: string;
+    label: string;
+    role: 'predictor' | 'mediator' | 'outcome';
+    x: number;
+    y: number;
+  }>;
+  paths: MediationPathInfo[];
+}
+
+export interface MediationAnalysisResult {
+  status: 'OK' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  sample_size?: number;
+  variables?: {
+    x: { label: string };
+    m: { label: string };
+    y: { label: string };
+  };
+  steps?: MediationStep[];
+  effects_summary?: MediationEffectsSummary;
+  significance_tests?: MediationSignificanceTests;
+  conclusion?: MediationConclusion;
+  diagram?: MediationDiagram;
+}
+
+// --- Non-Parametric Hypothesis Testing Types ---
+export interface MannWhitneyURequest {
+  target_question_id: string;
+  grouping_question_id: string;
+  group1_value?: string;
+  group2_value?: string;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface NonParametricDescriptives {
+  n: number;
+  mean: number;
+  std: number;
+  median: number;
+  q1: number;
+  q3: number;
+  iqr: number;
+  min: number;
+  max: number;
+}
+
+export interface MannWhitneyUResult {
+  status: 'OK' | 'INSUFFICIENT_DATA' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  test_type?: 'MANN_WHITNEY_U';
+  total_sample_size?: number;
+  groups?: {
+    group1: {
+      name: string;
+      rank_sum: number;
+      mean_rank: number;
+      descriptives: NonParametricDescriptives;
+    };
+    group2: {
+      name: string;
+      rank_sum: number;
+      mean_rank: number;
+      descriptives: NonParametricDescriptives;
+    };
+  };
+  statistics?: {
+    u_statistic: number;
+    u1: number;
+    u2: number;
+    expected_mean_u: number;
+    std_error_u: number;
+    z_statistic: number;
+    p_value: number;
+    is_significant: boolean;
+    ties_count: number;
+  };
+  effect_size?: {
+    rosenthal_r: number;
+    rosenthal_magnitude: string;
+    rank_biserial_correlation: number;
+    common_language_effect_size_pct: number;
+  };
+  conclusion?: {
+    higher_group: string;
+    is_significant: boolean;
+    apa_narrative: string;
+  };
+}
+
+export interface WilcoxonSignedRankRequest {
+  question_id_1: string;
+  question_id_2: string;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface WilcoxonSignedRankResult {
+  status: 'OK' | 'INSUFFICIENT_DATA' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  test_type?: 'WILCOXON_SIGNED_RANK';
+  total_pairs?: number;
+  effective_pairs?: number;
+  zero_differences_count?: number;
+  samples?: {
+    sample1: { name: string; descriptives: NonParametricDescriptives };
+    sample2: { name: string; descriptives: NonParametricDescriptives };
+    differences: NonParametricDescriptives;
+  };
+  statistics?: {
+    w_statistic: number;
+    w_plus: number;
+    w_minus: number;
+    expected_mean_w: number;
+    std_error_w: number;
+    z_statistic: number;
+    p_value: number;
+    is_significant: boolean;
+    ties_count: number;
+  };
+  effect_size?: {
+    rosenthal_r: number;
+    rosenthal_magnitude: string;
+    matched_pairs_rank_biserial: number;
+  };
+  conclusion?: {
+    is_significant: boolean;
+    apa_narrative: string;
+  };
+}
+
+// --- Missing Data Pattern Diagnostics & Imputation Types ---
+export interface MissingVariableSummary {
+  variable: string;
+  observed_count: number;
+  missing_count: number;
+  missing_pct: number;
+  mean: number | null;
+  std: number | null;
+}
+
+export interface MissingPatternItem {
+  pattern_id: string;
+  bitstring: string;
+  case_count: number;
+  percentage: number;
+  observed_variables: string[];
+  missing_variables: string[];
+  is_complete: boolean;
+}
+
+export interface LittlesMCARTest {
+  applicable: boolean;
+  reason?: string;
+  chi_square: number | null;
+  df: number;
+  p_value: number | null;
+  is_mcar?: boolean;
+  conclusion: string;
+  apa_writeup?: string;
+}
+
+export interface MissingDataDiagnosticsResult {
+  status: 'OK' | 'INSUFFICIENT_VARIABLES' | 'INSUFFICIENT_SAMPLE' | 'EMPTY_DATA' | 'ERROR';
+  message?: string;
+  sample_size?: number;
+  variables_count?: number;
+  complete_cases_count?: number;
+  incomplete_cases_count?: number;
+  complete_cases_pct?: number;
+  total_cells?: number;
+  total_missing_cells?: number;
+  overall_missing_rate?: number;
+  variables_summary?: MissingVariableSummary[];
+  patterns?: MissingPatternItem[];
+  patterns_count?: number;
+  littles_mcar_test?: LittlesMCARTest;
+}
+
+export interface MissingImputationComparison {
+  variable: string;
+  missing_cells_imputed: number;
+  original_mean: number;
+  imputed_mean: number;
+  mean_delta_pct: number;
+  original_std: number;
+  imputed_std: number;
+  preservation_status: 'HIGH' | 'MODERATE' | 'DRIFT_ALERT';
+}
+
+export interface MissingDataImputationResult {
+  status: 'OK' | 'NO_MISSING_DATA' | 'INSUFFICIENT_VARIABLES' | 'INSUFFICIENT_SAMPLE' | 'EMPTY_DATA' | 'ERROR';
+  message?: string;
+  method?: string;
+  method_label?: string;
+  sample_size?: number;
+  variables_count?: number;
+  imputed_cells_count?: number;
+  imputed_cells_pct?: number;
+  comparison?: MissingImputationComparison[];
+  apa_writeup?: string;
+  imputed_data_sample?: Array<Record<string, number>>;
+}
+
+// --- Scale Equating & Concordance Transformation Types ---
+export interface ConcordanceRow {
+  x_score: number;
+  percentile_rank: number;
+  linear_equivalent_raw: number;
+  linear_equivalent: number;
+  linear_equivalent_rounded: number;
+  equipercentile_equivalent: number;
+  equipercentile_rounded: number;
+  t_score: number;
+  stanine: number;
+}
+
+export interface ScaleEquatingResult {
+  status: 'OK' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  x_label?: string;
+  y_label?: string;
+  sample_sizes?: { x_count: number; y_count: number };
+  descriptive_statistics?: {
+    x_scale: { mean: number; std: number; skewness: number; min_observed: number; max_observed: number; theoretical_range: [number, number] };
+    y_scale: { mean: number; std: number; skewness: number; min_observed: number; max_observed: number; theoretical_range: [number, number] };
+  };
+  linear_equating?: {
+    slope_alpha: number;
+    intercept_beta: number;
+    formula: string;
+  };
+  discrepancy_analysis?: {
+    max_discrepancy: number;
+    mean_discrepancy: number;
+    agreement_verdict: 'EXCELLENT' | 'MODERATE' | 'SKEWED_DIVERGENCE';
+    agreement_narrative: string;
+  };
+  concordance_table?: ConcordanceRow[];
+  apa_narrative?: string;
+}
+
+
+
+// --- Multi-Group Measurement Invariance Types ---
+export interface InvarianceModelSummary {
+  model: string;
+  level: 'CONFIGURAL' | 'METRIC' | 'SCALAR' | 'STRICT';
+  chi_square: number;
+  df: number;
+  p_value: number;
+  cfi: number;
+  rmsea: number;
+  delta_chi2: number | null;
+  delta_df: number | null;
+  delta_p: number | null;
+  delta_cfi: number | null;
+  delta_rmsea: number | null;
+  supported: boolean;
+}
+
+export interface InvarianceItemDetail {
+  item_name: string;
+  loadings: Record<string, number>;
+  intercepts: Record<string, number>;
+  residual_variances: Record<string, number>;
+  max_loading_discrepancy: number;
+  is_stable: boolean;
+}
+
+export interface KruskalWallisRequest {
+  target_question_id: string;
+  grouping_question_id: string;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface DunnPostHocPair {
+  comparison: string;
+  group1: string;
+  group2: string;
+  mean_rank1: number;
+  mean_rank2: number;
+  mean_rank_diff: number;
+  std_error: number;
+  z_statistic: number;
+  p_value_unadjusted: number;
+  p_value_bonferroni: number;
+  is_significant_bonferroni: boolean;
+}
+
+export interface KruskalWallisResult {
+  status: 'OK' | 'INSUFFICIENT_DATA' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  test_type?: 'KRUSKAL_WALLIS_H';
+  k_groups?: number;
+  total_sample_size?: number;
+  degrees_of_freedom?: number;
+  statistics?: {
+    h_raw: number;
+    h_adjusted: number;
+    tie_correction_factor: number;
+    ties_count: number;
+    p_value: number;
+    is_significant: boolean;
+  };
+  effect_size?: {
+    epsilon_squared: number;
+    magnitude: string;
+  };
+  groups_summary?: Array<{
+    group_name: string;
+    sample_size: number;
+    rank_sum: number;
+    mean_rank: number;
+    median: number;
+    iqr: number;
+    mean: number;
+    std: number;
+  }>;
+  post_hoc_dunn_tests?: DunnPostHocPair[];
+  conclusion?: {
+    is_significant: boolean;
+    apa_narrative: string;
+  };
+}
+
+// --- Missing Data Pattern Diagnostics & Imputation Types ---
+export interface MissingVariableSummary {
+  variable: string;
+  observed_count: number;
+  missing_count: number;
+  missing_pct: number;
+  mean: number | null;
+  std: number | null;
+}
+
+export interface MissingPatternItem {
+  pattern_id: string;
+  bitstring: string;
+  case_count: number;
+  percentage: number;
+  observed_variables: string[];
+  missing_variables: string[];
+  is_complete: boolean;
+}
+
+export interface LittlesMCARTest {
+  applicable: boolean;
+  reason?: string;
+  chi_square: number | null;
+  df: number;
+  p_value: number | null;
+  is_mcar?: boolean;
+  conclusion: string;
+  apa_writeup?: string;
+}
+
+export interface MissingDataDiagnosticsResult {
+  status: 'OK' | 'INSUFFICIENT_VARIABLES' | 'INSUFFICIENT_SAMPLE' | 'EMPTY_DATA' | 'ERROR';
+  message?: string;
+  sample_size?: number;
+  variables_count?: number;
+  complete_cases_count?: number;
+  incomplete_cases_count?: number;
+  complete_cases_pct?: number;
+  total_cells?: number;
+  total_missing_cells?: number;
+  overall_missing_rate?: number;
+  variables_summary?: MissingVariableSummary[];
+  patterns?: MissingPatternItem[];
+  patterns_count?: number;
+  littles_mcar_test?: LittlesMCARTest;
+}
+
+export interface MissingImputationComparison {
+  variable: string;
+  missing_cells_imputed: number;
+  original_mean: number;
+  imputed_mean: number;
+  mean_delta_pct: number;
+  original_std: number;
+  imputed_std: number;
+  preservation_status: 'HIGH' | 'MODERATE' | 'DRIFT_ALERT';
+}
+
+export interface MissingDataImputationResult {
+  status: 'OK' | 'NO_MISSING_DATA' | 'INSUFFICIENT_VARIABLES' | 'INSUFFICIENT_SAMPLE' | 'EMPTY_DATA' | 'ERROR';
+  message?: string;
+  method?: string;
+  method_label?: string;
+  sample_size?: number;
+  variables_count?: number;
+  imputed_cells_count?: number;
+  imputed_cells_pct?: number;
+  comparison?: MissingImputationComparison[];
+  apa_writeup?: string;
+  imputed_data_sample?: Array<Record<string, number>>;
+}
+
+// --- Scale Equating & Concordance Transformation Types ---
+export interface ConcordanceRow {
+  x_score: number;
+  percentile_rank: number;
+  linear_equivalent_raw: number;
+  linear_equivalent: number;
+  linear_equivalent_rounded: number;
+  equipercentile_equivalent: number;
+  equipercentile_rounded: number;
+  t_score: number;
+  stanine: number;
+}
+
+export interface ScaleEquatingResult {
+  status: 'OK' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  x_label?: string;
+  y_label?: string;
+  sample_sizes?: { x_count: number; y_count: number };
+  descriptive_statistics?: {
+    x_scale: { mean: number; std: number; skewness: number; min_observed: number; max_observed: number; theoretical_range: [number, number] };
+    y_scale: { mean: number; std: number; skewness: number; min_observed: number; max_observed: number; theoretical_range: [number, number] };
+  };
+  linear_equating?: {
+    slope_alpha: number;
+    intercept_beta: number;
+    formula: string;
+  };
+  discrepancy_analysis?: {
+    max_discrepancy: number;
+    mean_discrepancy: number;
+    agreement_verdict: 'EXCELLENT' | 'MODERATE' | 'SKEWED_DIVERGENCE';
+    agreement_narrative: string;
+  };
+  concordance_table?: ConcordanceRow[];
+  apa_narrative?: string;
+}
+
+
+
+// --- Multi-Group Measurement Invariance Types ---
+export interface InvarianceModelSummary {
+  model: string;
+  level: 'CONFIGURAL' | 'METRIC' | 'SCALAR' | 'STRICT';
+  chi_square: number;
+  df: number;
+  p_value: number;
+  cfi: number;
+  rmsea: number;
+  delta_chi2: number | null;
+  delta_df: number | null;
+  delta_p: number | null;
+  delta_cfi: number | null;
+  delta_rmsea: number | null;
+  supported: boolean;
+}
+
+export interface InvarianceItemDetail {
+  item_name: string;
+  loadings: Record<string, number>;
+  intercepts: Record<string, number>;
+  residual_variances: Record<string, number>;
+  max_loading_discrepancy: number;
+  is_stable: boolean;
+}
+
+export interface MeasurementInvarianceResult {
+  status: 'OK' | 'INSUFFICIENT_GROUPS' | 'INSUFFICIENT_ITEMS' | 'INSUFFICIENT_SAMPLE' | 'ERROR';
+  message?: string;
+  k_groups?: number;
+  groups?: Record<string, number>;
+  total_sample_size?: number;
+  items_count?: number;
+  highest_level_achieved?: 'CONFIGURAL_ONLY' | 'METRIC_INVARIANCE' | 'SCALAR_INVARIANCE' | 'STRICT_INVARIANCE';
+  verdict_badge?: string;
+  recommendation?: string;
+  models_summary?: InvarianceModelSummary[];
+  item_details?: InvarianceItemDetail[];
+  apa_narrative?: string;
+}
+
+
+
+// --- Common Method Bias / Variance (CMB/CMV) Types ---
+export interface HarmanFactorBreakdown {
+  factor: number;
+  eigenvalue: number;
+  variance_pct: number;
+  cumulative_pct: number;
+}
+
+export interface HarmanTestResult {
+  n_sample: number;
+  n_items: number;
+  first_factor_eigenvalue: number;
+  first_factor_variance_pct: number;
+  factors_with_eigenvalue_gt_one: number;
+  threshold_pct: number;
+  has_cmv_risk: boolean;
+  passed: boolean;
+  variance_breakdown: HarmanFactorBreakdown[];
+  first_factor_loadings: Record<string, number>;
+  interpretation: string;
+}
+
+export interface MarkerPairComparison {
+  variable_x: string;
+  variable_y: string;
+  r_original: number;
+  p_original: number;
+  r_adjusted: number;
+  p_adjusted: number;
+  significance_retained: boolean;
+  t_statistic_adjusted: number;
+}
+
+export interface MarkerTestResult {
+  marker_variable: string;
+  is_auto_marker: boolean;
+  marker_correlation_r_m: number;
+  n_sample: number;
+  degrees_of_freedom: number;
+  total_pairs_tested: number;
+  significant_pairs_before: number;
+  significant_pairs_after: number;
+  significance_retention_rate_pct: number;
+  pair_comparisons: MarkerPairComparison[];
+  interpretation: string;
+}
+
+export interface ULMCFTestResult {
+  n_sample: number;
+  n_items: number;
+  estimated_cmv_variance_pct: number;
+  benchmark_threshold_pct: number;
+  is_acceptable: boolean;
+  average_method_r2: number;
+  method_loadings: Record<string, number>;
+  interpretation: string;
+}
+
+export interface CMBRemedy {
+  type: 'PROCEDURAL' | 'STATISTICAL' | 'REPORTING';
+  title: string;
+  detail: string;
+}
+
+export interface CommonMethodBiasResult {
+  status: 'SUCCESS' | 'INSUFFICIENT_ITEMS' | 'INSUFFICIENT_SAMPLE' | 'INSUFFICIENT_COMPLETE_DATA' | 'ERROR';
+  message?: string;
+  overall_risk?: 'LOW' | 'MODERATE' | 'HIGH';
+  risk_score?: number;
+  risk_summary?: string;
+  flagged_issues?: string[];
+  harman_test?: HarmanTestResult;
+  marker_test?: MarkerTestResult;
+  ulmcf_test?: ULMCFTestResult;
+  apa_writeup?: string;
+  recommended_remedies?: CMBRemedy[];
+}
+
+// --- Statistical Moderation (PROCESS Model 1) Types ---
+export interface ModerationVariableDetail {
+  label: string;
+  title: string;
+  mean: number;
+  std: number;
+  range?: [number, number];
+}
+
+export interface ModerationSimpleSlope {
+  level: 'LOW' | 'MEAN' | 'HIGH';
+  label: string;
+  w_value: number;
+  slope: number;
+  std_error: number;
+  t_stat: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface ModerationPlotPoint {
+  x: number;
+  y_pred: number;
+}
+
+export interface ModerationPlotLine {
+  level: 'LOW' | 'MEAN' | 'HIGH';
+  label: string;
+  point_low_x: ModerationPlotPoint;
+  point_high_x: ModerationPlotPoint;
+}
+
+export interface ModerationAnalysisResult {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'INSUFFICIENT_COMPLETE_DATA' | 'ZERO_VARIANCE' | 'ERROR';
+  message?: string;
+  sample_size?: number;
+  center_variables?: boolean;
+  variables?: {
+    independent_x: ModerationVariableDetail;
+    moderator_w: ModerationVariableDetail;
+    dependent_y: ModerationVariableDetail;
+  };
+  model_1_main_effects?: {
+    r_squared: number;
+    f_stat: number;
+    p_value: number;
+  };
+  model_2_moderation?: {
+    r_squared: number;
+    f_stat: number;
+    p_value: number;
+    coefficients: Array<{
+      term: string;
+      label: string;
+      title: string;
+      b_unstandardized: number;
+      std_error: number;
+      beta_standardized: number;
+      t_stat: number;
+      p_value: number;
+      is_significant_05: boolean;
+      ci_95_lower: number;
+      ci_95_upper: number;
+      vif: number;
+    }>;
+  };
+  moderation_effect?: {
+    delta_r_squared: number;
+    delta_f_stat: number;
+    delta_p_value: number;
+    interaction_b: number;
+    interaction_se: number;
+    interaction_t: number;
+    interaction_p: number;
+    is_significant: boolean;
+    verdict_badge: string;
+  };
+  simple_slopes?: ModerationSimpleSlope[];
+  johnson_neyman?: {
+    has_solution: boolean;
+    all_transition_points: number[];
+    points_within_observed_range: number[];
+    observed_moderator_range: [number, number];
+    percent_sample_significant: number;
+    interpretation: string;
+  };
+  interaction_plot?: {
+    x_axis_label: string;
+    y_axis_label: string;
+    x_range: [number, number];
+    lines: ModerationPlotLine[];
+  };
+  apa_narrative?: string;
+}
+
+export interface ModeratedMediationRequest {
+  independent_question_id: string;
+  mediator_question_id: string;
+  moderator_question_id: string;
+  dependent_question_id: string;
+  center_variables?: boolean;
+  num_bootstrap?: number;
+  scope?: string;
+}
+
+export interface ModeratedMediationVariableDetail {
+  title: string;
+  mean: number;
+  std: number;
+}
+
+export interface ConditionalIndirectEffect {
+  level: 'LOW' | 'MEAN' | 'HIGH';
+  label: string;
+  w_value: number;
+  conditional_a: number;
+  b_path: number;
+  indirect_effect: number;
+  bootstrap_se: number;
+  boot_ci_95_lower: number;
+  boot_ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface ModeratedMediationResult {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'INSUFFICIENT_COMPLETE_DATA' | 'ZERO_VARIANCE' | 'SINGULAR_MATRIX' | 'ERROR';
+  message?: string;
+  sample_size?: number;
+  bootstrap_samples_executed?: number;
+  center_variables?: boolean;
+  variables?: {
+    independent_x: ModeratedMediationVariableDetail;
+    mediator_m: ModeratedMediationVariableDetail;
+    moderator_w: ModeratedMediationVariableDetail;
+    dependent_y: ModeratedMediationVariableDetail;
+  };
+  stage1_mediator_model?: {
+    formula: string;
+    r_squared: number;
+    f_stat: number;
+    p_value: number;
+    coefficients: {
+      intercept_a0: number;
+      path_a1_X: number;
+      path_a2_W: number;
+      interaction_a3_XW: number;
+    };
+  };
+  stage2_dependent_model?: {
+    formula: string;
+    r_squared: number;
+    f_stat: number;
+    p_value: number;
+    coefficients: {
+      intercept_c0: number;
+      direct_path_c_prime: number;
+      mediator_path_b: number;
+    };
+  };
+  index_of_moderated_mediation?: {
+    index_omega: number;
+    bootstrap_se: number;
+    boot_ci_95_lower: number;
+    boot_ci_95_upper: number;
+    is_significant: boolean;
+    verdict_badge: string;
+  };
+  conditional_indirect_effects?: ConditionalIndirectEffect[];
+  apa_narrative?: string;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// --- Complex Survey Sampling (Two-Stage Cluster & Taylor Linearization) Types ---
+export interface ComplexSamplingRequest {
+  target_question_id: string;
+  cluster_question_id: string;
+  stratum_question_id?: string;
+  weight_question_id?: string;
+  scope?: string;
+}
+
+export interface ClusterBreakdownItem {
+  stratum: string;
+  cluster_id: string;
+  sample_size: number;
+  sum_weights: number;
+  cluster_mean: number;
+  deviation_from_mean: number;
+}
+
+export interface ComplexSamplingResult {
+  status: 'SUCCESS' | 'INSUFFICIENT_SAMPLE' | 'INSUFFICIENT_COMPLETE_DATA' | 'ZERO_VARIANCE' | 'INSUFFICIENT_CLUSTERS' | 'ERROR';
+  message?: string;
+  sample_size?: number;
+  strata_count?: number;
+  psu_count?: number;
+  degrees_of_freedom?: number;
+  cluster_size_summary?: {
+    mean_size: number;
+    std_size: number;
+    min_size: number;
+    max_size: number;
+    cv_size: number;
+  };
+  weight_summary?: {
+    total_population_estimate: number;
+    mean_weight: number;
+    std_weight: number;
+    cv_weight: number;
+    kish_weight_deff: number;
+  };
+  horvitz_thompson_estimates?: {
+    weighted_mean: number;
+    unweighted_mean: number;
+    weighting_bias_shift: number;
+    weighted_total: number;
+  };
+  taylor_linearization_variance?: {
+    complex_variance: number;
+    complex_se: number;
+    t_critical_95: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    margin_of_error: number;
+    lonely_psu_detected: boolean;
+  };
+  srs_comparison?: {
+    srs_variance: number;
+    srs_se: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    se_inflation_ratio: number;
+  };
+  design_effects?: {
+    deff: number;
+    deft: number;
+    icc: number;
+    effective_sample_size: number;
+    efficiency_loss_pct: number;
+    rating: string;
+    interpretation: string;
+  };
+  clusters_breakdown?: ClusterBreakdownItem[];
+  apa_narrative?: string;
+}
+
+
+// --- Propensity Score Matching (PSM) & Inverse Probability Weighting (IPW) Types ---
+export interface PSMAnalysisRequest {
+  treatment_question_id: string;
+  treatment_value: any;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  caliper_factor?: number;
+  scope?: string;
+}
+
+export interface CovariateBalanceItem {
+  covariate: string;
+  raw_treated_mean: number;
+  raw_control_mean: number;
+  raw_smd: number;
+  raw_variance_ratio: number;
+  matched_treated_mean: number;
+  matched_control_mean: number;
+  matched_smd: number;
+  matched_variance_ratio: number;
+  pct_bias_reduction: number;
+  is_balanced: boolean;
+}
+
+export interface CommonSupportBin {
+  bin_index: number;
+  bin_min: number;
+  bin_max: number;
+  bin_label: string;
+  treated_count: number;
+  control_count: number;
+  is_overlapping: boolean;
+}
+
+export interface LovePlotPoint {
+  covariate: string;
+  raw_smd: number;
+  matched_smd: number;
+  threshold_lower: number;
+  threshold_upper: number;
+}
+
+export interface PSMAnalysisResult {
+  status: string;
+  survey_id?: string;
+  treatment_name?: string;
+  outcome_name?: string;
+  sample_size?: number;
+  sample_treated?: number;
+  sample_control?: number;
+  matched_pairs_count?: number;
+  unmatched_treated_count?: number;
+  unmatched_control_count?: number;
+  caliper_factor?: number;
+  caliper_width?: number;
+  unadjusted_effect?: {
+    treated_mean: number;
+    control_mean: number;
+    raw_difference: number;
+    t_stat: number;
+    p_value: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+  };
+  matched_att?: {
+    estimate: number;
+    se: number;
+    t_stat: number;
+    p_value: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    cohens_d: number;
+    is_significant: boolean;
+  };
+  ipw_att?: {
+    estimate: number;
+    se: number;
+    t_stat: number;
+    p_value: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+  };
+  covariate_balance?: CovariateBalanceItem[];
+  balance_summary?: {
+    total_covariates: number;
+    balanced_covariates: number;
+    all_balanced: boolean;
+    max_matched_smd: number;
+    mean_bias_reduction_pct: number;
+  };
+  common_support_overlap?: CommonSupportBin[];
+  love_plot?: LovePlotPoint[];
+  apa_narrative?: string;
+}
+
+
+// --- Structural Topic Modeling (STM) & Latent Dirichlet Allocation (LDA) Types ---
+export interface TopicModelAnalysisRequest {
+  text_question_id: string;
+  covariate_question_id?: string;
+  num_topics?: number;
+  num_iterations?: number;
+  scope?: string;
+}
+
+export interface TopicWordItem {
+  word: string;
+  probability: number;
+  frequency: number;
+  exclusivity: number;
+}
+
+export interface TopicResultItem {
+  topic_id: number;
+  label: string;
+  short_label: string;
+  prevalence_share: number;
+  prevalence_percent: number;
+  coherence_umass: number;
+  top_words: TopicWordItem[];
+}
+
+export interface TopicCovariateEffect {
+  topic_id: number;
+  topic_label: string;
+  beta_coefficient: number;
+  correlation_r: number;
+  direction: 'positive' | 'negative' | 'neutral';
+  interpretation: string;
+}
+
+export interface TopicDocumentAssignment {
+  response_id: string;
+  text_snippet: string;
+  dominant_topic_id: number;
+  dominant_probability: number;
+  covariate_value?: number | null;
+}
+
+export interface TopicModelAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  vocabulary_size?: number;
+  num_topics?: number;
+  hyperparameters?: {
+    alpha: number;
+    beta: number;
+    iterations: number;
+  };
+  mean_coherence_umass?: number;
+  topics?: TopicResultItem[];
+  covariate_effects?: TopicCovariateEffect[];
+  document_sample_assignments?: TopicDocumentAssignment[];
+  apa_narrative?: string;
+}
+
+
+// --- Psychometric Network Analysis (GGM) Types ---
+export interface PsychometricNetworkRequest {
+  question_ids?: string[];
+  regularization_threshold?: number;
+  scope?: string;
+}
+
+export interface NetworkNodeItem {
+  id: number;
+  name: string;
+  x: number;
+  y: number;
+  strength: number;
+  z_strength: number;
+  expected_influence: number;
+  z_influence: number;
+  closeness: number;
+  z_closeness: number;
+  betweenness: number;
+  z_betweenness: number;
+}
+
+export interface NetworkEdgeItem {
+  source: number;
+  target: number;
+  source_name: string;
+  target_name: string;
+  weight: number;
+  abs_weight: number;
+  edge_type: 'positive' | 'negative';
+}
+
+export interface PsychometricNetworkResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  num_nodes?: number;
+  num_edges?: number;
+  possible_edges?: number;
+  density?: number;
+  density_percent?: number;
+  sparsity_percent?: number;
+  mean_weight?: number;
+  most_central_node?: string;
+  nodes?: NetworkNodeItem[];
+  edges?: NetworkEdgeItem[];
+  apa_narrative?: string;
+}
+
+
+// --- Item Response Theory (IRT) 2-Parameter Logistic (2PL) Types ---
+export interface IRT2PLAnalysisRequest {
+  question_ids?: string[];
+  binarization_threshold?: number;
+  max_em_iter?: number;
+  scope?: string;
+}
+
+export interface IRTItemResult {
+  item_id: string;
+  item_name: string;
+  discrimination_a: number;
+  discrimination_class: 'VERY_LOW' | 'MODERATE' | 'HIGH' | 'VERY_HIGH';
+  discrimination_label: string;
+  difficulty_b: number;
+  difficulty_class: 'VERY_EASY' | 'EASY' | 'MEDIUM' | 'HARD' | 'VERY_HARD';
+  difficulty_label: string;
+  endorsement_rate: number;
+  peak_information: number;
+  fit_chi_sq: number;
+  is_good_fit: boolean;
+}
+
+export interface IRTCurvePoint {
+  theta: number;
+  prob?: number;
+  info?: number;
+  se?: number;
+  svg_x: number;
+  svg_y: number;
+}
+
+export interface IRTICCCurve {
+  item_id: string;
+  item_name: string;
+  points: IRTCurvePoint[];
+  svg_path: string;
+}
+
+export interface IRTTestInformationCurve {
+  max_tif: number;
+  tif_points: IRTCurvePoint[];
+  se_points: IRTCurvePoint[];
+  tif_path: string;
+  se_path: string;
+}
+
+export interface IRTPersonTraitSummary {
+  mean_theta: number;
+  sd_theta: number;
+  min_theta: number;
+  max_theta: number;
+  mean_se: number;
+}
+
+export interface IRT2PLAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  num_items?: number;
+  is_already_binary?: boolean;
+  marginal_reliability?: number;
+  max_test_information?: number;
+  optimal_theta_range?: [number, number];
+  average_discrimination?: number;
+  average_difficulty?: number;
+  items?: IRTItemResult[];
+  icc_curves?: IRTICCCurve[];
+  test_information_curve?: IRTTestInformationCurve;
+  person_trait_summary?: IRTPersonTraitSummary;
+  apa_narrative?: string;
+}
+
+
+// --- Survival Analysis & Time-to-Drop-off (Kaplan-Meier & Cox HR) Types ---
+export interface SurvivalAnalysisRequest {
+  grouping_question_id?: string;
+  time_milestones?: number[];
+  scope?: string;
+}
+
+export interface SurvivalStep {
+  time: number;
+  at_risk: number;
+  events: number;
+  censored: number;
+  survival_prob: number;
+  se_greenwood: number;
+  ci_lower: number;
+  ci_upper: number;
+}
+
+export interface SurvivalMilestone {
+  time_seconds: number;
+  time_minutes: number;
+  survival_probability: number;
+  retention_percentage: number;
+  dropout_percentage: number;
+}
+
+export interface SurvivalCurveData {
+  max_observed_time: number;
+  median_survival_time?: number | null;
+  steps: SurvivalStep[];
+  svg_path: string;
+  svg_points: {
+    time: number;
+    prob: number;
+    svg_x: number;
+    svg_y: number;
+  }[];
+}
+
+export interface SurvivalGroupComparison {
+  group_1: {
+    name: string;
+    sample_size: number;
+    events_count: number;
+    median_survival?: number | null;
+    svg_path: string;
+  };
+  group_2: {
+    name: string;
+    sample_size: number;
+    events_count: number;
+    median_survival?: number | null;
+    svg_path: string;
+  };
+}
+
+export interface LogRankTestResult {
+  group1_name: string;
+  group2_name: string;
+  observed_events_1: number;
+  expected_events_1: number;
+  observed_events_2: number;
+  expected_events_2: number;
+  chi2_statistic: number;
+  degrees_of_freedom: number;
+  p_value: number;
+  is_statistically_significant: boolean;
+}
+
+export interface CoxHazardRatioResult {
+  reference_group: string;
+  comparison_group: string;
+  hazard_ratio: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  risk_interpretation: string;
+}
+
+export interface SurvivalAnalysisResult {
+  status: string;
+  message?: string;
+  total_participants?: number;
+  completed_count?: number;
+  drop_off_count?: number;
+  overall_completion_rate?: number;
+  overall_drop_off_rate?: number;
+  overall_km?: SurvivalCurveData;
+  milestones?: SurvivalMilestone[];
+  group_comparison?: SurvivalGroupComparison;
+  log_rank_test?: LogRankTestResult;
+  cox_hazard_ratio?: CoxHazardRatioResult;
+  apa_narrative?: string;
+}
+
+export interface MultilevelAnalysisRequest {
+  outcome_question_id: string;
+  predictor_question_id?: string | null;
+  cluster_question_id?: string | null;
+  centering?: 'grand_mean' | 'group_mean' | 'none';
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface MultilevelNullModel {
+  intercept_gamma_00: number;
+  tau_00: number;
+  sigma_sq: number;
+  icc: number;
+  icc_percentage: number;
+  icc_tier: string;
+  icc_label: string;
+  icc_recommendation: string;
+}
+
+export interface MultilevelFixedEffects {
+  intercept_gamma_00: number;
+  se_gamma_00: number;
+  t_gamma_00: number;
+  p_gamma_00: number;
+  slope_gamma_10?: number | null;
+  se_gamma_10?: number | null;
+  t_gamma_10?: number | null;
+  p_gamma_10?: number | null;
+}
+
+export interface MultilevelRandomEffects {
+  tau_00_intercept_var: number;
+  tau_11_slope_var: number;
+  sigma_sq_residual_var: number;
+  r2_level_1: number;
+  r2_level_2: number;
+}
+
+export interface MultilevelModelComparison {
+  deviance_hlm: number;
+  deviance_ols: number;
+  delta_deviance_chi2: number;
+  df: number;
+  p_value: number;
+  is_hlm_significantly_better: boolean;
+}
+
+export interface MultilevelClusterTrajectory {
+  cluster_id: string;
+  n_j: number;
+  y_mean: number;
+  x_mean: number;
+  eb_intercept: number;
+  eb_slope: number;
+  shrinkage_weight: number;
+  svg_path: string;
+  color: string;
+}
+
+export interface MultilevelAnalysisResult {
+  status: string;
+  message?: string;
+  total_sample_size?: number;
+  num_clusters?: number;
+  average_cluster_size?: number;
+  dependent_variable?: string;
+  predictor_variable?: string;
+  cluster_variable?: string;
+  centering?: string;
+  null_model?: MultilevelNullModel;
+  fixed_effects?: MultilevelFixedEffects;
+  random_effects?: MultilevelRandomEffects;
+  model_comparison_ols_vs_hlm?: MultilevelModelComparison;
+  cluster_trajectories?: MultilevelClusterTrajectory[];
+  grand_trajectory_path?: string;
+  apa_narrative?: string;
+}
+
+export interface ConjointAnalysisRequest {
+  rating_question_id: string;
+  attribute_question_ids: string[];
+  price_question_id?: string | null;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface ConjointImportanceItem {
+  attribute: string;
+  importance_pct: number;
+  range: number;
+  levels_count: number;
+  best_level: string;
+  worst_level: string;
+}
+
+export interface ConjointWTPItem {
+  attribute: string;
+  level: string;
+  part_worth: number;
+  wtp_valuation: number;
+}
+
+export interface ConjointAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  attributes_count?: number;
+  parameters_estimated?: number;
+  overall_utility_intercept?: number;
+  model_fit?: {
+    r_squared: number;
+    adjusted_r_squared: number;
+    mcfadden_pseudo_r2: number;
+    rmse: number;
+    fit_quality: string;
+  };
+  importance_ranking?: ConjointImportanceItem[];
+  part_worth_utilities?: Record<string, Record<string, number>>;
+  willingness_to_pay?: ConjointWTPItem[];
+  svg_importance_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface ConjointSimulationRequest {
+  rating_question_id: string;
+  attribute_question_ids: string[];
+  candidate_profiles: Array<{
+    id: string;
+    attributes: Record<string, string>;
+  }>;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface ConjointSimulationResult {
+  status: string;
+  message?: string;
+  market_shares?: Array<{
+    profile_id: string;
+    total_utility: number;
+    choice_share_pct: number;
+  }>;
+}
+
+export interface LCAAnalysisRequest {
+  item_question_ids: string[];
+  num_classes?: number | null;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface LCAModelComparisonItem {
+  num_classes: number;
+  log_likelihood: number;
+  num_parameters: number;
+  aic: number;
+  bic: number;
+  sabic: number;
+  entropy: number;
+  converged: boolean;
+}
+
+export interface LCAClassProfile {
+  class_index: number;
+  class_name: string;
+  prevalence_pct: number;
+  assigned_count: number;
+  color: string;
+  item_probabilities: Record<string, Record<string, number>>;
+}
+
+export interface LCAAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  items_count?: number;
+  optimal_classes_count?: number;
+  model_selection_criteria?: LCAModelComparisonItem[];
+  entropy?: number;
+  entropy_quality?: string;
+  class_prevalences?: Record<string, number>;
+  class_profiles?: LCAClassProfile[];
+  posterior_class_distribution?: number[];
+  svg_profile_plot?: string;
+  apa_narrative?: string;
+}
+
+export interface DiDAnalysisRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  time_question_id: string;
+  treatment_value?: string | null;
+  post_value?: string | null;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface DiDCellMeanItem {
+  mean: number;
+  n: number;
+  diff?: number;
+}
+
+export interface DiDAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  groups?: {
+    treatment_name: string;
+    control_name: string;
+    pre_period_name: string;
+    post_period_name: string;
+  };
+  cell_means_2x2?: {
+    control_pre: DiDCellMeanItem;
+    control_post: DiDCellMeanItem;
+    treat_pre: DiDCellMeanItem;
+    treat_post: DiDCellMeanItem;
+    counterfactual_post: number;
+  };
+  did_treatment_effect?: {
+    att_estimate: number;
+    std_error: number;
+    t_statistic: number;
+    p_value: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    is_statistically_significant: boolean;
+    relative_gain_pct: number;
+  };
+  regression_coefficients?: {
+    intercept_beta_0: number;
+    baseline_selection_beta_1: number;
+    time_trend_drift_beta_2: number;
+    interaction_att_delta: number;
+    r_squared: number;
+  };
+  svg_trajectory_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface SEMPathSpec {
+  source: string;
+  target: string;
+}
+
+export interface SEMAnalysisRequest {
+  paths: SEMPathSpec[];
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface SEMPathParameter {
+  source: string;
+  target: string;
+  source_label: string;
+  target_label: string;
+  unstandardized: number;
+  standard_error: number;
+  z_value: number;
+  p_value: number;
+  standardized: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface SEMEquationSummary {
+  endogenous_var: string;
+  endogenous_label: string;
+  predictors: string[];
+  r_squared: number;
+  adj_r_squared: number;
+  residual_variance: number;
+  f_statistic: number;
+  p_value: number;
+}
+
+export interface SEMIndirectEffect {
+  source: string;
+  target: string;
+  source_label: string;
+  target_label: string;
+  path: string[];
+  path_str: string;
+  unstandardized: number;
+  standard_error: number;
+  z_value: number;
+  p_value: number;
+  standardized: number;
+  is_significant: boolean;
+}
+
+export interface SEMTotalEffect {
+  source: string;
+  target: string;
+  source_label: string;
+  target_label: string;
+  direct: number;
+  indirect: number;
+  total: number;
+  standardized_direct: number;
+  standardized_indirect: number;
+  standardized_total: number;
+}
+
+export interface SEMFitIndices {
+  chi_square: number;
+  df: number;
+  p_value: number;
+  chi_square_baseline: number;
+  df_baseline: number;
+  cfi: number;
+  tli: number;
+  rmsea: number;
+  rmsea_ci_90_lower: number;
+  rmsea_ci_90_upper: number;
+  srmr: number;
+  is_good_fit: boolean;
+  fit_assessment: string;
+}
+
+export interface SEMAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  observed_variables?: string[];
+  exogenous_variables?: string[];
+  endogenous_variables?: string[];
+  paths?: SEMPathParameter[];
+  equations?: SEMEquationSummary[];
+  indirect_effects?: SEMIndirectEffect[];
+  total_effects?: SEMTotalEffect[];
+  fit_indices?: SEMFitIndices;
+  svg_path_diagram?: string;
+  apa_narrative?: string;
+}
+
+export interface CompetingRisksAnalysisRequest {
+  cluster_question_id?: string | null;
+  event_question_id?: string | null;
+  time_milestones?: number[] | null;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface CompetingRisksMilestone {
+  time_seconds: number;
+  overall_completion_rate: number;
+  cumulative_incidence: Record<string, number>;
+  naive_kaplan_meier: Record<string, number>;
+  km_overestimation_bias: Record<string, number>;
+}
+
+export interface ClusterFrailtyEstimate {
+  cluster_id: string;
+  sample_size: number;
+  dropoffs: number;
+  dropoff_rate: number;
+  frailty_relative_risk: number;
+  interpretation: string;
+}
+
+export interface SharedFrailtyModelResult {
+  clusters_count: number;
+  frailty_variance_theta: number;
+  lrt_statistic: number;
+  p_value: number;
+  is_cluster_heterogeneity_significant: boolean;
+  cluster_frailty_estimates: ClusterFrailtyEstimate[];
+}
+
+export interface CompetingRisksAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  competing_causes?: string[];
+  final_cumulative_incidence?: Record<string, number>;
+  milestone_evaluations?: CompetingRisksMilestone[];
+  shared_frailty_model?: SharedFrailtyModelResult;
+  svg_cif_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface IRT4PLAnalysisRequest {
+  question_ids: string[];
+  model_type?: '3pl' | '4pl';
+  binarization_threshold?: number | null;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface IRT4PLItemParameter {
+  item_index: number;
+  item_name: string;
+  proportion_correct: number;
+  discrimination_a: number;
+  difficulty_b: number;
+  guessing_c: number;
+  inattention_d: number;
+  quality_tier: string;
+}
+
+export interface IRT4PLTestInformation {
+  peak_theta: number;
+  peak_information: number;
+  minimum_standard_error: number;
+  theta_range: number[];
+  theta_grid: number[];
+  information_values: number[];
+  standard_errors: number[];
+  conditional_reliabilities: number[];
+}
+
+export interface IRT4PLCatStep {
+  step: number;
+  item_index: number;
+  item_name: string;
+  item_difficulty_b: number;
+  simulated_response: number;
+  provisional_theta: number;
+  measurement_se: number;
+}
+
+export interface IRT4PLAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  items_count?: number;
+  model_type?: '3PL' | '4PL';
+  binarization_threshold?: number;
+  items_parameters?: IRT4PLItemParameter[];
+  test_information_function?: IRT4PLTestInformation;
+  cat_simulation?: IRT4PLCatStep[];
+  svg_curves?: string;
+  apa_narrative?: string;
+}
+
+export interface IPWBalanceDiagnostic {
+  covariate_key: string;
+  covariate_label: string;
+  raw_asmd: number;
+  weighted_asmd: number;
+  weighted_variance_ratio: number;
+  is_balanced: boolean;
+  improvement_pct: number;
+}
+
+export interface IPWAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  treated_count?: number;
+  control_count?: number;
+  weight_scheme?: string;
+  unadjusted_effect?: {
+    difference_in_means: number;
+    standard_error: number;
+    treated_mean: number;
+    control_mean: number;
+  };
+  ipw_estimator?: {
+    treatment_effect: number;
+    standard_error: number;
+    z_value: number;
+    p_value: number;
+    is_significant: boolean;
+  };
+  doubly_robust_estimator?: {
+    treatment_effect: number;
+    standard_error: number;
+    z_value: number;
+    p_value: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    is_significant: boolean;
+  };
+  covariate_balance?: {
+    all_balanced_under_0_10: boolean;
+    maximum_weighted_asmd: number;
+    diagnostics: IPWBalanceDiagnostic[];
+  };
+  svg_love_plot?: string;
+  apa_narrative?: string;
+}
+
+export interface IPWAnalysisRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  treatment_value?: string;
+  weight_scheme?: 'ate' | 'att' | 'overlap' | 'stabilized';
+  trim_weights?: boolean;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface GAMSplineTurningPoint {
+  x_value: number;
+  predicted_y: number;
+  point_type: string;
+}
+
+export interface GAMSplineAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  knots_count?: number;
+  knots?: number[];
+  linear_baseline?: {
+    r_squared: number;
+    rss: number;
+    intercept: number;
+    slope: number;
+  };
+  gam_spline_model?: {
+    effective_degrees_of_freedom: number;
+    r_squared: number;
+    adjusted_r_squared: number;
+    rss: number;
+    residual_variance: number;
+    gcv_score: number;
+  };
+  nonlinearity_test?: {
+    f_statistic: number;
+    delta_df: number;
+    p_value: number;
+    is_significant_nonlinearity: boolean;
+  };
+  turning_points?: GAMSplineTurningPoint[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface GAMSplineAnalysisRequest {
+  predictor_question_id: string;
+  outcome_question_id: string;
+  n_knots?: number;
+  smoothing_penalty?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface QuantileEstimateRow {
+  tau: number;
+  intercept: number;
+  slope: number;
+  standard_error: number;
+  t_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+  pseudo_r1: number;
+  pinball_loss: number;
+}
+
+export interface QuantileRegressionResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  covariates_count?: number;
+  ols_baseline?: {
+    slope: number;
+    standard_error: number;
+    t_statistic: number;
+    p_value: number;
+    is_significant: boolean;
+    r_squared: number;
+  };
+  quantile_estimates?: QuantileEstimateRow[];
+  heterogeneity_test?: {
+    tau_comparison: string;
+    slope_difference: number;
+    standard_error: number;
+    z_statistic: number;
+    p_value: number;
+    has_significant_heterogeneity: boolean;
+  };
+  svg_process_plot?: string;
+  apa_narrative?: string;
+}
+
+export interface QuantileRegressionRequest {
+  predictor_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  quantiles?: number[];
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface GTheoryVarianceComponent {
+  source: string;
+  label: string;
+  df: number;
+  ss: number;
+  ms: number;
+  variance: number;
+  percent: number;
+}
+
+export interface GTheoryDStudyRow {
+  n_items: number;
+  relative_error_var: number;
+  absolute_error_var: number;
+  sem_relative: number;
+  sem_absolute: number;
+  g_coefficient: number;
+  phi_coefficient: number;
+  is_acceptable_norm: boolean;
+  is_acceptable_criterion: boolean;
+}
+
+export interface GTheoryAnalysisResult {
+  status: string;
+  message?: string;
+  design_type?: string;
+  sample_size?: number;
+  items_count?: number;
+  variance_components?: GTheoryVarianceComponent[];
+  current_design_metrics?: {
+    universe_score_variance: number;
+    relative_error_variance: number;
+    absolute_error_variance: number;
+    g_coefficient_relative: number;
+    phi_coefficient_absolute: number;
+    sem_relative: number;
+    sem_absolute: number;
+  };
+  d_study_projections?: GTheoryDStudyRow[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface GTheoryAnalysisRequest {
+  item_question_ids: string[];
+  rater_question_id?: string | null;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface RDDBinnedScatterPoint {
+  side: 'left' | 'right';
+  x_mean: number;
+  y_mean: number;
+  count: number;
+}
+
+export interface RDDAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  effective_sample_size?: number;
+  cutoff_threshold?: number;
+  bandwidth?: number;
+  treatment_effect_late?: {
+    tau_rdd: number;
+    standard_error: number;
+    z_statistic: number;
+    p_value: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    is_significant: boolean;
+    left_limit_intercept: number;
+    right_limit_intercept: number;
+    left_slope: number;
+    right_slope: number;
+  };
+  mccrary_manipulation_test?: {
+    log_difference: number;
+    p_value: number;
+    has_manipulation: boolean;
+    verdict: string;
+  };
+  binned_scatter_points?: RDDBinnedScatterPoint[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface RDDAnalysisRequest {
+  running_question_id: string;
+  outcome_question_id: string;
+  cutoff: number;
+  bandwidth?: number | null;
+  polynomial_order?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface SCMDonorWeight {
+  donor_name: string;
+  weight: number;
+  weight_percentage: number;
+}
+
+export interface SCMBalanceRow {
+  period: string;
+  treated_value: number;
+  synthetic_value: number;
+  donor_mean_value: number;
+  difference: number;
+}
+
+export interface SCMTrajectoryPoint {
+  period: string;
+  actual_treated: number;
+  synthetic_control: number;
+  gap: number;
+  is_post_treatment: boolean;
+}
+
+export interface SyntheticControlAnalysisResult {
+  status: string;
+  message?: string;
+  treated_unit?: string;
+  treatment_period?: string;
+  treatment_period_index?: number;
+  donor_pool_count?: number;
+  att_effect?: number;
+  rmspe_pre?: number;
+  rmspe_post?: number;
+  rmspe_ratio?: number;
+  empirical_p_value?: number;
+  is_significant?: boolean;
+  top_donor_weights?: SCMDonorWeight[];
+  balance_table?: SCMBalanceRow[];
+  trajectory?: SCMTrajectoryPoint[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface SyntheticControlAnalysisRequest {
+  unit_question_id: string;
+  period_question_id: string;
+  outcome_question_id: string;
+  treated_unit: string;
+  treatment_period: any;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface SAEAreaEstimate {
+  area_name: string;
+  sample_size: number;
+  direct_estimate: number;
+  direct_se: number;
+  direct_ci_lower: number;
+  direct_ci_upper: number;
+  synthetic_prediction: number;
+  shrinkage_weight_gamma: number;
+  eblup_estimate: number;
+  eblup_se: number;
+  eblup_ci_lower: number;
+  eblup_ci_upper: number;
+  efficiency_gain_pct: number;
+}
+
+export interface SAERegressionCoef {
+  term: string;
+  coefficient: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+}
+
+export interface SmallAreaEstimationResult {
+  status: string;
+  message?: string;
+  area_count?: number;
+  between_area_variance_sigma_v2?: number;
+  mean_shrinkage_weight_gamma?: number;
+  mean_efficiency_gain_pct?: number;
+  regression_coefficients?: SAERegressionCoef[];
+  area_estimates?: SAEAreaEstimate[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface SmallAreaEstimationRequest {
+  area_question_id: string;
+  outcome_question_id: string;
+  auxiliary_question_ids?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface EventStudyCoefficient {
+  relative_period: number;
+  period_label: string;
+  coefficient: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_reference: boolean;
+  is_lead: boolean;
+  is_significant: boolean;
+}
+
+export interface EventStudyAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  units_count?: number;
+  periods_count?: number;
+  event_window_min?: number;
+  event_window_max?: number;
+  pre_trend_wald_stat?: number;
+  pre_trend_df?: number;
+  pre_trend_p_value?: number;
+  parallel_trends_supported?: boolean;
+  avg_post_treatment_effect?: number;
+  cumulative_post_treatment_effect?: number;
+  event_coefficients?: EventStudyCoefficient[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface EventStudyAnalysisRequest {
+  unit_question_id: string;
+  time_question_id: string;
+  outcome_question_id: string;
+  event_time_question_id?: string;
+  treated_units?: string[];
+  global_event_time?: any;
+  max_leads?: number;
+  max_lags?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface BSTSTrajectoryPoint {
+  period: string;
+  actual: number;
+  counterfactual: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  pointwise_impact: number;
+  cumulative_impact: number;
+  cumulative_ci_lower: number;
+  cumulative_ci_upper: number;
+  is_post: boolean;
+}
+
+export interface BSTSCausalImpactResult {
+  status: string;
+  message?: string;
+  intervention_time?: string;
+  intervention_index?: number;
+  pre_periods_count?: number;
+  post_periods_count?: number;
+  avg_actual_post?: number;
+  avg_counterfactual_post?: number;
+  avg_pointwise_effect?: number;
+  cumulative_effect?: number;
+  relative_effect_pct?: number;
+  posterior_tail_p_value?: number;
+  is_significant?: boolean;
+  trajectory?: BSTSTrajectoryPoint[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface BSTSCausalImpactRequest {
+  time_question_id: string;
+  outcome_question_id: string;
+  intervention_time: any;
+  covariate_question_ids?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// --- Doubly Robust AIPW & Heterogeneous CATE (Robins et al. 1994, Chernozhukov et al. 2018) Types ---
+export interface AIPWSubgroupCATE {
+  subgroup: string;
+  sample_size: number;
+  cate: number;
+  se: number;
+  ci_lower: number;
+  ci_upper: number;
+  z_score: number;
+  p_value: number;
+}
+
+export interface AIPWPropensityOverlap {
+  treated_mean: number;
+  control_mean: number;
+  overlap_range: [number, number];
+  strong_overlap: boolean;
+}
+
+export interface AIPWHeterogeneityTest {
+  f_statistic?: number;
+  p_value?: number;
+  is_heterogeneous: boolean;
+}
+
+export interface AIPWCATEResult {
+  status: string;
+  message?: string;
+  ate?: number;
+  se?: number;
+  z_stat?: number;
+  p_value?: number;
+  ci_95_lower?: number;
+  ci_95_upper?: number;
+  is_significant?: boolean;
+  naive_difference?: number;
+  selection_bias_estimate?: number;
+  total_sample_size?: number;
+  effective_sample_size?: number;
+  trimmed_units_count?: number;
+  propensity_overlap?: AIPWPropensityOverlap;
+  subgroup_cate?: AIPWSubgroupCATE[];
+  heterogeneity_test?: AIPWHeterogeneityTest;
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface AIPWCATERequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  confounder_question_ids: string[];
+  subgroup_question_id?: string;
+  treatment_value?: any;
+  trim_alpha?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Instrumental Variables Two-Stage Least Squares (2SLS) Types ---
+export interface IVEstimate {
+  beta: number;
+  se: number;
+  z_stat: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface OLSBenchmark {
+  beta: number;
+  se: number;
+  t_stat: number;
+  p_value: number;
+  bias_difference: number;
+}
+
+export interface FirstStageDiagnostics {
+  f_statistic: number;
+  p_value: number;
+  is_weak_instrument: boolean;
+  staiger_stock_rule_of_thumb: number;
+  stock_yogo_10_pct_critical_value: number;
+  stock_yogo_15_pct_critical_value: number;
+}
+
+export interface WuHausmanTest {
+  t_statistic: number;
+  p_value: number;
+  is_endogenous: boolean;
+}
+
+export interface SarganHansenTest {
+  j_statistic?: number;
+  p_value?: number;
+  instruments_valid?: boolean;
+  degrees_of_freedom?: number;
+}
+
+export interface IV2SLSResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  instruments_count?: number;
+  iv_estimate?: IVEstimate;
+  ols_benchmark?: OLSBenchmark;
+  first_stage_diagnostics?: FirstStageDiagnostics;
+  wu_hausman_test?: WuHausmanTest;
+  sargan_hansen_overid_test?: SarganHansenTest;
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface IV2SLSRequest {
+  outcome_question_id: string;
+  endogenous_question_id: string;
+  instrument_question_ids: string[];
+  control_question_ids?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Bifactor Psychometric Modeling & Omega Hierarchical Types ---
+export interface BifactorSubscaleMetric {
+  subscale: string;
+  item_count: number;
+  items: string[];
+  omega_subscale_total: number;
+  omega_hierarchical_subscale: number;
+  viable_as_independent_scale: boolean;
+}
+
+export interface BifactorItemDiagnostic {
+  item_index: number;
+  label: string;
+  subscale: string;
+  loading_general: number;
+  loading_subscale: number;
+  uniqueness: number;
+  item_ecv: number;
+  is_general_anchor: boolean;
+}
+
+export interface BifactorAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  items_count?: number;
+  subscales_count?: number;
+  omega_total?: number;
+  omega_hierarchical?: number;
+  explained_common_variance?: number;
+  percent_uncontaminated_correlations?: number;
+  is_essentially_unidimensional?: boolean;
+  recommendation?: string;
+  subscale_metrics?: BifactorSubscaleMetric[];
+  item_diagnostics?: BifactorItemDiagnostic[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface BifactorSubscaleInput {
+  subscale_name: string;
+  question_ids: string[];
+}
+
+export interface BifactorAnalysisRequest {
+  subscales: BifactorSubscaleInput[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Panel Vector Autoregression (Panel VAR) & Granger Causality Types ---
+export interface PVARGrangerTest {
+  wald_chi2: number;
+  p_value: number;
+  is_significant: boolean;
+}
+
+export interface PVAREquation {
+  dependent_var: string;
+  coeff_self_lag: number;
+  se_self_lag: number;
+  coeff_cross_lag: number;
+  se_cross_lag: number;
+}
+
+export interface PanelVARResult {
+  status: string;
+  message?: string;
+  panel_units_count?: number;
+  effective_observations?: number;
+  lags?: number;
+  var1_name?: string;
+  var2_name?: string;
+  is_stable?: boolean;
+  stability_max_modulus?: number;
+  causality_conclusion?: string;
+  equations?: {
+    eq_var1: PVAREquation;
+    eq_var2: PVAREquation;
+  };
+  granger_causality?: {
+    var1_causes_var2: PVARGrangerTest;
+    var2_causes_var1: PVARGrangerTest;
+  };
+  fevd_horizon_5?: {
+    var1_explained_by_var2_pct: number;
+    var2_explained_by_var1_pct: number;
+  };
+  oirf_trajectory?: {
+    response_of_var2_to_var1: number[];
+    response_of_var1_to_var2: number[];
+  };
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface PanelVARRequest {
+  unit_question_id: string;
+  time_question_id: string;
+  var1_question_id: string;
+  var2_question_id: string;
+  lags?: number;
+  irf_horizons?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Latent Growth Curve Modeling (LGCM) Types ---
+export interface LatentGrowthMeans {
+  intercept_mean: number;
+  intercept_se: number;
+  intercept_z: number;
+  intercept_p: number;
+  slope_mean: number;
+  slope_se: number;
+  slope_z: number;
+  slope_p: number;
+}
+
+export interface LatentGrowthVariances {
+  intercept_variance: number;
+  slope_variance: number;
+  intercept_slope_covariance: number;
+  intercept_slope_correlation: number;
+}
+
+export interface LatentGrowthFit {
+  chi_square: number;
+  degrees_of_freedom: number;
+  p_value: number;
+  cfi: number;
+  tli: number;
+  rmsea: number;
+  is_good_fit: boolean;
+}
+
+export interface LatentGrowthDynamics {
+  has_significant_trajectory: boolean;
+  has_individual_heterogeneity: boolean;
+  direction: string;
+}
+
+export interface LatentGrowthResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  waves_count?: number;
+  latent_means?: LatentGrowthMeans;
+  latent_variances?: LatentGrowthVariances;
+  model_fit?: LatentGrowthFit;
+  growth_dynamics?: LatentGrowthDynamics;
+  observed_wave_means?: number[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface LatentGrowthRequest {
+  wave_question_ids: string[];
+  time_scores?: number[];
+  wave_labels?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Quantile Treatment Effects (QTE) Types ---
+export interface QuantileEffectItem {
+  quantile: number;
+  qte: number;
+  q_treated: number;
+  q_control: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface QTEResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  treated_count?: number;
+  control_count?: number;
+  average_treatment_effect?: number;
+  median_treatment_effect?: number;
+  delta_iqr_effect?: number;
+  delta_90_10_effect?: number;
+  has_heterogeneous_distributional_effects?: boolean;
+  inequality_impact?: string;
+  quantile_effects?: QuantileEffectItem[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface QTERequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids?: string[];
+  quantiles?: number[];
+  alpha_trim?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Causal DAG & Structure Learning Types ---
+export interface DAGNodeInfo {
+  index: number;
+  name: string;
+  in_degree: number;
+  out_degree: number;
+  total_degree: number;
+  causal_role: string;
+}
+
+export interface DAGEdgeInfo {
+  source_index: number;
+  source_name: string;
+  target_index: number;
+  target_name: string;
+  type: 'directed' | 'undirected';
+  weight: number;
+  direction: string;
+}
+
+export interface CausalDAGResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  variables_count?: number;
+  edges_count?: number;
+  directed_edges_count?: number;
+  undirected_edges_count?: number;
+  root_causes?: string[];
+  sink_outcomes?: string[];
+  mediators?: string[];
+  nodes?: DAGNodeInfo[];
+  edges?: DAGEdgeInfo[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalDAGRequest {
+  question_ids: string[];
+  alpha?: number;
+  max_cond_size?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Marginal Structural Models (MSM) Types ---
+export interface MSMWeightDiagnostics {
+  mean: number;
+  std: number;
+  min: number;
+  max: number;
+  truncated_p1: number;
+  truncated_p99: number;
+}
+
+export interface MSMAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  waves_count?: number;
+  causal_effect_per_wave?: number;
+  std_error?: number;
+  z_statistic?: number;
+  p_value?: number;
+  ci_95_lower?: number;
+  ci_95_upper?: number;
+  naive_ols_effect?: number;
+  naive_ols_p_value?: number;
+  confounding_bias_pct?: number;
+  confounding_verdict?: string;
+  stabilized_weights_diagnostics?: MSMWeightDiagnostics;
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface MSMAnalysisRequest {
+  treatment_question_ids: string[];
+  confounder_question_ids: string[];
+  outcome_question_id: string;
+  wave_labels?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Generalized Estimating Equations (GEE) Types ---
+export interface GEECoefficient {
+  term: string;
+  estimate: number;
+  robust_se: number;
+  naive_se: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface GEEAnalysisResult {
+  status: string;
+  message?: string;
+  clusters_count?: number;
+  observations_count?: number;
+  family?: string;
+  working_correlation_structure?: string;
+  estimated_correlation_parameter?: number;
+  dispersion_phi?: number;
+  qic?: number;
+  coefficients?: GEECoefficient[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface GEEAnalysisRequest {
+  cluster_question_id: string;
+  time_question_id: string;
+  outcome_question_id: string;
+  predictor_question_ids: string[];
+  family?: 'gaussian' | 'binomial';
+  corstr?: 'exchangeable' | 'ar1' | 'independent';
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Exact Permutation & Randomization Inference Types ---
+export interface RandomizationInferenceResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  treated_count?: number;
+  control_count?: number;
+  permutations_count?: number;
+  difference_in_means?: {
+    observed_statistic: number;
+    exact_p_value: number;
+    is_significant: boolean;
+  };
+  difference_in_medians?: {
+    observed_statistic: number;
+    exact_p_value: number;
+    is_significant: boolean;
+  };
+  wilcoxon_rank_sum?: {
+    observed_statistic: number;
+    exact_p_value: number;
+    is_significant: boolean;
+  };
+  hodges_lehmann_shift?: {
+    point_estimate: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+  };
+  asymptotic_welch_t_test?: {
+    t_statistic: number;
+    p_value: number;
+  };
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface RandomizationInferenceRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  num_permutations?: number;
+  alternative?: 'two-sided' | 'greater' | 'less';
+  scope?: 'all' | 'verified_clean';
+}
+
+// --- Extreme Value Theory (EVT) & Survey Tail Risk Types ---
+export interface EVTRiskMeasure {
+  confidence_level: number;
+  var_p: number;
+  es_p?: number | null;
+  is_infinite_mean?: boolean;
+}
+
+export interface EVTMeanExcessPoint {
+  threshold: number;
+  mean_excess: number;
+  count: number;
+}
+
+export interface EVTAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  threshold?: number;
+  exceedances_count?: number;
+  exceedance_probability?: number;
+  shape_xi?: number;
+  se_shape_xi?: number;
+  scale_sigma?: number;
+  se_scale_sigma?: number;
+  tail_classification?: string;
+  tail_interpretation?: string;
+  gof_ks_statistic?: number;
+  gof_ks_p_value?: number;
+  gof_passed?: boolean;
+  risk_measures?: EVTRiskMeasure[];
+  mean_excess_grid?: EVTMeanExcessPoint[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface EVTAnalysisRequest {
+  metric_question_id: string;
+  threshold_percentile?: number;
+  custom_threshold?: number;
+  alpha_levels?: number[];
+  scope?: 'all' | 'verified_clean';
+}
+
+// --- Joint Modeling of Longitudinal & Survival Data Types ---
+export interface DynamicSurvivalPrediction {
+  time: number;
+  surv_low: number;
+  surv_mean: number;
+  surv_high: number;
+}
+
+export interface JointModelAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  total_longitudinal_observations?: number;
+  events_attrited_count?: number;
+  censored_retained_count?: number;
+  longitudinal_submodel?: {
+    intercept_fixed: number;
+    slope_fixed: number;
+    residual_std_sigma_e: number;
+    random_intercept_std: number;
+    random_slope_std: number;
+  };
+  survival_submodel?: {
+    association_alpha: number;
+    se_alpha: number;
+    z_statistic: number;
+    p_value: number;
+    hazard_ratio: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    is_significant: boolean;
+  };
+  attrition_diagnostics?: {
+    is_non_ignorable: boolean;
+    interpretation: string;
+  };
+  dynamic_predictions?: DynamicSurvivalPrediction[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface JointModelAnalysisRequest {
+  subject_question_id: string;
+  time_question_id: string;
+  outcome_question_id: string;
+  event_question_id?: string;
+  event_time_question_id?: string;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Conformal Prediction & Distribution-Free Risk Intervals Types ---
+export interface ConformalCalibrationPoint {
+  alpha: number;
+  nominal_coverage: number;
+  conformal_coverage: number;
+  gaussian_coverage: number;
+  quantile_cutoff: number;
+}
+
+export interface ConformalSamplePrediction {
+  test_index: number;
+  actual_y: number;
+  predicted_y: number;
+  lower_bound: number;
+  upper_bound: number;
+  interval_width: number;
+  is_covered: boolean;
+}
+
+export interface ConformalPredictionResult {
+  status: string;
+  message?: string;
+  method?: string;
+  target_field?: string;
+  feature_fields?: string[];
+  sample_sizes?: {
+    total: number;
+    train: number;
+    calibration: number;
+    test: number;
+  };
+  parameters?: {
+    nominal_coverage: number;
+    alpha: number;
+    conformal_quantile: number;
+    finite_sample_lower_guarantee: number;
+    finite_sample_upper_bound: number;
+  };
+  evaluation_metrics?: {
+    conformal_coverage: number;
+    gaussian_coverage: number;
+    conformal_mean_width: number;
+    conformal_median_width: number;
+    conformal_iqr_width: number;
+    gaussian_mean_width: number;
+    efficiency_gain_ratio: number;
+  };
+  calibration_curve?: ConformalCalibrationPoint[];
+  sample_predictions?: ConformalSamplePrediction[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface ConformalPredictionRequest {
+  target_question_id: string;
+  feature_question_ids: string[];
+  alpha?: number;
+  method?: 'split_conformal' | 'locally_weighted';
+  calib_fraction?: number;
+  test_fraction?: number;
+  clamp_min?: number;
+  clamp_max?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Multilevel Structural Equation Modeling (MSEM) Types ---
+export interface MSEMSubmodelResult {
+  a_path: number;
+  se_a: number;
+  p_a: number;
+  b_path: number;
+  se_b: number;
+  p_b: number;
+  c_prime_path: number;
+  se_c_prime: number;
+  indirect_effect: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  p_indirect: number;
+  is_significant: boolean;
+}
+
+export interface MSEMAnalysisResult {
+  status: string;
+  message?: string;
+  cluster_field?: string;
+  x_field?: string;
+  m_field?: string;
+  y_field?: string;
+  sample_diagnostics?: {
+    n_total: number;
+    n_clusters: number;
+    avg_cluster_size: number;
+    cluster_size_min: number;
+    cluster_size_max: number;
+  };
+  intraclass_correlations?: {
+    icc_x: number;
+    icc_m: number;
+    icc_y: number;
+    interpretation: string;
+  };
+  level1_within_submodel?: MSEMSubmodelResult;
+  level2_between_submodel?: MSEMSubmodelResult;
+  conflation_test?: {
+    diff_between_within: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    is_conflated: boolean;
+    interpretation: string;
+  };
+  fit_indices?: {
+    cfi: number;
+    rmsea: number;
+    srmr_within: number;
+    srmr_between: number;
+  };
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface MSEMAnalysisRequest {
+  cluster_question_id: string;
+  x_question_id: string;
+  m_question_id: string;
+  y_question_id: string;
+  n_mc_sims?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Targeted Maximum Likelihood Estimation (TMLE) Types ---
+export interface TMLEComparisonEstimator {
+  name: string;
+  ate: number;
+  ci_lower: number;
+  ci_upper: number;
+  bias_risk: string;
+}
+
+export interface TMLEAnalysisResult {
+  status: string;
+  message?: string;
+  treatment_field?: string;
+  outcome_field?: string;
+  covariate_fields?: string[];
+  sample_diagnostics?: {
+    n_total: number;
+    n_treated: number;
+    n_control: number;
+    treated_ratio: number;
+    min_propensity_score: number;
+    max_propensity_score: number;
+    positivity_violation_risk: boolean;
+  };
+  targeted_parameters?: {
+    fluctuation_epsilon: number;
+    initial_gcomp_ate: number;
+    targeted_tmle_ate: number;
+    se_tmle: number;
+    z_statistic: number;
+    p_value: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    is_significant: boolean;
+  };
+  estimator_comparisons?: TMLEComparisonEstimator[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface TMLEAnalysisRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  gbound?: number;
+  target_treatment_val?: any;
+  control_treatment_val?: any;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Synthetic Difference-in-Differences (SDID) Types ---
+export interface SDIDTrajectoryPoint {
+  time: string;
+  is_post: boolean;
+  treated_actual: number;
+  synthetic_control: number;
+  counterfactual_parallel: number;
+}
+
+export interface SDIDDonorWeight {
+  unit: string;
+  weight: number;
+}
+
+export interface SDIDTimeWeight {
+  time: string;
+  weight: number;
+}
+
+export interface SDIDAnalysisResult {
+  status: string;
+  message?: string;
+  unit_field?: string;
+  time_field?: string;
+  outcome_field?: string;
+  treated_units?: string[];
+  treatment_start_time?: string;
+  sample_diagnostics?: {
+    n_treated_units: number;
+    n_control_units: number;
+    t_pre_periods: number;
+    t_post_periods: number;
+    total_panel_records: number;
+  };
+  sdid_estimates?: {
+    tau_sdid: number;
+    se_sdid: number;
+    z_statistic: number;
+    p_value: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    is_significant: boolean;
+  };
+  comparison_estimates?: {
+    tau_did_unweighted: number;
+    tau_scm_standard: number;
+    tau_sdid_doubly_weighted: number;
+  };
+  top_donor_weights?: SDIDDonorWeight[];
+  time_weights?: SDIDTimeWeight[];
+  time_trajectories?: SDIDTrajectoryPoint[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface SDIDAnalysisRequest {
+  unit_question_id: string;
+  time_question_id: string;
+  outcome_question_id: string;
+  treated_units: string[];
+  treatment_start_time: any;
+  n_placebo_reps?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+// --- Generalized Causal Forest (GRF; Athey, Tibshirani & Wager 2019) Types ---
+export interface CausalForestVariableImportance {
+  feature: string;
+  importance: number;
+  relative_pct: number;
+}
+
+export interface CausalForestBin {
+  bin_start: number;
+  bin_end: number;
+  bin_label: string;
+  count: number;
+  pct: number;
+}
+
+export interface CausalForestAnalysisResult {
+  status: string;
+  message?: string;
+  treatment_field?: string;
+  outcome_field?: string;
+  feature_fields?: string[];
+  sample_diagnostics?: {
+    n_total: number;
+    n_treated: number;
+    n_control: number;
+    p_treated: number;
+    n_features: number;
+    n_trees: number;
+  };
+  cate_summary?: {
+    mean_ate: number;
+    se_ate: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    median_cate: number;
+    std_cate: number;
+    iqr_cate: number;
+    min_cate: number;
+    max_cate: number;
+    p_positive_effect: number;
+    heterogeneity_variance: number;
+    heterogeneity_p_value: number;
+    has_heterogeneity: boolean;
+  };
+  variable_importance?: CausalForestVariableImportance[];
+  cate_distribution?: CausalForestBin[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalForestAnalysisRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  feature_question_ids: string[];
+  n_trees?: number;
+  min_leaf_size?: number;
+  target_treatment_val?: any;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+
+// --- Causal Mediation Sensitivity Analysis (Imai, Keele & Tingley 2010) Types ---
+export interface CausalMediationPathEstimate {
+  coefficient: number;
+  se: number;
+  z_stat: number;
+  p_value: number;
+  is_significant: boolean;
+}
+
+export interface CausalMediationSensitivityPoint {
+  rho: number;
+  acme: number;
+  se: number;
+  ci_lower: number;
+  ci_upper: number;
+  is_zero_in_ci: boolean;
+}
+
+export interface CausalMediationSensitivityResult {
+  status: string;
+  message?: string;
+  treatment_field?: string;
+  mediator_field?: string;
+  outcome_field?: string;
+  covariate_fields?: string[];
+  sample_diagnostics?: {
+    n_total: number;
+    n_treated: number;
+    n_control: number;
+    mean_mediator: number;
+    sd_mediator: number;
+    mean_outcome: number;
+    sd_outcome: number;
+    r_squared_mediator_model: number;
+    r_squared_outcome_model: number;
+  };
+  path_estimates?: {
+    path_a: CausalMediationPathEstimate;
+    path_b: CausalMediationPathEstimate;
+    path_c_prime: CausalMediationPathEstimate;
+  };
+  baseline_effects?: {
+    acme: number;
+    se_acme: number;
+    ci_95_lower: number;
+    ci_95_upper: number;
+    z_stat: number;
+    p_value: number;
+    is_significant: boolean;
+    ade: number;
+    se_ade: number;
+    p_ade: number;
+    total_effect: number;
+    proportion_mediated: number;
+  };
+  sensitivity_analysis?: {
+    critical_rho_threshold: number;
+    r2_star_product: number;
+    robustness_level: string;
+    robustness_badge: string;
+    robustness_description: string;
+    sensitivity_curve: CausalMediationSensitivityPoint[];
+  };
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalMediationSensitivityRequest {
+  treatment_question_id: string;
+  mediator_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  target_treatment_val?: any;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Dynamic Time Warping (DTW) Trajectory Clustering Types ---
+export interface DTWClusterInfo {
+  cluster_id: number;
+  color: string;
+  size: number;
+  percentage: number;
+  archetype_title: string;
+  within_cluster_dispersion: number;
+  mean_trajectory: number[];
+  medoid_trajectory: number[];
+}
+
+export interface DTWClusteringResult {
+  status: string;
+  message?: string;
+  time_series_fields?: string[];
+  time_labels?: string[];
+  sample_diagnostics?: {
+    n_total: number;
+    n_time_points: number;
+    n_clusters: number;
+    window_radius: number;
+    mean_silhouette_score: number;
+  };
+  clusters?: DTWClusterInfo[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface DTWClusteringRequest {
+  time_series_question_ids: string[];
+  time_labels?: string[];
+  n_clusters?: number;
+  window_radius?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Causal Interaction Trees & Honest Subgroup Identification (Athey & Imbens 2016) Types ---
+export interface CausalTreeSubgroup {
+  leaf_id: number;
+  rule: string;
+  n_total: number;
+  n_treated: number;
+  n_control: number;
+  tau_subgroup: number;
+  se: number;
+  ci_lower: number;
+  ci_upper: number;
+  p_value: number;
+  is_significant: boolean;
+  category: string;
+}
+
+export interface CausalTreeAnalysisResult {
+  status: string;
+  message?: string;
+  treatment_field?: string;
+  outcome_field?: string;
+  feature_fields?: string[];
+  sample_diagnostics?: {
+    n_total: number;
+    n_training_structure: number;
+    n_estimation_honest: number;
+    n_treated_total: number;
+    n_control_total: number;
+    n_subgroups: number;
+    ate_overall: number;
+  };
+  subgroups?: CausalTreeSubgroup[];
+  tree_structure?: any;
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalTreeAnalysisRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  feature_question_ids: string[];
+  max_depth?: number;
+  min_leaf_size?: number;
+  target_treatment_val?: any;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Multiple Testing Correction & False Discovery Rate (FDR) (Benjamini & Hochberg 1995, Storey 2002) Types ---
+export interface FDRCorrectionItem {
+  rank: number;
+  hypothesis: string;
+  raw_p_value: number;
+  bh_q_value: number;
+  by_adjusted_p: number;
+  bonferroni_p: number;
+  bh_critical_value: number;
+  is_significant_bh: boolean;
+  is_significant_bonferroni: boolean;
+  decision_status: 'SURVIVES_BONFERRONI' | 'DISCOVERED_BH_FDR' | 'FILTERED_FALSE_POSITIVE' | 'NON_SIGNIFICANT' | string;
+  decision_badge: string;
+}
+
+export interface MultipleTestingFDRResult {
+  status: string;
+  message?: string;
+  sample_diagnostics?: {
+    total_hypotheses_m: number;
+    fdr_target_q: number;
+    estimated_pi_0_null_proportion: number;
+    raw_significant_count: number;
+    bh_fdr_significant_count: number;
+    by_fdr_significant_count: number;
+    bonferroni_significant_count: number;
+    rescued_by_bh_count: number;
+    filtered_false_positives_count: number;
+  };
+  corrections?: FDRCorrectionItem[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface MultipleTestingFDRRequest {
+  question_ids?: string[];
+  custom_p_values?: number[];
+  custom_labels?: string[];
+  fdr_q?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Bayesian Structural Equation Modeling (BSEM) (Muthén & Asparouhov 2012) Types ---
+export interface BSEMStructuralPath {
+  source_factor: string;
+  target_factor: string;
+  posterior_mean: number;
+  posterior_sd: number;
+  ci_lower: number;
+  ci_upper: number;
+  gelman_rubin_r_hat: number;
+  effective_sample_size: number;
+  mcse: number;
+  bayesian_p_value: number;
+  is_significant: boolean;
+  convergence_status: string;
+}
+
+export interface BSEMLoadingItem {
+  item_id: string;
+  item_title: string;
+  factor_name: string;
+  is_primary: boolean;
+  prior_type: string;
+  posterior_mean: number;
+  posterior_sd: number;
+  ci_lower: number;
+  ci_upper: number;
+}
+
+export interface BSEMPriorSensitivityItem {
+  prior_sd: number;
+  prior_variance: number;
+  posterior_mean_beta: number;
+  absolute_drift_from_baseline: number;
+}
+
+export interface BSEMResult {
+  status: string;
+  message?: string;
+  sample_diagnostics?: {
+    n_observations: number;
+    n_factors: number;
+    n_items: number;
+    n_chains: number;
+    n_iterations: number;
+    n_burnin: number;
+    prior_cross_loading_sd: number;
+    posterior_predictive_p_value: number;
+    model_fit_status: string;
+    model_fit_badge: string;
+    prior_robustness_status: string;
+    prior_robustness_badge: string;
+  };
+  structural_paths?: BSEMStructuralPath[];
+  loadings?: BSEMLoadingItem[];
+  prior_sensitivity?: BSEMPriorSensitivityItem[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface BSEMRequest {
+  measurement_spec: Record<string, string[]>;
+  structural_regressions?: Array<{ source: string; target: string }>;
+  prior_cross_loading_sd?: number;
+  n_iterations?: number;
+  n_burnin?: number;
+  n_chains?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Gaussian Copula Endogeneity Estimation (Park & Gupta 2012) Types ---
+export interface GaussianCopulaResult {
+  status: string;
+  message?: string;
+  sample_diagnostics?: {
+    n_observations: number;
+    endogenous_variable: string;
+    outcome_variable: string;
+    control_variables: string[];
+    jarque_bera_stat: number;
+    jarque_bera_p_value: number;
+    skewness: number;
+    excess_kurtosis: number;
+    non_normality_satisfied: boolean;
+    copula_vif: number;
+    endogeneity_status: string;
+    endogeneity_badge: string;
+  };
+  naive_ols?: {
+    beta: number;
+    se: number;
+    t_stat: number;
+    ci_lower: number;
+    ci_upper: number;
+    r_squared: number;
+  };
+  copula_corrected?: {
+    beta_copula: number;
+    se_bootstrap: number;
+    ci_lower_bootstrap: number;
+    ci_upper_bootstrap: number;
+    copula_rho_parameter: number;
+    se_copula_rho: number;
+    t_rho: number;
+    p_value_rho: number;
+    is_endogeneity_significant: boolean;
+    endogeneity_bias_gap: number;
+    percentage_bias: number;
+    r_squared: number;
+  };
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface GaussianCopulaRequest {
+  endogenous_question_id: string;
+  outcome_question_id: string;
+  control_question_ids?: string[];
+  n_bootstraps?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Dynamic Factor Modeling (DFM) (Stock & Watson 2002) Types ---
+export interface DFMTrajectoryPoint {
+  wave_index: number;
+  wave_label: string;
+  sample_size: number;
+  filtered_state: number;
+  smoothed_factor: number;
+  standard_error: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+}
+
+export interface DFMVarianceDecompositionItem {
+  question_id: string;
+  title: string;
+  loading_lambda: number;
+  common_variance_share_r2: number;
+  idiosyncratic_noise_share: number;
+  signal_to_noise_ratio: number;
+}
+
+export interface DynamicFactorModelResult {
+  status: string;
+  message?: string;
+  sample_diagnostics?: {
+    total_waves_t: number;
+    total_indicators_p: number;
+    total_observations: number;
+    n_dynamic_factors: number;
+    ar1_persistence: number;
+    overall_signal_variance_share: number;
+    state_space_filter: string;
+  };
+  trajectory?: DFMTrajectoryPoint[];
+  variance_decomposition?: DFMVarianceDecompositionItem[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface DynamicFactorModelRequest {
+  indicator_question_ids: string[];
+  wave_question_id?: string;
+  time_field?: string;
+  n_factors?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Extreme Bound Analysis (EBA) Interfaces ---
+export interface EBASpecificationItem {
+  model_id: number;
+  beta: number;
+  se: number;
+  t_stat: number;
+  p_value: number;
+  r_squared: number;
+  ci_lower: number;
+  ci_upper: number;
+  is_significant: boolean;
+  controls: string[];
+  cdf_zero: number;
+}
+
+export interface EBASummary {
+  n_samples: number;
+  total_models_evaluated: number;
+  candidate_controls_pool_size: number;
+  mean_beta: number;
+  median_beta: number;
+  std_beta: number;
+  min_beta: number;
+  max_beta: number;
+  leamer_lower_bound: number;
+  leamer_upper_bound: number;
+  leamer_verdict: 'ROBUST_POSITIVE' | 'ROBUST_NEGATIVE' | 'FRAGILE';
+  leamer_label: string;
+  sala_i_martin_cdf: number;
+  sala_i_martin_weighted_cdf: number;
+  sala_i_martin_verdict: 'ROBUST' | 'FRAGILE';
+  sala_i_martin_label: string;
+  significant_models_fraction: number;
+  positive_models_fraction: number;
+  sig_positive_models: number;
+  sig_negative_models: number;
+  non_significant_models: number;
+  min_beta_model_controls: string[];
+  max_beta_model_controls: string[];
+}
+
+export interface ExtremeBoundsResult {
+  status: string;
+  message?: string;
+  summary?: EBASummary;
+  specifications_sample?: EBASpecificationItem[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface ExtremeBoundsRequest {
+  focus_question_id: string;
+  outcome_question_id: string;
+  candidate_question_ids: string[];
+  free_question_ids?: string[];
+  max_controls_per_model?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Spatial Econometrics & Moran's I Interfaces ---
+export interface SpatialEconometricsImpact {
+  variable: string;
+  coefficient: number;
+  direct_impact: number;
+  indirect_spillover_impact: number;
+  total_impact: number;
+  spillover_ratio: number;
+}
+
+export interface SpatialEconometricsResult {
+  status: string;
+  message?: string;
+  morans_i?: {
+    morans_i: number;
+    expected_i: number;
+    variance_i: number;
+    standard_error: number;
+    z_score: number;
+    p_value: number;
+    is_significant: boolean;
+    classification: string;
+    interpretation: string;
+    quadrants: {
+      high_high: number;
+      low_low: number;
+      high_low: number;
+      low_high: number;
+    };
+  };
+  lm_diagnostics?: {
+    lm_error_stat: number;
+    lm_error_p_value: number;
+    lm_lag_stat: number;
+    lm_lag_p_value: number;
+    recommended_model: string;
+    advice: string;
+  };
+  baseline_ols?: {
+    r_squared: number;
+    sigma_squared: number;
+    coefficients: number[];
+    standard_errors: number[];
+    p_values: number[];
+  };
+  spatial_lag_model?: {
+    rho: number;
+    rho_standard_error: number;
+    rho_z_stat: number;
+    rho_p_value: number;
+    is_rho_significant: boolean;
+    intercept: number;
+    r_squared: number;
+    impact_decomposition: SpatialEconometricsImpact[];
+  };
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface SpatialEconometricsRequest {
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  lat_field?: string;
+  lon_field?: string;
+  weights_type?: string;
+  knn_k?: number;
+  distance_power?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Instrumental Variable Quantile Regression (IV-QR) Interfaces ---
+export interface IVQRQuantileItem {
+  quantile: number;
+  iv_qr_estimate: number;
+  ci_lower: number;
+  ci_upper: number;
+  is_significant: boolean;
+  exogenous_qr_estimate: number;
+  exogenous_qr_se: number;
+  endogeneity_bias_gap: number;
+  min_wald_stat: number;
+}
+
+export interface IVQRSummary {
+  n_samples: number;
+  instrument_strength: 'STRONG_INSTRUMENT' | 'WEAK_INSTRUMENT';
+  instrument_f_stat: number;
+  strength_warning: string;
+  ols_estimate: number;
+  ols_se: number;
+  tsls_estimate: number;
+  tsls_se: number;
+  interquantile_spread_90_10: number;
+  has_quantile_heterogeneity: boolean;
+  chi2_critical_value: number;
+}
+
+export interface IVQuantileRegressionResult {
+  status: string;
+  message?: string;
+  summary?: IVQRSummary;
+  quantile_estimates?: IVQRQuantileItem[];
+  svg_chart?: string;
+  apa_narrative?: string;
+}
+
+export interface IVQuantileRegressionRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  instrument_question_id: string;
+  covariate_question_ids?: string[];
+  quantiles?: number[];
+  grid_points?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Choice-Based Conjoint with Hierarchical Bayes (HB-CBC) Interfaces ---
+export interface ConjointHBDiagnostics {
+  n_respondents: number;
+  n_total_observations: number;
+  n_parameters: number;
+  mcmc_draws: number;
+  mcmc_burn_in: number;
+  mcmc_acceptance_rate: number;
+  log_likelihood: number;
+  null_log_likelihood: number;
+  mcfadden_pseudo_r2: number;
+  hit_rate_pct: number;
+  rmse: number;
+}
+
+export interface ConjointHBAttributeImportance {
+  attribute: string;
+  relative_importance_pct: number;
+  importance_sd_pct: number;
+}
+
+export interface ConjointHBPartWorth {
+  attribute: string;
+  level: string;
+  part_worth_utility: number;
+  bci_95_lower: number;
+  bci_95_upper: number;
+  is_reference: boolean;
+}
+
+export interface ConjointHBWTPItem {
+  attribute: string;
+  level: string;
+  utility_gain_vs_ref: number;
+  wtp_currency: number;
+}
+
+export interface ConjointHBWTP {
+  price_attribute: string;
+  price_range: number[];
+  marginal_utility_of_price: number;
+  wtp_estimates: ConjointHBWTPItem[];
+}
+
+export interface ConjointHBSimulationScenario {
+  scenario_name: string;
+  attributes: Record<string, any>;
+  predicted_choice_share_pct: number;
+}
+
+export interface ConjointHBResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: ConjointHBDiagnostics;
+  attribute_importance?: ConjointHBAttributeImportance[];
+  attribute_details?: Record<string, any>;
+  part_worth_utilities?: ConjointHBPartWorth[];
+  willingness_to_pay?: ConjointHBWTP;
+  market_simulations?: ConjointHBSimulationScenario[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ConjointHBRequest {
+  attributes_config: Record<string, string[]>;
+  tasks_data?: Array<{
+    respondent_id?: string;
+    task_id?: string;
+    attributes: Record<string, any>;
+    chosen: number;
+  }>;
+  choice_question_id?: string;
+  profile_attribute_mapping?: Record<string, string>;
+  price_attribute?: string;
+  simulation_scenarios?: Array<{
+    name?: string;
+    attributes: Record<string, any>;
+  }>;
+  n_draws?: number;
+  burn_in?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Fractional Response Regression (Papke & Wooldridge 1996, 2008) Interfaces ---
+export interface FractionalResponseCoefficient {
+  variable: string;
+  is_intercept: boolean;
+  estimate: number;
+  robust_se: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  average_marginal_effect?: number;
+  ame_se?: number;
+  marginal_effect_at_mean?: number;
+  is_significant: boolean;
+}
+
+export interface FractionalResponseDiagnostics {
+  n_samples: number;
+  n_covariates: number;
+  link_function: string;
+  boundary_zeros: number;
+  boundary_ones: number;
+  interior_observations: number;
+  converged: boolean;
+  quasi_log_likelihood: number;
+  null_log_likelihood: number;
+  mcfadden_pseudo_r2: number;
+  qaic: number;
+  qbic: number;
+  qmle_rmse: number;
+  ols_rmse: number;
+  ols_out_of_bounds_count: number;
+  reset_test_stat: number;
+  reset_test_pval: number;
+  reset_passed: boolean;
+}
+
+export interface FractionalResponseResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: FractionalResponseDiagnostics;
+  coefficients?: FractionalResponseCoefficient[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface FractionalResponseRequest {
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  link?: 'logit' | 'probit' | 'cloglog';
+  scale_from_percentage?: boolean;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Multidimensional Item Response Theory (MIRT; Reckase 2009) Interfaces ---
+export interface MIRTItemParameter {
+  item_name: string;
+  intercept_d: number;
+  slopes_a: number[];
+  mdisc: number;
+  mdisc_classification: string;
+  mid: number;
+  directional_angles_deg: number[];
+  item_p_value: number;
+  item_chi_square: number;
+  item_rmsea: number;
+  item_fit_verdict: string;
+}
+
+export interface MIRTDiagnostics {
+  n_samples: number;
+  n_items: number;
+  n_dimensions: number;
+  dimension_labels: string[];
+  converged: boolean;
+  em_iterations: number;
+  log_likelihood: number;
+  aic: number;
+  bic: number;
+  eap_trait_means: number[];
+  eap_trait_sds: number[];
+  trait_correlations: Array<{
+    dim1: string;
+    dim2: string;
+    correlation_r: number;
+  }>;
+}
+
+export interface MIRTResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: MIRTDiagnostics;
+  item_parameters?: MIRTItemParameter[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface MIRTRequest {
+  item_question_ids: string[];
+  n_dimensions?: number;
+  dimension_names?: string[];
+  max_em_iter?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Heckman Two-Step Sample Selection Model (Heckman 1979) Interfaces ---
+export interface HeckmanCoefficientComparison {
+  variable: string;
+  is_intercept: boolean;
+  ols_estimate: number;
+  ols_se: number;
+  heckman_estimate: number;
+  heckman_se: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  selection_bias_gap: number;
+  is_significant: boolean;
+}
+
+export interface HeckmanDiagnostics {
+  n_total_observations: number;
+  n_selected_observed: number;
+  n_unselected_censored: number;
+  selection_rate_pct: number;
+  inverse_mills_ratio_coef: number;
+  imr_se: number;
+  imr_t_statistic: number;
+  imr_p_value: number;
+  rho_correlation: number;
+  sigma_epsilon: number;
+  has_selection_bias: boolean;
+  selection_verdict: string;
+  exclusion_restrictions: string[];
+  has_valid_exclusion: boolean;
+}
+
+export interface HeckmanSelectionResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: HeckmanDiagnostics;
+  coefficients_comparison?: HeckmanCoefficientComparison[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface HeckmanSelectionRequest {
+  outcome_question_id: string;
+  selection_indicator_question_id?: string;
+  outcome_covariate_question_ids: string[];
+  exclusion_restriction_question_ids?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Stochastic Frontier Analysis (SFA; Aigner et al. 1977; JLMS 1982) Interfaces ---
+export interface SFACoefficient {
+  variable: string;
+  is_intercept: boolean;
+  frontier_coefficient: number;
+  elasticity_estimate: number;
+  standard_error: number;
+  t_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface SFAIndividualEfficiency {
+  unit_index: number;
+  technical_inefficiency_u: number;
+  technical_efficiency_pct: number;
+}
+
+export interface SFADiagnostics {
+  n_units: number;
+  n_inputs: number;
+  log_transformed: boolean;
+  converged: boolean;
+  sfa_log_likelihood: number;
+  ols_log_likelihood: number;
+  lr_test_stat: number;
+  lr_test_pval: number;
+  has_inefficiency: boolean;
+  inefficiency_verdict: string;
+  sigma_total: number;
+  sigma_u_inefficiency: number;
+  sigma_v_noise: number;
+  lambda_ratio: number;
+  gamma_variance_share: number;
+  ols_residual_skewness: number;
+  returns_to_scale: number;
+  rts_verdict: string;
+  mean_technical_efficiency_pct: number;
+  median_technical_efficiency_pct: number;
+  min_technical_efficiency_pct: number;
+  max_technical_efficiency_pct: number;
+  std_technical_efficiency_pct: number;
+}
+
+export interface SFAInefficiencySummary {
+  mean_efficiency: number;
+  median_efficiency: number;
+  min_efficiency: number;
+  max_efficiency: number;
+  efficiency_distribution_quartiles: {
+    q25: number;
+    median: number;
+    q75: number;
+  };
+}
+
+export interface StochasticFrontierResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: SFADiagnostics;
+  coefficients?: SFACoefficient[];
+  inefficiency_summary?: SFAInefficiencySummary;
+  individual_efficiency_sample?: SFAIndividualEfficiency[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface StochasticFrontierRequest {
+  output_question_id: string;
+  input_question_ids: string[];
+  log_transform?: boolean;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Zero-Inflated Count Models (ZIP & ZINB; Lambert 1992, Greene 1994) Interfaces ---
+export interface ZeroInflatedCountCoefficient {
+  variable: string;
+  is_intercept: boolean;
+  coefficient: number;
+  incidence_rate_ratio_irr: number;
+  standard_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  irr_95_lower: number;
+  irr_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface ZeroInflatedLogitCoefficient {
+  variable: string;
+  is_intercept: boolean;
+  logit_coefficient: number;
+  odds_ratio: number;
+  standard_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  or_95_lower: number;
+  or_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface ZeroInflatedDiagnostics {
+  sample_size: number;
+  zero_observations_count: number;
+  zero_percentage: number;
+  sample_mean: number;
+  sample_variance: number;
+  dispersion_ratio: number;
+  converged: boolean;
+  model_type: string;
+  log_likelihood_zi: number;
+  log_likelihood_standard_poisson: number;
+  aic_zi: number;
+  bic_zi: number;
+  aic_standard_poisson: number;
+  bic_standard_poisson: number;
+  vuong_test_z: number;
+  vuong_test_p: number;
+  vuong_favors_zero_inflation: boolean;
+  vuong_verdict: string;
+  dispersion_parameter_alpha?: number | null;
+}
+
+export interface ZeroInflatedFrequencyDistribution {
+  counts: number[];
+  observed_frequencies: number[];
+  predicted_frequencies: number[];
+}
+
+export interface ZeroInflatedResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: ZeroInflatedDiagnostics;
+  count_model_coefficients?: ZeroInflatedCountCoefficient[];
+  inflation_model_coefficients?: ZeroInflatedLogitCoefficient[];
+  frequency_distribution?: ZeroInflatedFrequencyDistribution;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ZeroInflatedRequest {
+  count_question_id: string;
+  covariate_question_ids: string[];
+  inflation_covariate_question_ids?: string[];
+  model_type?: 'ZIP' | 'ZINB';
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Latent Moderated Structural Equations (LMS / QML; Klein & Moosbrugger 2000) Interfaces ---
+export interface LMSCoefficient {
+  parameter: string;
+  label: string;
+  estimate: number;
+  standard_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface LMSSimpleSlope {
+  level_label: string;
+  moderator_value: number;
+  simple_slope: number;
+  standard_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  is_significant: boolean;
+}
+
+export interface LMSDiagnostics {
+  sample_size: number;
+  converged: boolean;
+  structural_r2: number;
+  cohen_f2_effect_size: number;
+  f2_classification: string;
+  attenuation_bias_gap_pct: number;
+  naive_observed_interaction_gamma: number;
+  latent_interaction_gamma: number;
+  latent_predictor_reliability_alpha: number;
+  latent_moderator_reliability_alpha: number;
+  latent_outcome_reliability_alpha: number;
+  latent_correlation_xi1_xi2: number;
+  has_significant_moderation: boolean;
+  johnson_neyman_cutoffs: number[];
+}
+
+export interface LatentModerationResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: LMSDiagnostics;
+  coefficients?: LMSCoefficient[];
+  simple_slopes?: LMSSimpleSlope[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface LatentModerationRequest {
+  predictor_item_ids: string[];
+  moderator_item_ids: string[];
+  outcome_item_ids: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Endogenous Switching Regression (ESR; Maddala 1983, Lokshin & Sajaia 2004) Interfaces ---
+export interface ESRCoefficient {
+  variable: string;
+  is_intercept: boolean;
+  regime1_estimate: number;
+  regime1_se: number;
+  regime1_z: number;
+  regime1_p: number;
+  regime1_ci_95: [number, number];
+  regime0_estimate: number;
+  regime0_se: number;
+  regime0_z: number;
+  regime0_p: number;
+  regime0_ci_95: [number, number];
+  coefficient_difference: number;
+}
+
+export interface ESRTreatmentEffectItem {
+  estimate: number;
+  standard_error: number;
+  t_statistic: number;
+  p_value: number;
+  ci_95: [number, number];
+}
+
+export interface ESRTreatmentEffects {
+  att: ESRTreatmentEffectItem;
+  atu: ESRTreatmentEffectItem;
+  transitional_heterogeneity: number;
+}
+
+export interface ESRDiagnostics {
+  total_sample: number;
+  regime1_count: number;
+  regime0_count: number;
+  treatment_rate_pct: number;
+  converged: boolean;
+  fiml_log_likelihood: number;
+  lr_test_independence_stat: number;
+  lr_test_independence_pval: number;
+  has_endogenous_selection: boolean;
+  rho_1_treated_selection: number;
+  rho_1_se: number;
+  rho_0_untreated_selection: number;
+  rho_0_se: number;
+  sigma_1_treated: number;
+  sigma_0_untreated: number;
+  average_treatment_effect_treated_att: number;
+  att_se: number;
+  att_p_value: number;
+  average_treatment_effect_untreated_atu: number;
+  atu_se: number;
+  atu_p_value: number;
+  transitional_heterogeneity: number;
+  base_heterogeneity_treated: number;
+  base_heterogeneity_untreated: number;
+}
+
+export interface EndogenousSwitchingResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: ESRDiagnostics;
+  treatment_effects?: ESRTreatmentEffects;
+  coefficients?: ESRCoefficient[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface EndogenousSwitchingRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  instrument_question_ids?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Generalized Propensity Score (GPS) Dose-Response (Hirano & Imbens 2004) Interfaces ---
+export interface GPSDosePoint {
+  dosage_t: number;
+  expected_outcome_mu: number;
+  standard_error: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+}
+
+export interface GPSMarginalEffectPoint {
+  dosage_t: number;
+  marginal_treatment_effect: number;
+  standard_error: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+}
+
+export interface GPSDiagnostics {
+  sample_size: number;
+  n_covariates: number;
+  treatment_min: number;
+  treatment_max: number;
+  treatment_mean: number;
+  treatment_sd: number;
+  treatment_model_r2: number;
+  treatment_model_sigma: number;
+  outcome_model_r2: number;
+  optimal_dosage_peak: number;
+  peak_expected_outcome: number;
+  baseline_expected_outcome: number;
+  net_causal_gain_at_optimal: number;
+}
+
+export interface GPSDoseResponseResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: GPSDiagnostics;
+  dose_response_curve?: GPSDosePoint[];
+  marginal_effects_curve?: GPSMarginalEffectPoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface GPSDoseResponseRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  n_grid_points?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Causal Discovery DAG (LiNGAM & ANM - Shimizu et al. 2006; Hoyer et al. 2009) ---
+export interface CausalEdge {
+  from: string;
+  to: string;
+  path_coefficient: number;
+  total_effect: number;
+  t_statistic: number;
+  p_value: number;
+  is_significant: boolean;
+}
+
+export interface CausalNonGaussianityTest {
+  variable: string;
+  skewness: number;
+  excess_kurtosis: number;
+  omnibus_stat: number;
+  p_value: number;
+  is_non_gaussian: boolean;
+}
+
+export interface CausalANMDiagnostic {
+  edge: string;
+  residual_cause_corr: number;
+  independence_p_value: number;
+  anm_noise_independent: boolean;
+}
+
+export interface CausalMatrixData {
+  variables: string[];
+  matrix: number[][];
+}
+
+export interface CausalDiscoveryDiagnostics {
+  N: number;
+  p: number;
+  fastica_converged: boolean;
+  non_gaussian_variables_count: number;
+  total_directed_edges: number;
+  prune_threshold: number;
+}
+
+export interface CausalDiscoveryResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: CausalDiscoveryDiagnostics;
+  causal_order?: string[];
+  directed_edges?: CausalEdge[];
+  non_gaussianity_tests?: CausalNonGaussianityTest[];
+  anm_diagnostics?: CausalANMDiagnostic[];
+  adjacency_matrix?: CausalMatrixData;
+  total_effects_matrix?: CausalMatrixData;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalDiscoveryRequest {
+  variable_question_ids: string[];
+  prune_threshold?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Bayesian Additive Regression Trees (BART) Causal (Chipman et al. 2010; Hill 2011) ---
+export interface BARTTreatmentEffectMetric {
+  estimate: number;
+  se: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  p_value?: number;
+}
+
+export interface BARTTreatmentEffects {
+  ate: BARTTreatmentEffectMetric;
+  att: BARTTreatmentEffectMetric;
+  atu: BARTTreatmentEffectMetric;
+}
+
+export interface BARTITEDistribution {
+  p05: number;
+  p25: number;
+  median: number;
+  p75: number;
+  p95: number;
+  sd_tau: number;
+  sd_tau_ci_lower: number;
+  sd_tau_ci_upper: number;
+}
+
+export interface BARTVariableImportance {
+  covariate: string;
+  split_count: number;
+  relative_importance: number;
+  is_primary_moderator: boolean;
+}
+
+export interface BARTSubgroupCATE {
+  moderator: string;
+  subgroup: string;
+  n_respondents: number;
+  cate_estimate: number;
+  se: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+}
+
+export interface BARTCausalDiagnostics {
+  N: number;
+  n_treated: number;
+  n_control: number;
+  n_covariates: number;
+  n_trees: number;
+  n_posterior_samples: number;
+  has_significant_heterogeneity: boolean;
+}
+
+export interface BARTCausalResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: BARTCausalDiagnostics;
+  treatment_effects?: BARTTreatmentEffects;
+  ite_distribution?: BARTITEDistribution;
+  variable_importance?: BARTVariableImportance[];
+  subgroup_cate?: BARTSubgroupCATE[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface BARTCausalRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  n_trees?: number;
+  n_samples?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Conjoint Analysis & Discrete Choice Experiment (DCE - McFadden 1974; Train 2009) ---
+export interface ConjointPartWorth {
+  attribute: string;
+  part_worth_utility: number;
+  se: number;
+  t_stat: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  range_utility: number;
+  relative_importance_pct: number;
+  is_significant: boolean;
+}
+
+export interface ConjointWTP {
+  attribute: string;
+  wtp_estimate: number;
+  wtp_se: number;
+  wtp_ci_lower: number;
+  wtp_ci_upper: number;
+  unit: string;
+}
+
+export interface ConjointDiagnostics {
+  N: number;
+  n_chosen: number;
+  n_rejected: number;
+  n_attributes: number;
+  mcfadden_pseudo_r2: number;
+  log_likelihood: number;
+  null_log_likelihood: number;
+  lr_test_stat: number;
+  lr_test_p_value: number;
+  aic: number;
+  bic: number;
+  converged: boolean;
+}
+
+export interface ConjointChoiceResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: ConjointDiagnostics;
+  part_worth_utilities?: ConjointPartWorth[];
+  willingness_to_pay?: ConjointWTP[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ConjointChoiceRequest {
+  choice_question_id: string;
+  attribute_question_ids: string[];
+  price_question_id?: string;
+  price_unit?: string;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Multi-Group SEM Invariance & Latent Means (Meredith 1993; Byrne 2013) ---
+export interface MGSEMInvarianceStep {
+  model: string;
+  chi2: number;
+  df: number;
+  p_value: number;
+  cfi: number;
+  rmsea: number;
+  srmr: number;
+  delta_chi2: number;
+  delta_df: number;
+  delta_p: number;
+  delta_cfi: number;
+  status: string;
+}
+
+export interface MGSEMLatentMeans {
+  reference_group: string;
+  comparison_group: string;
+  latent_mean_ref: number;
+  latent_mean_comp: number;
+  se: number;
+  z_stat: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  cohens_d: number;
+  is_significant: boolean;
+  is_valid_comparison: boolean;
+}
+
+export interface MGSEMIndicatorParam {
+  indicator: string;
+  loading_g1: number;
+  loading_g2: number;
+  loading_diff: number;
+  intercept_g1: number;
+  intercept_g2: number;
+  intercept_diff: number;
+  is_scalar_invariant: boolean;
+}
+
+export interface MGSEMDiagnostics {
+  N_total: number;
+  N1: number;
+  N2: number;
+  group1: string;
+  group2: string;
+  n_indicators: number;
+  metric_supported: boolean;
+  scalar_supported: boolean;
+  strict_supported: boolean;
+}
+
+export interface MGSEMInvarianceResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: MGSEMDiagnostics;
+  invariance_hierarchy?: MGSEMInvarianceStep[];
+  latent_means_comparison?: MGSEMLatentMeans;
+  indicator_parameters?: MGSEMIndicatorParam[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface MGSEMInvarianceRequest {
+  group_question_id: string;
+  indicator_question_ids: string[];
+  reference_group?: string;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Generalized Additive Models (GAM) & Penalized Splines (Hastie & Tibshirani 1990; Wood 2017) ---
+export interface GAMCurvePoint {
+  x: number;
+  f_x: number;
+  ci_lower: number;
+  ci_upper: number;
+  deriv1: number;
+}
+
+export interface GAMTippingPoint {
+  x_value: number;
+  predicted_response: number;
+  type: string;
+  interpretation: string;
+}
+
+export interface GAMDiagnostics {
+  N: number;
+  n_knots: number;
+  optimal_smoothing_lambda: number;
+  effective_degrees_of_freedom: number;
+  r_squared: number;
+  f_stat_nonlinearity: number;
+  p_value_nonlinearity: number;
+  is_strictly_nonlinear: boolean;
+  total_tipping_points: number;
+}
+
+export interface GAMSplineResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: GAMDiagnostics;
+  tipping_points?: GAMTippingPoint[];
+  smooth_curve?: GAMCurvePoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface GAMSplineRequest {
+  predictor_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  n_knots?: number;
+  grid_points?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Latent Profile Analysis (LPA) Interfaces ---
+export interface LatentProfileItemStat {
+  indicator: string;
+  mean: number;
+  std: number;
+  z_score: number;
+}
+
+export interface LatentProfileDetail {
+  profile_id: number;
+  name: string;
+  size: number;
+  percentage: number;
+  average_posterior_prob: number;
+  item_statistics: LatentProfileItemStat[];
+}
+
+export interface LPAClassComparison {
+  n_classes: number;
+  log_likelihood: number;
+  num_params: number;
+  aic: number;
+  bic: number;
+  sabic: number;
+  entropy: number;
+  min_class_pct: number;
+}
+
+export interface LPADiagnostics {
+  sample_size: number;
+  n_indicators: number;
+  optimal_n_classes: number;
+  log_likelihood: number;
+  aic: number;
+  bic: number;
+  sabic: number;
+  entropy: number;
+  is_well_separated: boolean;
+  separation_quality: string;
+}
+
+export interface LatentProfileResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: LPADiagnostics;
+  model_comparison?: LPAClassComparison[];
+  profiles?: LatentProfileDetail[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface LatentProfileRequest {
+  indicator_question_ids: string[];
+  n_profiles?: number;
+  max_profiles?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Shapley Value Regression & Key Driver Analysis (KDA) Interfaces ---
+export interface ShapleyDriverItem {
+  driver_id: number;
+  driver_name: string;
+  shapley_r2_contribution: number;
+  importance_share_pct: number;
+  performance_mean: number;
+  performance_std: number;
+  bivariate_correlation: number;
+  vif: number;
+  strategic_quadrant: string;
+  strategic_label: string;
+  action_urgency: string;
+}
+
+export interface ShapleyDriverDiagnostics {
+  sample_size: number;
+  n_drivers: number;
+  full_model_r2: number;
+  sum_shapley_contributions: number;
+  efficiency_gap: number;
+  max_vif: number;
+  has_multicollinearity: boolean;
+  importance_threshold_median: number;
+  performance_threshold_median: number;
+}
+
+export interface ShapleyDriverResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: ShapleyDriverDiagnostics;
+  drivers?: ShapleyDriverItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ShapleyDriverRequest {
+  driver_question_ids: string[];
+  outcome_question_id: string;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Plackett-Luce Choice Model & Rank-Ordered Logit Interfaces ---
+export interface PlackettLuceItem {
+  item_id: number;
+  item_name: string;
+  latent_worth: number;
+  worth_percentage: number;
+  utility_log_worth: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_lower: number;
+  ci_upper: number;
+}
+
+export interface PlackettLuceDiagnostics {
+  sample_size: number;
+  n_items: number;
+  log_likelihood: number;
+  null_log_likelihood: number;
+  mcfadden_pseudo_r2: number;
+  lr_chi_square: number;
+  df: number;
+  p_value: number;
+  converged: boolean;
+}
+
+export interface PlackettLuceResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: PlackettLuceDiagnostics;
+  items?: PlackettLuceItem[];
+  pairwise_win_matrix?: number[][];
+  item_labels?: string[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface PlackettLuceRequest {
+  ranking_question_id?: string;
+  item_question_ids?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- MaxDiff Best-Worst Scaling Interfaces ---
+export interface MaxDiffItem {
+  item_id: number;
+  item_name: string;
+  raw_utility: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  preference_share_pct: number;
+  best_count: number;
+  worst_count: number;
+  times_shown: number;
+  best_rate_pct: number;
+  worst_rate_pct: number;
+  counting_score: number;
+}
+
+export interface MaxDiffDiagnostics {
+  n_tasks: number;
+  n_items: number;
+  log_likelihood: number;
+  null_log_likelihood: number;
+  mcfadden_pseudo_r2: number;
+  converged: boolean;
+}
+
+export interface MaxDiffResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: MaxDiffDiagnostics;
+  items?: MaxDiffItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface MaxDiffRequest {
+  best_question_id?: string;
+  worst_question_id?: string;
+  item_question_ids?: string[];
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Bayesian Network DAG Structure Learning Interfaces ---
+export interface BayesianNetworkNode {
+  node_id: number;
+  label: string;
+  topological_role: string;
+  in_degree: number;
+  out_degree: number;
+  parents: string[];
+  children: string[];
+  markov_blanket: string[];
+}
+
+export interface BayesianNetworkEdge {
+  from_node: string;
+  to_node: string;
+  from_index: number;
+  to_index: number;
+  standardized_path_coeff: number;
+  relationship_type: string;
+}
+
+export interface BayesianNetworkDiagnostics {
+  sample_size: number;
+  n_nodes: number;
+  total_edges: number;
+  graph_density: number;
+  final_bic_score: number;
+  empty_graph_bic: number;
+  bic_gain: number;
+  is_acyclic: boolean;
+}
+
+export interface BayesianNetworkResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: BayesianNetworkDiagnostics;
+  nodes?: BayesianNetworkNode[];
+  edges?: BayesianNetworkEdge[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface BayesianNetworkRequest {
+  question_ids: string[];
+  max_parents?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+
+// --- Stochastic Dominance & Distributional Inequality (Davidson & Duclos 2000) ---
+export interface StochasticDominanceDiagnostics {
+  sample_size_a: number;
+  sample_size_b: number;
+  mean_a: number;
+  mean_b: number;
+  median_a: number;
+  median_b: number;
+  std_a: number;
+  std_b: number;
+  gini_a: number;
+  gini_b: number;
+  ks_statistic: number;
+  ks_p_value: number;
+  fsd_conclusion: string;
+  ssd_conclusion: string;
+  tsd_conclusion: string;
+  fsd_dominant_group: string;
+  ssd_dominant_group: string;
+}
+
+export interface StochasticDominanceThreshold {
+  threshold: number;
+  cdf_a: number;
+  cdf_b: number;
+  fsd_diff_b_minus_a: number;
+  d2_integral_a: number;
+  d2_integral_b: number;
+  ssd_diff_b_minus_a: number;
+}
+
+export interface StochasticDominanceResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  diagnostics?: StochasticDominanceDiagnostics;
+  grid_thresholds?: StochasticDominanceThreshold[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface StochasticDominanceRequest {
+  outcome_question_id: string;
+  group_question_id: string;
+  group_a_value?: string;
+  group_b_value?: string;
+  group_a_label?: string;
+  group_b_label?: string;
+  n_grid_points?: number;
+  scope?: 'all' | 'verified_clean';
 }
