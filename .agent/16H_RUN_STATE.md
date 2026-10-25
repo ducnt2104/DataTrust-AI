@@ -1936,3 +1936,28 @@ eq 0\}$
   - Backend Unit & Route Tests: **5/5 passed in 2.15s**.
   - Frontend Production Build: **2,111 modules transformed, 0 errors in 1.74s**.
   - Contract Documentation: Section 126 appended to `docs/API_CONTRACT.md`.
+
+## 10. Iteration 146: Surrogate Index & Long-Term Causal Evaluation Engine (Athey, Chetty, Imbens, & Kang 2019 Econometrica)
+- **Timestamp**: 2026-10-25T11:54:00+07:00
+- **Scientific Foundation**:
+  - Overcomes the Horizon Gap problem where long-term target outcomes $Y$ cannot be observed in real-time within the experimental survey window.
+  - Formulates the Prentice-Athey surrogacy condition ($Y \perp W \mid S, X$), ensuring that the intermediate surrogate vector $S = (S_1, \dots, S_K)$ fully mediates all long-term causal channels.
+  - Constructs the Surrogate Index $r(s, x) = E[Y \mid S=s, X=x]$ on observational follow-up samples via Ridge regularization ($\lambda$).
+  - Projects the long-term average treatment effect $\tau_Y = E[r(S, X) \mid W=1] - E[r(S, X) \mid W=0]$ on experimental respondents.
+  - Surrogacy diagnostic validation testing direct effect of $W$ on $Y$ controlling for $(S, X)$.
+  - Two-sample bootstrap inference (300 resamples) accounting for estimation noise in both experimental and observational data sources.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/surrogate_index_engine.py` (410 lines).
+  - Pydantic Schemas: `SurrogateIndexRequest` and `SurrogateIndexOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/surrogate-index` with `SURROGATE_INDEX_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_surrogate_index_engine.py` (4/4 passed).
+  - Route Tests: `backend/tests/test_surrogate_index_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `SurrogateDecompositionItem`, `SurrogateIndexResult`, `SurrogateIndexRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runSurrogateIndex` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/SurrogateIndexCard.tsx` (430 lines) with treatment selector, multi-surrogate checklist, long-term outcome selector, Ridge penalty slider, metric highlights (long-term $\tau_Y$, index $R^2$, sample sizes, surrogacy condition), surrogate decomposition table, dual-panel SVG visualizer (Forest Plot & Relative Weights), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **5/5 passed in 1.90s**.
+  - Frontend Production Build: **2,112 modules transformed, 0 errors in 1.16s**.
+  - Contract Documentation: Section 127 appended to `docs/API_CONTRACT.md`.

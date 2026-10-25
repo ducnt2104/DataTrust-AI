@@ -7795,3 +7795,55 @@ export interface LeeBoundsRequest {
   n_bootstraps?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+export interface SurrogateDecompositionItem {
+  surrogate_name: string;
+  treatment_effect: number;
+  std_error: number;
+  surrogate_weight_in_index: number;
+}
+
+export interface SurrogateIndexResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  sample_sizes?: {
+    experimental_sample: number;
+    observational_sample: number;
+    total: number;
+  };
+  bootstrap_replications?: number;
+  surrogate_index_fit?: {
+    r_squared: number;
+    ridge_lambda: number;
+  };
+  longterm_treatment_effect?: {
+    estimate: number;
+    std_error: number;
+    z_stat: number;
+    p_value: number;
+    ci_lower: number;
+    ci_upper: number;
+    is_significant: boolean;
+  };
+  surrogate_decomposition?: SurrogateDecompositionItem[];
+  surrogacy_validation?: {
+    risk_status: string;
+    direct_effect_p_value?: number;
+  };
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface SurrogateIndexRequest {
+  treatment_question_id: string;
+  surrogate_question_ids: string[];
+  longterm_outcome_question_id: string;
+  covariate_question_ids?: string[];
+  sample_indicator_question_id?: string;
+  alpha_level?: number;
+  n_bootstraps?: number;
+  ridge_lambda?: number;
+  scope?: 'all' | 'verified_clean';
+}

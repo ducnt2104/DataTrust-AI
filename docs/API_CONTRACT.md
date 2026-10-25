@@ -5320,3 +5320,46 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG trực quan hóa kép Forest Plot & Tỷ lệ hao hụt.
   - `apa_narrative`: Thuyết minh học thuật chuẩn mực APA 7th Edition theo Lee (2009).
 - **Niêm phong kiểm toán:** Ghi nhận `LEE_BOUNDS_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 127. Surrogate Index & Long-Term Causal Evaluation Engine (Athey, Chetty, Imbens, & Kang 2019 Econometrica)
+- **Mục tiêu:** Giải quyết triệt để vấn đề độ trễ thời gian (Horizon Gap) trong nghiên cứu khảo sát và đánh giá can thiệp: kết quả dài hạn $Y$ (như thu nhập 5 năm, lòng trung thành thương hiệu dài hạn, sức khỏe mãn tính) chỉ quan sát được sau nhiều năm, trong khi quyết định can thiệp cần phản hồi nhanh chóng. Động cơ kết hợp mẫu khảo sát thử nghiệm ngắn hạn (có can thiệp $W$ và các biến đại diện $S$) với mẫu theo dõi quan sát (có $S$ và kết quả dài hạn $Y$) để dự phóng chính xác hiệu ứng nhân quả dài hạn $\tau_Y$.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Điều kiện Đại diện Prentice-Athey (Surrogacy Condition; Prentice 1989; Athey et al. 2019):**
+     - Giả định cốt lõi: $Y \perp W \mid (S, X)$.
+     - Sau khi kiểm soát tập biến đại diện ngắn hạn $S = (S_1, \dots, S_K)$ và các đặc điểm nền $X$, biến can thiệp $W$ không mang thêm bất kỳ thông tin nào về kết quả dài hạn $Y$. Toàn bộ hiệu ứng dài hạn được trung gian hoàn toàn qua vectơ $S$.
+  2. **Xây dựng Chỉ số Đại diện (Surrogate Index $r(S, X)$):**
+     - Ước lượng hàm kỳ vọng có điều kiện $r(s, x) \equiv E[Y \mid S=s, X=x]$ trên tập dữ liệu quan sát/theo dõi thông qua mô hình hồi quy phạt Ridge (L2 regularization):
+       $$\hat{\beta} = \arg\min_\beta \sum_{i \in \text{Obs}} (Y_i - \beta_0 - S_i'\beta_S - X_i'\beta_X)^2 + \lambda \|\beta\|_2^2$$
+  3. **Nhận diện Hiệu ứng Can thiệp Dài hạn (Long-Term Treatment Effect $\tau_Y$):**
+     - Đánh giá chỉ số đại diện $\hat{r}(S_i, X_i)$ cho từng đối tượng trong mẫu thử nghiệm:
+       $$\hat{\tau}_Y = \frac{1}{N_{1, \text{exp}}} \sum_{i \in \text{Exp}: W_i=1} \hat{r}(S_i, X_i) - \frac{1}{N_{0, \text{exp}}} \sum_{i \in \text{Exp}: W_i=0} \hat{r}(S_i, X_i)$$
+  4. **Kiểm định Chẩn đoán Điều kiện Đại diện (Prentice Direct Effect Test):**
+     - Khi mẫu quan sát có ghi nhận can thiệp, hệ thống kiểm định giả thuyết $H_0: \gamma = 0$ trong $Y = \alpha_0 + \gamma W + S'\beta + X'\delta + \varepsilon$. Nếu $p < 0.05$, cảnh báo nguy cơ vi phạm điều kiện đại diện do can thiệp có tác động trực tiếp ngoài các biến $S$.
+  5. **Suy diễn Thống kê Bootstrap Hai Mẫu (Two-Sample Bootstrap):**
+     - Tái chọn mẫu đồng thời cả tập dữ liệu quan sát (nhiễu ước lượng tham số $\beta$) và tập thử nghiệm (phương sai mẫu ngẫu nhiên) để cung cấp sai số chuẩn $\hat{SE}$ và khoảng tin cậy 95% chuẩn xác.
+  6. **Đồ thị SVG Kép Khoa học:**
+     - Panel A: Forest Plot so sánh hiệu ứng dài hạn $\tau_Y$ với tác động trên từng biến đại diện ngắn hạn $S_k$.
+     - Panel B: Biểu đồ thanh ngang thể hiện trọng số đóng góp của từng biến đại diện trong chỉ số $r(S, X)$.
+  7. **Báo cáo Học thuật Chuẩn APA 7th Edition:** Tự động biên soạn theo chuẩn Athey et al. (2019).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/surrogate-index`
+- **Request Body (`SurrogateIndexRequest`):**
+  - `treatment_question_id`: UUID biến can thiệp thử nghiệm $W$.
+  - `surrogate_question_ids`: Danh sách UUID các câu hỏi đại diện ngắn hạn $S_1, S_2, \dots$.
+  - `longterm_outcome_question_id`: UUID biến kết quả dài hạn $Y$.
+  - `covariate_question_ids`: Danh sách UUID các biến kiểm soát nền $X$.
+  - `sample_indicator_question_id`: UUID biến chỉ báo mẫu (Tùy chọn: 1 = thử nghiệm, 0 = quan sát).
+  - `alpha_level`: Mức ý nghĩa thống kê (Mặc định 0.05).
+  - `n_bootstraps`: Số lần tái chọn mẫu bootstrap hai mẫu (Mặc định 300).
+  - `ridge_lambda`: Hệ số phạt Ridge L2 (Mặc định 1.0).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`SurrogateIndexOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"ERROR"`.
+  - `model_type`: `"SURROGATE_INDEX_ATHEY_CHETTY_IMBENS_2019"`.
+  - `sample_sizes`: Quy mô mẫu thử nghiệm ($N_{\text{exp}}$), mẫu theo dõi ($N_{\text{obs}}$), tổng mẫu.
+  - `surrogate_index_fit`: Hệ số xác định $R^2$ của chỉ số đại diện trên mẫu quan sát.
+  - `longterm_treatment_effect`: Ước lượng $\tau_Y$, SE bootstrap hai mẫu, z-statistic, p-value, 95% CI.
+  - `surrogate_decomposition`: Tác động ngắn hạn của $W$ lên từng $S_k$ và trọng số tương ứng trong $r(S, X)$.
+  - `surrogacy_validation`: Đánh giá rủi ro vi phạm điều kiện đại diện (Prentice direct effect p-value).
+  - `svg_visualization`: Đồ thị SVG trực quan hóa kép Forest Plot & Trọng số đại diện.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn mực APA 7th Edition theo Athey et al. (2019).
+- **Niêm phong kiểm toán:** Ghi nhận `SURROGATE_INDEX_EVALUATED` vào chuỗi sổ cái SHA-256.

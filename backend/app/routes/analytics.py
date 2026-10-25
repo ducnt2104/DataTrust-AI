@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.surrogate_index_engine import estimate_surrogate_index
 from app.engine.lee_bounds_engine import estimate_lee_bounds
 from app.engine.mte_engine import estimate_mte
 from app.engine.larf_engine import estimate_larf
@@ -89,6 +90,8 @@ from app.schemas import (
     MTEOut,
     LeeBoundsRequest,
     LeeBoundsOut,
+    SurrogateIndexRequest,
+    SurrogateIndexOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -14551,6 +14554,126 @@ def run_lee_bounds_analysis(
                 "lower_bound": res.get("bounds", {}).get("unconditional", {}).get("lower_bound") if res.get("bounds") else None,
                 "upper_bound": res.get("bounds", {}).get("unconditional", {}).get("upper_bound") if res.get("bounds") else None,
                 "trimming_fraction_q": res.get("response_rates", {}).get("trimming_fraction_q") if res.get("response_rates") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/surrogate-index", response_model=SurrogateIndexOut)
+def run_surrogate_index_analysis(
+    survey_id: str,
+    payload: SurrogateIndexRequest
+):
+    """
+    Surrogate Index & Long-Term Causal Evaluation from Short-Term Proxies.
+    Athey, Chetty, Imbens, & Kang (2019 Econometrica).
+    Identifies long-term treatment effects by constructing a Surrogate Index r(S, X)
+    from short-term intermediate survey questions and projecting long-term counterfactuals.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        surr_ids = payload.surrogate_question_ids
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            # Surrogates must be answered
+            if all(sid in answers for sid in surr_ids):
+                record = {}
+                valid_surrs = True
+                for sid in surr_ids:
+                    try:
+                        record[sid] = float(answers[sid])
+                    except (ValueError, TypeError):
+                        valid_surrs = False
+                        break
+                if not valid_surrs:
+                    continue
+
+                # Treatment
+                if payload.treatment_question_id in answers:
+                    try:
+                        record[payload.treatment_question_id] = float(answers[payload.treatment_question_id])
+                    except (ValueError, TypeError):
+                        record[payload.treatment_question_id] = np.nan
+                else:
+                    record[payload.treatment_question_id] = np.nan
+
+                # Long-term outcome
+                if payload.longterm_outcome_question_id in answers:
+                    try:
+                        record[payload.longterm_outcome_question_id] = float(answers[payload.longterm_outcome_question_id])
+                    except (ValueError, TypeError):
+                        record[payload.longterm_outcome_question_id] = np.nan
+                else:
+                    record[payload.longterm_outcome_question_id] = np.nan
+
+                # Covariates
+                for cid in cov_ids:
+                    if cid in answers:
+                        try:
+                            record[cid] = float(answers[cid])
+                        except (ValueError, TypeError):
+                            pass
+
+                df_records.append(record)
+
+        if len(df_records) < 40:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng phản hồi có đầy đủ câu trả lời biến đại diện (N={len(df_records)}) chưa đạt tối thiểu 40 mẫu."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        res = estimate_surrogate_index(
+            df=df,
+            treatment_col=payload.treatment_question_id,
+            surrogate_cols=surr_ids,
+            longterm_outcome_col=payload.longterm_outcome_question_id,
+            covariate_cols=cov_ids,
+            sample_indicator_col=payload.sample_indicator_question_id,
+            alpha_level=payload.alpha_level,
+            n_bootstraps=payload.n_bootstraps,
+            ridge_lambda=payload.ridge_lambda
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="SURROGATE_INDEX_EVALUATED",
+            details={
+                "treatment_qid": payload.treatment_question_id,
+                "surrogate_qids": surr_ids,
+                "longterm_qid": payload.longterm_outcome_question_id,
+                "longterm_tau": res.get("longterm_treatment_effect", {}).get("estimate") if res.get("longterm_treatment_effect") else None,
+                "index_r2": res.get("surrogate_index_fit", {}).get("r_squared") if res.get("surrogate_index_fit") else None,
                 "status": res.get("status")
             }
         )

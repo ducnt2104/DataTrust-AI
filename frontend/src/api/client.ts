@@ -205,7 +205,9 @@ import {
   MTERequest,
   MTEResult,
   LeeBoundsRequest,
-  LeeBoundsResult
+  LeeBoundsResult,
+  SurrogateIndexRequest,
+  SurrogateIndexResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2398,5 +2400,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<LeeBoundsResult>(res);
+  },
+
+  async runSurrogateIndex(
+    surveyId: string,
+    payload: SurrogateIndexRequest
+  ): Promise<SurrogateIndexResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/surrogate-index`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<SurrogateIndexResult>(res);
   }
 };
