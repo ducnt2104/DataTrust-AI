@@ -1,3 +1,4 @@
+from app.engine.many_weak_iv_jive_engine import run_many_weak_iv_jive_analysis
 from app.engine.factorial_conjoint_amce_engine import run_factorial_conjoint_amce
 from app.engine.discrete_rd_heaping_engine import run_discrete_rd_heaping_analysis
 from app.engine.abadie_complier_profiling_engine import run_abadie_complier_profiling
@@ -221,6 +222,8 @@ from app.schemas import (
     DiscreteRDHeapingOut,
     FactorialConjointAMCERequest,
     FactorialConjointAMCEOut,
+    ManyWeakIVJIVERequest,
+    ManyWeakIVJIVEOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -18925,6 +18928,81 @@ def run_factorial_conjoint_amce_endpoint(
                         "sample_size_profiles": res.get("sample_size_profiles"),
                         "respondent_count": res.get("respondent_count"),
                         "attributes_count": len(res.get("attributes_evaluated", [])),
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/many-weak-iv-jive", response_model=ManyWeakIVJIVEOut)
+def run_many_weak_iv_jive_endpoint(
+    survey_id: str,
+    payload: ManyWeakIVJIVERequest
+):
+    """
+    Many-Weak-IV Robust JIVE, LIML & Fuller (1977) Engine
+    (Angrist, Imbens, & Krueger 1999; Fuller 1977; Chao et al. 2012).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        all_qids = [payload.treatment_question_id, payload.outcome_question_id] + payload.instrument_question_ids + (payload.covariate_question_ids or [])
+        for r_id, ans in data_by_resp.items():
+            rec = {}
+            for qid in all_qids:
+                rec[qid] = ans.get(qid)
+            records.append(rec)
+
+        try:
+            res = run_many_weak_iv_jive_analysis(
+                records=records,
+                treatment_col=payload.treatment_question_id,
+                outcome_col=payload.outcome_question_id,
+                instrument_cols=payload.instrument_question_ids,
+                covariate_cols=payload.covariate_question_ids or [],
+                fuller_a=payload.fuller_a or 1.0,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi phân tích JIVE: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="MANY_WEAK_IV_JIVE_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "sample_size": res.get("sample_size"),
+                        "instruments_count": res.get("instruments_count"),
+                        "first_stage_f": res.get("first_stage_diagnostics", {}).get("f_statistic"),
+                        "weak_instrument": res.get("first_stage_diagnostics", {}).get("weak_instrument"),
                     }
                 )
             except Exception:

@@ -6687,3 +6687,37 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `FactorialConjointAMCERequest` (`choice_question_id`, `attribute_question_ids`, `task_question_id`, `position_question_id`, `reference_levels`, `interaction_pairs`, `scope`).
   - **Response:** `FactorialConjointAMCEOut` (`status`, `sample_size_profiles`, `respondent_count`, `attributes_evaluated`, `reference_levels`, `amce_estimates`, `marginal_means`, `acie_interactions`, `validity_diagnostics`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `FACTORIAL_CONJOINT_AMCE_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 172. Many-Weak-IV Robust JIVE, LIML & Fuller (1977) Engine (Angrist, Imbens, & Krueger 1999; Fuller 1977; Chao et al. 2012; Stock & Yogo 2005)
+- **Mục tiêu:** Giải quyết triệt để vấn đề chệch đòn bẩy mẫu hữu hạn (Finite-Sample Leverage Bias) của phương pháp biến công cụ hai bước truyền thống (2SLS) khi số lượng biến công cụ lớn ($ lớn) hoặc mối quan hệ giữa biến công cụ và biến can thiệp yếu ( < 10$), đảm bảo ước lượng tác động nhân quả không chệch và có khoảng tin cậy vững chắc.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Chệch Mẫu Hữu Hạn của 2SLS (Finite-Sample 2SLS Bias; Bound, Jaeger, & Baker 1995; Staiger & Stock 1997):**
+     - Khi số lượng công cụ $ tăng hoặc độ mạnh công cụ suy giảm ( pprox 1$ đến $), ước lượng 2SLS bị kéo mạnh về phía OLS:
+       \\text{Bias}(\\hat{\\beta}_{\\text{2SLS}}) \\approx \\frac{\\sigma_{u \\varepsilon}}{\\sigma_u^2} \\cdot \\frac{K}{E[F]}
+       dẫn đến suy diễn sai lầm về hiệu quả can thiệp thực tế.
+  2. **Ước Lượng Biến Công Cụ Jackknife (Leave-One-Out JIVE; Angrist, Imbens, & Krueger 1999):**
+     - Để triệt tiêu tương quan nội sinh giữa sai số giai đoạn hai $\\varepsilon_i$ và giá trị dự báo giai đoạn một $\\hat{D}_i = \\mathbf{P}_{i \\cdot} \\mathbf{D}$, JIVE loại bỏ chính quan sát $ khỏi phương trình giai đoạn một:
+       \\hat{D}_{(-i)} = \\frac{\\mathbf{Z}_i' \\hat{\\boldsymbol{\\pi}} - h_{ii} D_i}{1 - h_{ii}}
+       trong đó {ii} = [\\mathbf{Z}(\\mathbf{Z}'\\mathbf{Z})^{-1}\\mathbf{Z}']_{ii}$ là giá trị đòn bẩy đường chéo (diagonal leverage).
+     - Do $\\hat{D}_{(-i)}$ độc lập với $\\varepsilon_i$, $\\text{Cov}(\\hat{D}_{(-i)}, \\varepsilon_i) = 0$, loại bỏ hoàn toàn chệch mẫu hữu hạn bất kể số lượng biến công cụ $.
+  3. **Ước Lượng Sai Số Chuẩn Vững Chao et al. (2012):**
+     - Áp dụng ma trận hiệp phương sai bất đồng phương sai (Heteroskedasticity-Robust Variance) tối ưu hóa cho cấu trúc nhiều công cụ:
+       \\mathbf{V}_{\\text{JIVE}} = (\\tilde{\\mathbf{D}}_{\\text{jive}}' \\tilde{\\mathbf{D}})^{-1} \\left( \\sum_{i=1}^N \\tilde{D}_{\\text{jive}, i}^2 \\hat{\\varepsilon}_i^2 \\right) (\\tilde{\\mathbf{D}}' \\tilde{\\mathbf{D}}_{\\text{jive}})^{-1}
+  4. **Ước Lượng Hợp Lý Cực Đại Thông Tin Giới Hạn (LIML; Anderson & Rubin 1949) & Fuller (1977):**
+     - LIML tìm giá trị riêng nhỏ nhất {\\text{LIML}} = \\min \\text{eig}((\\mathbf{Y}^*, \\mathbf{D}^*)' \\mathbf{P}_Z (\\mathbf{Y}^*, \\mathbf{D}^*), (\\mathbf{Y}^*, \\mathbf{D}^*)' \\mathbf{M}_Z (\\mathbf{Y}^*, \\mathbf{D}^*))$.
+     - Tuy nhiên, phân phối của LIML không có mômen hữu hạn (no finite moments; Cauchy-like tails), dẫn đến nguy cơ xuất hiện các giá trị cực đoan trong mẫu nhỏ.
+     - Hiệu chỉnh Fuller (1977) khắc phục điều này bằng cách đặt:
+       k_{\\text{Fuller}} = k_{\\text{LIML}} - \\frac{a}{N - K - L_x}
+       với  = 1.0$ đảm bảo mômen bậc 1 và bậc 2 hữu hạn, tối ưu hóa sai số toàn phương trung bình (Mean Squared Error - MSE) trong mẫu hữu hạn.
+  5. **Kiểm Định Nhận Diện Stock & Yogo (2005) & Quá Nhận Diện Sargan-Hansen J:**
+     - Đánh giá Cragg-Donald Wald $-statistic so với ngưỡng Stock & Yogo 10% maximal IV bias (.83$ đến .58$ tùy số công cụ).
+     - Kiểm định giả thuyết không về tính ngoại sinh của tập công cụ thông qua thống kê Sargan  = \\mathbf{e}_{\\text{2SLS}}' \\mathbf{P}_Z \\mathbf{e}_{\\text{2SLS}} / \\hat{\\sigma}^2 \\sim \\chi^2(K - 1)$.
+  6. **Trực Quan Hóa Vector Kép SVG & Tường Thuật APA 7th:**
+     - Panel A: Forest Plot 5 mô hình ước lượng (OLS, 2SLS, JIVE, LIML, Fuller) kèm khoảng tin cậy 95% và đường tham chiếu tác động.
+     - Panel B: Phân phối đòn bẩy {ii}$ so với đường đòn bẩy trung bình $\\bar{h} = K/N$ và thước đo nhận diện Stock-Yogo $.
+     - Báo cáo APA 7th Edition tóm tắt chi tiết cỡ mẫu $, số công cụ $, $-stat, độ chệch được loại bỏ và kết luận ngoại sinh.
+- **API Endpoint:** POST /api/surveys/{survey_id}/analytics/many-weak-iv-jive
+  - **Payload:** ManyWeakIVJIVERequest (	reatment_question_id, outcome_question_id, instrument_question_ids, covariate_question_ids, uller_a, scope).
+  - **Response:** ManyWeakIVJIVEOut (status, sample_size, instruments_count, covariates_count, irst_stage_diagnostics, estimator_comparisons, overidentification_test, svg_visualization, pa_narrative).
+- **Niêm phong kiểm toán:** Ghi nhận MANY_WEAK_IV_JIVE_EVALUATED vào chuỗi sổ cái SHA-256.

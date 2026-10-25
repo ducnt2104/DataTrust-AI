@@ -3235,6 +3235,35 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 58. Planned Next Iteration: Iteration 191
+## 58. Iteration 191: Many-Weak-IV Robust JIVE, LIML & Fuller (1977) Engine (Angrist et al. 1999; Fuller 1977; Chao et al. 2012)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T18:31:00+07:00
+- **Scientific Foundation**:
+  - Finite-Sample 2SLS Leverage Bias with Many Weak Instruments: Quantifies and eliminates the asymptotic bias of 2SLS toward OLS under many instruments $\\text{Bias}(\\hat{\\beta}_{\\text{2SLS}}) \\approx \\frac{\\sigma_{u \\varepsilon}}{\\sigma_u^2} \\cdot \\frac{K}{E[F]}$ (Bound et al. 1995; Staiger & Stock 1997).
+  - Jackknife Instrumental Variables Estimator (JIVE; Angrist, Imbens, & Krueger 1999): Replaces standard fitted values with leave-one-out predictions $\\hat{D}_{(-i)} = \\frac{\\mathbf{Z}_i' \\hat{\\boldsymbol{\\pi}} - h_{ii} D_i}{1 - h_{ii}}$, strictly eliminating own-observation leverage bias $\\text{Cov}(\\hat{D}_{(-i)}, \\varepsilon_i) = 0$.
+  - Many-Weak-IV Heteroskedasticity-Robust Variance (Chao, Swanson, Hausman, Newey, & Woutersen 2012): Constructs robust sandwich covariance estimator robust to arbitrary heteroskedasticity and high-dimensional projection leverage.
+  - Limited Information Maximum Likelihood (LIML; Anderson & Rubin 1949) & Fuller (1977) Modified LIML: Computes {\\text{LIML}}$ and modified {\\text{Fuller}} = k_{\\text{LIML}} - \\frac{a}{N - K - L_x}$ with =1.0$, guaranteeing finite sample moments and minimax optimal MSE under weak instruments.
+  - Stock-Yogo (2005) First-Stage Diagnostics: Evaluates Cragg-Donald Wald F-statistic against exact 10% maximal IV bias critical thresholds (.83$ to .58$).
+  - Sargan-Hansen Overidentification Test ($-statistic $\\sim \\chi^2(K-1)$) for instrument exogeneity.
+  - Responsive Dual-Panel SVG Visualizer: Panel A renders 5-estimator Forest Plot (OLS, 2SLS, JIVE, LIML, Fuller) with 95% CIs; Panel B renders First-Stage Leverage distribution ({ii}$) with mean leverage benchmark $\\bar{h} = K/N$ and Stock-Yogo threshold gauge.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/many_weak_iv_jive_engine.py (550 lines).
+  - Schemas: ManyWeakIVJIVERequest, ManyWeakIVJIVEOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/many-weak-iv-jive with MANY_WEAK_IV_JIVE_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_many_weak_iv_jive_engine.py (4/4 passed in 0.31s).
+  - Route Tests: backend/tests/test_many_weak_iv_jive_routes.py (2/2 passed in 1.48s).
+- **Frontend Components**:
+  - TypeScript Types: ManyWeakIVEstimatorRow, ManyWeakIVFirstStageDiagnostics, ManyWeakIVOveridentificationTest, ManyWeakIVJIVERequest, ManyWeakIVJIVEResult in frontend/src/types/survey.ts.
+  - API Client Method: runManyWeakIVJIVE in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/ManyWeakIVJIVECard.tsx (540 lines) with Treatment selector, Outcome selector, Instruments multi-selector, Covariates multi-selector, Fuller parameter a selector, 5 KPI cards (Sample N, First-Stage F, Mean Leverage, Sargan J, Bias Reduction), dual-panel SVG visualizer, tabs for Estimator Table, Forest Plot, Diagnostics, and APA 7th narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 6/6 passed (88/88 cumulative passed across Iterations 171-191).
+  - Frontend Production Build: 2,156 modules transformed, 0 errors in 1.29s.
+  - Contract Documentation: Section 172 appended to docs/API_CONTRACT.md.
+
+---
+
+## 59. Planned Next Iteration: Iteration 192
 - **Feature**: Partial Identification & Non-Random Attrition Bounds Engine (Horowitz & Manski 2000 Econometrica; Manski & Pepper 2000; Lee 2009 Review of Economic Studies).
 - **Scope**: Implements worst-case Manski-Horowitz bounds, Monotone Instrumental Variable (MIV) bounds, and Monotone Treatment Response (MTR) bounds for survey non-response and multi-wave panel attrition, with sharp dual-panel SVG bounding frontiers.

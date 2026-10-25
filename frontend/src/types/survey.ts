@@ -10183,6 +10183,7 @@ export interface ControlFunction2SRIResult {
 }
 
 
+
 // --- Random-Intercept Cross-Lagged Panel Model (RI-CLPM) Interfaces (Hamaker et al. 2015) ---
 export interface RICLPMAutoregParam {
   estimate: number;
@@ -10286,6 +10287,55 @@ export interface RICLPMResult {
   within_person_dynamics: RICLPMWithinDynamics;
   longitudinal_mediation: RICLPMMediationSummary;
   goodness_of_fit: RICLPMGoodnessOfFit;
+  svg_visualization: string;
+  apa_narrative: string;
+}
+
+// --- Many-Weak-IV Robust JIVE, LIML & Fuller (1977) (DataTrust Iteration 191) ---
+export interface ManyWeakIVEstimatorRow {
+  estimator: string;
+  estimate: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95: [number, number];
+  notes: string;
+}
+
+export interface ManyWeakIVFirstStageDiagnostics {
+  f_statistic: number;
+  p_value: number;
+  weak_instrument: boolean;
+  stock_yogo_10pct_critical_value: number;
+  mean_leverage: number;
+  max_leverage: number;
+}
+
+export interface ManyWeakIVOveridentificationTest {
+  sargan_statistic?: number | null;
+  df?: number | null;
+  p_value?: number | null;
+  is_overidentified: boolean;
+  exogeneity_rejected?: boolean | null;
+}
+
+export interface ManyWeakIVJIVERequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  instrument_question_ids: string[];
+  covariate_question_ids?: string[];
+  fuller_a?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface ManyWeakIVJIVEResult {
+  status: string;
+  sample_size: number;
+  instruments_count: number;
+  covariates_count: number;
+  first_stage_diagnostics: ManyWeakIVFirstStageDiagnostics;
+  estimator_comparisons: ManyWeakIVEstimatorRow[];
+  overidentification_test: ManyWeakIVOveridentificationTest;
   svg_visualization: string;
   apa_narrative: string;
 }

@@ -293,7 +293,9 @@ import {
   DiscreteRDHeapingRequest,
   DiscreteRDHeapingResult,
   FactorialConjointAMCERequest,
-  FactorialConjointAMCEResult
+  FactorialConjointAMCEResult,
+  ManyWeakIVJIVERequest,
+  ManyWeakIVJIVEResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2987,5 +2989,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<FactorialConjointAMCEResult>(res);
+  },
+
+  async runManyWeakIVJIVE(
+    surveyId: string,
+    payload: ManyWeakIVJIVERequest
+  ): Promise<ManyWeakIVJIVEResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/many-weak-iv-jive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ManyWeakIVJIVEResult>(res);
   }
 };
