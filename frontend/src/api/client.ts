@@ -265,7 +265,9 @@ import {
   ClusterDMLRequest,
   ClusterDMLResult,
   DistributionalSyntheticControlRequest,
-  DistributionalSyntheticControlResult
+  DistributionalSyntheticControlResult,
+  CausalSensitivityBoundsRequest,
+  CausalSensitivityBoundsResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2793,5 +2795,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<DistributionalSyntheticControlResult>(res);
+  },
+  async runCausalSensitivityBounds(
+    surveyId: string,
+    payload: CausalSensitivityBoundsRequest
+  ): Promise<CausalSensitivityBoundsResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/causal-sensitivity-bounds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<CausalSensitivityBoundsResult>(res);
   }
 };

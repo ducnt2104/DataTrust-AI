@@ -6248,3 +6248,30 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Response:** `DistributionalSyntheticControlOut` (`status`, `sample_size`, `treated_unit`, `num_donors`, `pre_periods`, `post_periods`, `wasserstein_distance`, `permutation_p_value`, `mean_treatment_effect`, `median_treatment_effect`, `inequality_diagnostics`, `donor_weights`, `quantile_curve`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `DISTRIBUTIONAL_SYNTHETIC_CONTROL_EVALUATED` vào chuỗi sổ cái SHA-256.
 
+### 158. Nonparametric Copula Causal Sensitivity Bounds & Unmeasured Confounding Tolerance Engine (Cinelli & Hazlett 2020 JRSS-B; Hu 2008 J. Econometrics)
+- **Mục tiêu:** Định lượng độ vững chắc của các ước lượng hiệu ứng can thiệp nhân quả ($\hat{\tau}$) trước nguy cơ tồn tại các biến nhiễu tiềm ẩn chưa quan sát ($U$; ví dụ: động lực nội tại, năng lực nhận thức ẩn, ưu thế thể chế ngầm). Giải quyết triệt để phê bình phản biện kinh điển về thiên lệch biến bị bỏ sót (Omitted Variable Bias - OVB) trong các nghiên cứu khảo sát quan sát thông qua hệ quy chiếu $R^2$ riêng phần (Partial $R^2$), Giá trị Độ vững cốt lõi (Robustness Value - RV), và đối chuẩn trực tiếp với các biến kiểm soát quan sát (Covariate Benchmarking).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Công Thức Phân Rã Độ Chệch Biến Ẩn (Cinelli & Hazlett 2020):**
+     - Mô hình thực tế: $Y = \tau D + X \beta + \gamma U + \epsilon$ với $U$ là biến nhiễu chưa quan sát.
+     - Sai số ước lượng:
+       $$\text{Bias} = \widehat{\text{SE}}(\hat{\tau}) \sqrt{ \frac{R^2_{Y \sim U \mid D, X} \cdot R^2_{D \sim U \mid X}}{1 - R^2_{D \sim U \mid X}} \cdot \text{df} }$$
+       trong đó $R^2_{Y \sim U \mid D, X}$ và $R^2_{D \sim U \mid X}$ là tỷ lệ phần trăm phương sai phần dư của $Y$ và $D$ được giải thích bởi biến ẩn $U$.
+  2. **Giá Trị Độ Vững Triệt Tiêu Hiệu Ứng (Robustness Value to Zero $\text{RV}_q$):**
+     - Cường độ liên kết tối thiểu đồng thời mà $U$ cần có với cả $D$ và $Y$ ($R^2_{D \sim U \mid X} = R^2_{Y \sim U \mid D, X} = \text{RV}_q$) để kéo hiệu ứng $\hat{\tau}$ về 0 ($q=1.0$):
+       $$\text{RV}_{q=1} = \frac{1}{2} \left( \sqrt{f^4 + 4 f^2} - f^2 \right), \quad f = \frac{|t|}{\sqrt{\text{df}}}$$
+  3. **Giá Trị Độ Vững Ý Nghĩa Thống Kê (Robustness Value for Statistical Significance $\text{RV}_\alpha$):**
+     - Cường độ biến ẩn cần thiết để làm mất đi ý nghĩa thống kê ở mức $\alpha$ (kéo cận khoảng tin cậy $95\%$ về 0):
+       $$f_\alpha = \frac{|t| - t^*_{\alpha, \text{df}}}{\sqrt{\text{df}}}$$
+  4. **Đối Chuẩn Khoa Học với Biến Kiểm Soát Quan Sát (Covariate Benchmarking):**
+     - Tính toán $R^2_{D \sim X_j \mid X_{-j}}$ và $R^2_{Y \sim X_j \mid D, X_{-j}}$ cho từng biến kiểm soát thực nghiệm.
+     - Kiểm tra trực tiếp xem nếu một biến ẩn có sức mạnh bằng $1\times$ hay $2\times$ biến kiểm soát mạnh nhất thì hiệu ứng nhân quả có giữ được ý nghĩa thống kê hay không.
+  5. **Biên Phụ Thuộc Đuôi Cực Trị Copula (Copula Extreme Tail Bounds; Hu 2008):**
+     - Đo lường chỉ số phụ thuộc đuôi dưới Clayton ($\lambda_L$) và đuôi trên Gumbel ($\lambda_U$) từ hệ số Kendall's $\tau_k$ của phần dư, xác định mức độ bất đối xứng trong tình huống lựa chọn nghịch đảo cực đoan.
+  6. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị đường đồng mức độ nhạy (Sensitivity Contours) hiển thị đường ranh giới $\tau^* = 0$, điểm ngắm Robustness Value (RV), và các điểm đối chuẩn biến quan sát.
+     - Panel B: Đồ thị quỹ đạo kịch bản xấu nhất (Worst-Case Confounder Curve) mô phỏng sự suy giảm của $\hat{\tau}^*$ khi cường độ biến ẩn gia tăng từ $0\%$ đến $40\%$.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/causal-sensitivity-bounds`
+  - **Payload:** `CausalSensitivityBoundsRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `alpha_level`, `scope`).
+  - **Response:** `CausalSensitivityBoundsOut` (`status`, `sample_size`, `degrees_of_freedom`, `baseline_estimates`, `robustness_values`, `covariate_benchmarks`, `worst_case_curve`, `copula_tail_bounds`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_SENSITIVITY_BOUNDS_EVALUATED` vào chuỗi sổ cái SHA-256.
+

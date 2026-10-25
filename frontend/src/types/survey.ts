@@ -9574,3 +9574,62 @@ export interface DistributionalSyntheticControlRequest {
   scope?: 'all' | 'verified_clean';
 }
 
+// --- Nonparametric Copula Causal Sensitivity Bounds (Cinelli & Hazlett 2020) ---
+export interface CSBBaselineEstimates {
+  tau_hat: number;
+  se_hat: number;
+  t_statistic: number;
+  p_value: number;
+  partial_r2_treatment: number;
+}
+
+export interface CSBRobustnessValues {
+  rv_q_to_zero: number;
+  rv_alpha_significance: number;
+  robustness_tier: string;
+  tier_description: string;
+}
+
+export interface CSBCovariateBenchmark {
+  name: string;
+  r2_d: number;
+  r2_y: number;
+  bias_impact_1x: number;
+  adjusted_tau_1x: number;
+  retains_significance: boolean;
+}
+
+export interface CSBWorstCasePoint {
+  r2_strength: number;
+  bias: number;
+  adjusted_tau: number;
+}
+
+export interface CSBCopulaTailBounds {
+  kendall_tau: number;
+  clayton_lower_tail: number;
+  gumbel_upper_tail: number;
+}
+
+export interface CausalSensitivityBoundsResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  degrees_of_freedom?: number;
+  baseline_estimates?: CSBBaselineEstimates;
+  robustness_values?: CSBRobustnessValues;
+  covariate_benchmarks?: CSBCovariateBenchmark[];
+  worst_case_curve?: CSBWorstCasePoint[];
+  copula_tail_bounds?: CSBCopulaTailBounds;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalSensitivityBoundsRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}
+

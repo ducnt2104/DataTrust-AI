@@ -2820,6 +2820,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 44. Planned Next Iteration: Iteration 177
-- **Feature**: Nonparametric Copula Causal Sensitivity Bounds & Unmeasured Confounding Tolerance Engine (Hu 2008 Journal of Econometrics; Schennach 2020; Cinelli & Hazlett 2020 JRSS-B).
-- **Scope**: Quantifies how robust causal survey estimates (ATE, ATT) are against unmeasured latent confounding using copula dependence modeling and benchmark bounding. Derives exact Robustness Value (RV) and partial R^2 contour curves for policy defense.
+## 44. Iteration 177: Nonparametric Copula Causal Sensitivity Bounds & Unmeasured Confounding Tolerance Engine (Cinelli & Hazlett 2020 JRSS-B; Hu 2008 J. Econometrics)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T16:01:00+07:00
+- **Scientific Foundation**:
+  - Solves the quintessential omitted variable bias (OVB) critique in observational survey designs by formalizing unmeasured confounding tolerance via Partial R^2 (Cinelli & Hazlett 2020 JRSS-B).
+  - Robustness Value (RV): Derives the minimal confounder association strength RV_q (to reduce causal effect to 0) and RV_alpha (to eliminate statistical significance at alpha=0.05).
+  - Empirical Covariate Benchmarking: Quantifies Partial R^2 of all observed survey covariates (R^2_{D~X|X_{-j}} and R^2_{Y~X|D,X_{-j}}) to establish whether an unmeasured confounder would have to be 1x, 2x, or 3x stronger than observed controls to invalidate conclusions.
+  - Copula Extreme Tail Bounds: Estimates Kendall's tau and calculates Clayton lower tail (lambda_L) and Gumbel upper tail (lambda_U) indices for extreme adverse selection (Hu 2008).
+  - Worst-Case Confounder Trajectory: Traces the adjusted point estimate tau* across equal confounder strengths from 0% to 35%.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays the Partial R^2 sensitivity contour map with RV crosshair and plotted benchmark covariates; Panel B illustrates the worst-case confounder decay trajectory.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/causal_sensitivity_bounds_engine.py (380 lines).
+  - Schemas: CausalSensitivityBoundsRequest, CausalSensitivityBoundsOut, CSBBaselineEstimates, CSBRobustnessValues, CSBCovariateBenchmark, CSBWorstCasePoint, CSBCopulaTailBounds in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/causal-sensitivity-bounds with CAUSAL_SENSITIVITY_BOUNDS_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_causal_sensitivity_bounds_engine.py (3/3 passed in 0.27s).
+  - Route Tests: backend/tests/test_causal_sensitivity_bounds_routes.py (1/1 passed in 1.65s).
+- **Frontend Components**:
+  - TypeScript Types: CSBBaselineEstimates, CSBRobustnessValues, CSBCovariateBenchmark, CSBWorstCasePoint, CSBCopulaTailBounds, CausalSensitivityBoundsResult, CausalSensitivityBoundsRequest in frontend/src/types/survey.ts.
+  - API Client Method: runCausalSensitivityBounds in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/CausalSensitivityBoundsCard.tsx (510 lines) with treatment, outcome, covariates checklist, alpha selector, 4 KPI cards (Baseline tau, RV to zero, RV for significance, Copula tail bounds), dual-panel SVG visualizer, tabbed covariate benchmarks / worst-case trajectory / guidelines, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (28/28 cumulative passed across Iterations 171-177 in 14.57s).
+  - Frontend Production Build: 2,142 modules transformed, 0 errors in 1.39s.
+  - Contract Documentation: Section 158 appended to docs/API_CONTRACT.md.
+
+---
+
+## 45. Planned Next Iteration: Iteration 178
+- **Feature**: Causal Matrix Completion & Nuclear Norm Regularized Matrix Factorization Engine (Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021 JASA; Bai 2009).
+- **Scope**: Estimates causal effects in panel survey settings with staggered treatment adoption and arbitrary unobserved unit and time confounders by treating counterfactual estimation as a matrix completion problem with low-rank nuclear norm penalties.

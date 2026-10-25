@@ -1,3 +1,4 @@
+from app.engine.causal_sensitivity_bounds_engine import run_causal_sensitivity_bounds
 from app.engine.distributional_synthetic_control_engine import run_distributional_synthetic_control
 from app.engine.cluster_dml_engine import run_cluster_dml
 from app.engine.diff_in_disc_engine import run_diff_in_discontinuities
@@ -179,6 +180,8 @@ from app.schemas import (
     ClusterDMLOut,
     DistributionalSyntheticControlRequest,
     DistributionalSyntheticControlOut,
+    CausalSensitivityBoundsRequest,
+    CausalSensitivityBoundsOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17756,6 +17759,77 @@ def run_distributional_synthetic_control_endpoint(
                         "wasserstein_distance": res.get("wasserstein_distance"),
                         "mean_treatment_effect": res.get("mean_treatment_effect"),
                         "permutation_p_value": res.get("permutation_p_value")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+@router.post("/causal-sensitivity-bounds", response_model=CausalSensitivityBoundsOut)
+def run_causal_sensitivity_bounds_endpoint(
+    survey_id: str,
+    payload: CausalSensitivityBoundsRequest
+):
+    """
+    Nonparametric Copula Causal Sensitivity Bounds & Unmeasured Confounding Tolerance (Cinelli & Hazlett 2020 JRSS-B).
+    Computes Robustness Values (RV_q, RV_alpha), covariate benchmarking, and worst-case confounding sensitivity curves.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                "treatment": ans.get(payload.treatment_question_id),
+                "outcome": ans.get(payload.outcome_question_id),
+                **{cq: ans.get(cq) for cq in payload.covariate_question_ids}
+            })
+
+        res = run_causal_sensitivity_bounds(
+            records=records,
+            treatment_col="treatment",
+            outcome_col="outcome",
+            covariate_cols=payload.covariate_question_ids,
+            alpha_level=payload.alpha_level
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="CAUSAL_SENSITIVITY_BOUNDS_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "tau_hat": res.get("baseline_estimates", {}).get("tau_hat"),
+                        "rv_q": res.get("robustness_values", {}).get("rv_q_to_zero"),
+                        "rv_alpha": res.get("robustness_values", {}).get("rv_alpha_significance"),
+                        "robustness_tier": res.get("robustness_values", {}).get("robustness_tier")
                     }
                 )
             except Exception:
