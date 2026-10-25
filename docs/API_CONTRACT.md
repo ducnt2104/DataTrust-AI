@@ -5958,3 +5958,36 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** TargetedMaximumLikelihoodRequest (	reatment_question_id, outcome_question_id, covariate_question_ids, amily, propensity_trim, lpha_level, scope).
   - **Response:** TargetedMaximumLikelihoodOut (status, sample_size, amily, 	argeted_ate, initial_ate, ipw_ate, clever_covariate_epsilon, efficient_influence_curve, diagnostics, svg_visualization, pa_narrative).
 - **Niêm phong kiểm toán:** Ghi nhận TARGETED_MAXIMUM_LIKELIHOOD_EVALUATED vào chuỗi sổ cái SHA-256.
+
+
+### 149. Copula-Based Endogeneity Correction & Non-Gaussian Joint Likelihood Engine (Park & Gupta 2012 Marketing Science; Tran & Tsionas 2015; Haschka 2022)
+- **Mục tiêu:** Khắc phục triệt để hiện tượng nội sinh (Endogeneity: tương quan giữa biến giải thích và sai số ngẫu nhiên Cov(X, epsilon) != 0) trong các nghiên cứu khảo sát hành vi người dùng, tiêu dùng và thị trường mà không cần biến công cụ ngoại sinh (Instrument-Free Identification). Trong thực tế nghiên cứu khảo sát, việc tìm kiếm biến công cụ ngoại sinh vừa thỏa mãn điều kiện liên quan (Relevance) vừa thỏa mãn điều kiện loại trừ (Exclusion restriction) thường bất khả thi. Động cơ này vận dụng định lý Sklar và lý thuyết Copula của Park & Gupta (2012 Marketing Science) để nhận dạng và hiệu chỉnh trực tiếp thiên lệch nội sinh thông qua các mô-men phân phối bậc cao và phép biến đổi phi Gauss.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định Lý Sklar & Cặp Ghép Copula (Sklar's Theorem & Copula Coupling):**
+     - Với biến nội sinh liên tục P có phân phối cận biên F_P(p), hàm phân phối tích lũy thực nghiệm (Empirical CDF) liên tục: U_i = F_hat(P_i) = rank(P_i) / (n + 1).
+     - Phân phối đồng thời của (P, epsilon) được liên kết qua hàm Copula C(u, v; rho).
+  2. **Biến Đổi Nhân Quả Chuẩn Hóa Copula (Copula Control Term):**
+     - Gaussian Copula (Park & Gupta 2012):
+       P_i^* = Phi^{-1}(F(P_i)) = Phi^{-1}(U_i)
+     - Clayton Copula (Phụ thuộc đuôi dưới bất đối xứng):
+       psi(U_i) = (U_i^{-theta} - 1) / theta
+  3. **Mô Hình Hồi Quy Cấu Trúc Mở Rộng 2 Giai Đoạn:**
+     Y_i = beta_0 + beta_1 P_i + gamma' Z_i + lambda P_i^* + u_i
+     trong đó u_i = sqrt(1 - rho^2) omega_i là sai số ngẫu nhiên ngoại sinh thuần túy (E[u | P, Z] = 0).
+  4. **Kiểm Định Giả Thuyết Nội Sinh (Durbin-Wu-Hausman-type t-test on lambda):**
+     - Giả thuyết vô hiệu H_0: lambda = 0 (rho = 0, biến P ngoại sinh, OLS không chệch).
+     - Giả thuyết đối H_1: lambda != 0 (P nội sinh, OLS chệch).
+     - Hệ số tương quan nội sinh suy diễn:
+       rho_hat_{P, epsilon} = lambda / sqrt(sigma_u^2 + lambda^2 Var(P^*))
+  5. **Điều Kiện Nhận Dạng Phân Phối Phi Gauss (Non-Normality Identification Diagnostic):**
+     - Nếu P tuân theo phân phối chuẩn Gauss, P^* tỷ lệ thuận với P, dẫn đến hiện tượng cộng tuyến hoàn hảo.
+     - Kiểm định Shapiro-Wilk, Skewness, Kurtosis chứng minh biến khảo sát lệch chuẩn (Non-Gaussian), đảm bảo tính nhận dạng vững chắc của tham số beta_1 và lambda.
+  6. **Sai Số Chuẩn Bootstrap Phân Tầng:**
+     - Do P^* là biến hồi quy được sinh ra (Generated Regressor), thực hiện lặp lại Bootstrap B lần (mặc định B = 100) để ước tính sai số chuẩn tiệm cận vững SE_{boot}.
+  7. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị phân tán biểu diễn biến đổi phân phối thực nghiệm từ P sang biến Copula P^* = Phi^{-1}(F(P)).
+     - Panel B: Forest plot so sánh hệ số tác động beta và khoảng tin cậy 95% giữa Naive OLS và Copula-Augmented OLS kèm huy hiệu kết luận nội sinh.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/copula-endogeneity`
+  - **Payload:** `CopulaEndogeneityRequest` (`outcome_question_id`, `endogenous_question_id`, `covariate_question_ids`, `copula_family`, `bootstrap_replications`, `alpha_level`, `scope`).
+  - **Response:** `CopulaEndogeneityOut` (`status`, `sample_size`, `copula_family`, `non_normality_diagnostics`, `naive_ols`, `copula_augmented`, `endogeneity_test`, `bias_correction`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `COPULA_ENDOGENEITY_EVALUATED` vào chuỗi sổ cái SHA-256.

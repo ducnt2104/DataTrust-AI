@@ -1,5 +1,6 @@
 import pandas as pd
 from app.engine.targeted_maximum_likelihood_engine import run_targeted_maximum_likelihood_estimation
+from app.engine.copula_endogeneity_engine import run_copula_endogeneity_analysis
 from app.engine.boundary_kernel_deconvolution_engine import run_boundary_kernel_deconvolution
 from app.engine.hierarchical_bayes_conjoint_engine import run_hierarchical_bayes_conjoint
 from app.engine.generalized_synthetic_control_engine import run_generalized_synthetic_control
@@ -155,6 +156,8 @@ from app.schemas import (
     BoundaryKernelDeconvolutionOut,
     TargetedMaximumLikelihoodRequest,
     TargetedMaximumLikelihoodOut,
+    CopulaEndogeneityRequest,
+    CopulaEndogeneityOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17097,6 +17100,91 @@ def run_targeted_maximum_likelihood_endpoint(
                 "n_obs": res.get("sample_size"),
                 "ate_tmle": res.get("ate_tmle", {}).get("estimate"),
                 "p_value": res.get("ate_tmle", {}).get("p_value"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/copula-endogeneity", response_model=CopulaEndogeneityOut)
+def run_copula_endogeneity_endpoint(
+    survey_id: str,
+    payload: CopulaEndogeneityRequest
+):
+    """
+    Copula-Based Endogeneity Correction Engine (Park & Gupta 2012; Tran & Tsionas 2015).
+    Corrects for regressor-error correlation in survey regressions without external instruments
+    via Gaussian/Clayton copula transformations of continuous non-normal endogenous regressors.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                "id": r_id,
+                "answers": ans
+            })
+
+        if len(records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 25 bản ghi hợp lệ để thực hiện phân tích Copula Endogeneity (hiện có: {len(records)})."
+            }
+
+        try:
+            res = run_copula_endogeneity_analysis(
+                records=records,
+                outcome_question_id=payload.outcome_question_id,
+                endogenous_question_id=payload.endogenous_question_id,
+                covariate_question_ids=payload.covariate_question_ids,
+                copula_family=payload.copula_family,
+                bootstrap_replications=payload.bootstrap_replications,
+                alpha_level=payload.alpha_level,
+                scope=payload.scope
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình phân tích Copula Endogeneity: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="COPULA_ENDOGENEITY_EVALUATED",
+            details={
+                "n_obs": res.get("sample_size"),
+                "copula_family": res.get("copula_family"),
+                "naive_estimate": res.get("naive_ols", {}).get("estimate"),
+                "copula_estimate": res.get("copula_augmented", {}).get("estimate"),
+                "is_endogenous": res.get("endogeneity_test", {}).get("is_endogenous"),
                 "status": res.get("status")
             }
         )

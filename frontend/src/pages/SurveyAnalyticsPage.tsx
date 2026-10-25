@@ -146,6 +146,7 @@ import { GeneralizedSyntheticControlCard } from '../components/GeneralizedSynthe
 import { HierarchicalBayesConjointCard } from '../components/HierarchicalBayesConjointCard';
 import { BoundaryKernelDeconvolutionCard } from '../components/BoundaryKernelDeconvolutionCard';
 import { TargetedMaximumLikelihoodCard } from '../components/TargetedMaximumLikelihoodCard';
+import { CopulaEndogeneityCard } from '../components/CopulaEndogeneityCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1659,6 +1660,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Targeted Maximum Likelihood Estimation with Efficient Influence Curve Inference (TMLE; van der Laan & Rose 2011; Schuler & Rose 2017) */}
       <TargetedMaximumLikelihoodCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Copula-Based Endogeneity Correction Engine (Park & Gupta 2012 Marketing Science; Tran & Tsionas 2015) */}
+      <CopulaEndogeneityCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

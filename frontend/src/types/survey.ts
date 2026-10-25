@@ -9070,3 +9070,68 @@ export interface TargetedMaximumLikelihoodRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Copula-Based Endogeneity Correction (Park & Gupta 2012) Types ---
+export interface CopulaNonNormalityDiagnostics {
+  shapiro_w: number;
+  shapiro_p: number;
+  skewness: number;
+  kurtosis: number;
+  is_non_normal: boolean;
+  status_label: string;
+  regressor_copula_correlation: number;
+}
+
+export interface CopulaModelEstimate {
+  estimate: number;
+  se?: number;
+  se_asymptotic?: number;
+  se_bootstrap?: number;
+  t_stat: number;
+  p_value: number;
+  ci_95: [number, number];
+  r2: number;
+}
+
+export interface CopulaEndogeneityTest {
+  lambda_pstar: number;
+  se_lambda: number;
+  se_bootstrap: number;
+  t_stat: number;
+  p_value: number;
+  ci_95: [number, number];
+  implied_rho: number;
+  is_endogenous: boolean;
+  conclusion: string;
+}
+
+export interface CopulaBiasCorrection {
+  absolute_bias: number;
+  relative_bias_pct: number;
+  recommended_estimator: string;
+}
+
+export interface CopulaEndogeneityResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  copula_family?: string;
+  non_normality_diagnostics?: CopulaNonNormalityDiagnostics;
+  naive_ols?: CopulaModelEstimate;
+  copula_augmented?: CopulaModelEstimate;
+  endogeneity_test?: CopulaEndogeneityTest;
+  bias_correction?: CopulaBiasCorrection;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface CopulaEndogeneityRequest {
+  outcome_question_id: string;
+  endogenous_question_id: string;
+  covariate_question_ids?: string[];
+  copula_family?: 'gaussian' | 'clayton';
+  bootstrap_replications?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

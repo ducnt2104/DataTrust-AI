@@ -2569,6 +2569,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 35. Planned Next Iteration: Iteration 168
-- **Feature**: Copula-Based Endogeneity Correction & Non-Gaussian Joint Likelihood Engine (Park & Gupta 2012 Marketing Science; Tran & Tsionas 2015).
-- **Scope**: Resolves regressor-error correlation in survey data without requiring external instrumental variables by leveraging Gaussian/Clayton copula transformations of continuous non-normal endogenous regressors (^* = \Phi^{-1}(F(X))$), extracting identification directly from higher-order distributional moments and non-Gaussian copula dependencies.
+## 35. Iteration 168: Copula-Based Endogeneity Correction & Non-Gaussian Joint Likelihood Engine (Park & Gupta 2012 Marketing Science; Tran & Tsionas 2015; Haschka 2022)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T14:47:00+07:00
+- **Scientific Foundation**:
+  - Resolves regressor-error endogeneity (Cov(X, epsilon) != 0) without external instrumental variables by leveraging Sklar's theorem and Gaussian/Clayton copula transformations of continuous non-normal endogenous regressors (Park & Gupta 2012 Marketing Science).
+  - Identification via Higher-Order Moments: Leverages empirical CDF transformation U_i = rank(P_i)/(n+1) and inverse Gaussian CDF P* = Phi^{-1}(U_i). When P is non-normal, P* is nonlinear in P, breaking collinearity and providing mathematically rigorous identification of causal coefficients.
+  - Endogeneity Durbin-Wu-Hausman Test: Estimates lambda on the copula control regressor P* in Y = beta_0 + beta_1 P + gamma' Z + lambda P* + u. If lambda != 0 (p < alpha), endogeneity is confirmed and implied correlation rho = lambda / sqrt(sigma_u^2 + lambda^2 Var(P*)) is derived.
+  - Non-Normality Diagnostics: Formal Shapiro-Wilk, Skewness, and Excess Kurtosis testing verifying non-Gaussian support required for copula identification.
+  - Stratified Bootstrap Inference: Computes B-repetition bootstrap standard errors (SE_boot) ensuring valid asymptotic inference despite the generated regressor P*.
+  - Responsive Dual-Panel SVG: Panel A visualizes the empirical transformation from observed P to copula P*; Panel B provides forest plot comparing Naive OLS vs Copula-Augmented estimates with 95% CIs.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/copula_endogeneity_engine.py` (390 lines).
+  - Pydantic Schemas: `CopulaEndogeneityRequest` and `CopulaEndogeneityOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/copula-endogeneity` with `COPULA_ENDOGENEITY_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_copula_endogeneity_engine.py` (3/3 passed in 0.28s).
+  - Route Tests: `backend/tests/test_copula_endogeneity_routes.py` (1/1 passed in 1.61s).
+- **Frontend Components**:
+  - TypeScript Types: `CopulaNonNormalityDiagnostics`, `CopulaModelEstimate`, `CopulaEndogeneityTest`, `CopulaBiasCorrection`, `CopulaEndogeneityResult`, `CopulaEndogeneityRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runCopulaEndogeneity` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/CopulaEndogeneityCard.tsx` (560 lines) with outcome, endogenous regressor, covariates selector, copula family dropdown, bootstrap reps slider, 4 KPI cards (Naive OLS, Copula Effect, Endogeneity Test lambda, Implied rho & Bias), non-normality diagnostics card, dual-panel SVG visualizer, comparative model table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed** (68/68 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,134 modules transformed, 0 errors in 1.54s**.
+  - Contract Documentation: Section 149 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 36. Planned Next Iteration: Iteration 169
+- **Feature**: Causal Survival Analysis & Counterfactual Restricted Mean Survival Time Engine (RMST-DML; Royston & Parmar 2013; Díaz et al. 2019; Knaus 2022).
+- **Scope**: Evaluates treatment effects on time-to-event outcomes with right censoring in longitudinal and panel survey cohorts (e.g. churn duration, platform retention, event latency) using Doubly Robust / DML Restricted Mean Survival Time (RMST) differences Delta tau = int_0^{t^*} [S_1(t) - S_0(t)] dt, bypassing proportional hazards assumptions and providing clinically/economically interpretable life-expectancy gains.

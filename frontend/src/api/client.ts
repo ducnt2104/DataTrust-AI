@@ -249,7 +249,9 @@ import {
   BoundaryKernelDeconvolutionRequest,
   BoundaryKernelDeconvolutionResult,
   TargetedMaximumLikelihoodRequest,
-  TargetedMaximumLikelihoodResult
+  TargetedMaximumLikelihoodResult,
+  CopulaEndogeneityRequest,
+  CopulaEndogeneityResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2689,5 +2691,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<TargetedMaximumLikelihoodResult>(res);
+  },
+  async runCopulaEndogeneity(
+    surveyId: string,
+    payload: CopulaEndogeneityRequest
+  ): Promise<CopulaEndogeneityResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/copula-endogeneity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<CopulaEndogeneityResult>(res);
   }
 };
