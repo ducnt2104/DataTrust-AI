@@ -10414,3 +10414,79 @@ export interface DiscreteRDHeapingResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+// --- Factorial Conjoint AMCE & Marginal Means Types (Hainmueller et al. 2014; DataTrust Iteration 190) ---
+export interface AMCEEstimateRow {
+  attribute: string;
+  level: string;
+  is_reference: boolean;
+  estimate: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95: [number, number];
+  is_significant: boolean;
+}
+
+export interface MarginalMeanRow {
+  attribute: string;
+  level: string;
+  marginal_mean: number;
+  std_error: number;
+  ci_95: [number, number];
+  profile_count: number;
+  relative_to_parity: number;
+}
+
+export interface ACIEInteractionRow {
+  attribute_pair: [string, string];
+  level_pair: [string, string];
+  reference_pair: [string, string];
+  acie_estimate: number;
+  std_error: number;
+  p_value: number;
+  is_significant: boolean;
+  synergy_type: string;
+}
+
+export interface ConjointValidityDiagnostics {
+  profile_order?: {
+    position_1_choice_rate: number;
+    position_2_choice_rate: number;
+    order_difference: number;
+    p_value: number;
+    order_bias_detected: boolean;
+    interpretation: string;
+  } | null;
+  task_fatigue?: {
+    num_tasks: number;
+    task_slope: number;
+    p_value: number;
+    fatigue_detected: boolean;
+    interpretation: string;
+  } | null;
+}
+
+export interface FactorialConjointAMCERequest {
+  choice_question_id: string;
+  attribute_question_ids: string[];
+  task_question_id?: string;
+  position_question_id?: string;
+  reference_levels?: Record<string, string>;
+  interaction_pairs?: [string, string][];
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface FactorialConjointAMCEResult {
+  status: string;
+  sample_size_profiles: number;
+  respondent_count: number;
+  attributes_evaluated: string[];
+  reference_levels: Record<string, string>;
+  amce_estimates: Record<string, AMCEEstimateRow[]>;
+  marginal_means: Record<string, MarginalMeanRow[]>;
+  acie_interactions: ACIEInteractionRow[];
+  validity_diagnostics: ConjointValidityDiagnostics;
+  svg_visualization: string;
+  apa_narrative: string;
+}

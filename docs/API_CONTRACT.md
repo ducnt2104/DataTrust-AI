@@ -6656,3 +6656,34 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `DiscreteRDHeapingRequest` (`running_question_id`, `outcome_question_id`, `cutoff`, `bandwidth`, `kernel`, `focal_rounding_interval`, `n_permutations`, `scope`).
   - **Response:** `DiscreteRDHeapingOut` (`status`, `sample_size`, `window_sample_size`, `cutoff`, `bandwidth`, `discreteness_diagnostics`, `conventional_rdd`, `kolesar_rothe_honest_bounds`, `donut_hole_diagnostics`, `local_randomization_inference`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `DISCRETE_RD_HEAPING_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 171. Factorial Conjoint Experiment Analysis & AMCE Engine (Hainmueller, Hopkins, & Yamamoto 2014 Political Analysis; Leeper, Hobolt, & Tilley 2020; Egami & Imai 2019 JASA)
+- **Mục tiêu:** Ước lượng phi tham số tác động nhân quả của từng thuộc tính đa chiều trong các thí nghiệm lựa chọn conjoint (Multi-Attribute Conjoint Experiments), tách biệt chính xác Average Marginal Component Effects (AMCE), Marginal Means (MM) không phụ thuộc mức cơ sở, hiệu ứng tương tác hai chiều (ACIE) và kiểm định hiệu lực nội tại về vị trí hồ sơ và độ mệt mỏi của người trả lời.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hiệu Ứng Thành Phần Biên Trung Bình (Average Marginal Component Effect - AMCE; Hainmueller et al. 2014):**
+     - Cho thuộc tính $k$ với mức cơ sở $l_0$, AMCE của mức $l$ so với $l_0$:
+       $$\text{AMCE}_{k, l} = E[ Y(X_k = l, X_{-k}) - Y(X_k = l_0, X_{-k}) ]$$
+     - Định danh phi tham số thông qua hồi quy bình phương tối thiểu OLS trên các biến giả thuộc tính (loại bỏ mức cơ sở).
+  2. **Ma Trận Hiệp Phương Sai Sai Số Chuẩn Gom Cụm (Cluster-Robust Sandwich Covariance CR1; Liang & Zeger 1986):**
+     - Do mỗi người trả lời $i$ đánh giá nhiều hồ sơ lặp lại trong nhiều vòng tác vụ, sai số được gom cụm theo ID người trả lời:
+       $$\mathbf{V}_{\text{cluster}} = (\mathbf{X}'\mathbf{X})^{-1} \left( \sum_{i=1}^N \mathbf{X}_i' \mathbf{e}_i \mathbf{e}_i' \mathbf{X}_i \right) (\mathbf{X}'\mathbf{X})^{-1} \cdot \frac{N}{N - 1} \frac{M - 1}{M - K}$$
+       trong đó $N$ là số người trả lời và $M$ là tổng số hồ sơ được đánh giá.
+  3. **Trung Bình Biên Độc Lập Mức Cơ Sở (Marginal Means - MM; Leeper, Hobolt, & Tilley 2020):**
+     - Khắc phục nhược điểm của AMCE khi so sánh phân nhóm hoặc diễn giải thứ tự ưu tiên tuyệt đối (do AMCE thay đổi theo mức $l_0$ được chọn làm chuẩn):
+       $$\text{MM}_{k, l} = E[Y \mid X_k = l]$$
+     - Phản ánh xác suất lựa chọn tuyệt đối của mức $l$ khi ngẫu nhiên hóa đều các thuộc tính còn lại, so sánh trực tiếp với đường ngang giá $0.50$ (trong thiết kế 2 hồ sơ buộc chọn).
+  4. **Hiệu Ứng Tương Tác Thành Phần Trung Bình (Average Component Interaction Effects - ACIE; Egami & Imai 2019 JASA):**
+     - Kiểm định quan hệ hiệp đồng (Synergy / Complementarity) hoặc thay thế (Substitution) giữa hai thuộc tính $k$ và $m$:
+       $$\text{ACIE}_{(k, l), (m, j)} = \text{AMCE}(k, l \mid m=j) - \text{AMCE}(k, l \mid m=j_0)$$
+  5. **Kiểm Định Hiệu Lực Nội Tại Conjoint (Internal Validity Diagnostics):**
+     - **Profile Order Bias:** Kiểm định giả thuyết không thiên lệch vị trí $H_0: P(\text{Choice}=1 \mid \text{Position}=1) = 0.50$ (so sánh vị trí Trái vs Phải).
+     - **Carryover / Fatigue Test:** Kiểm định xu hướng biến thiên của xác suất lựa chọn theo số thứ tự vòng tác vụ $t = 1, 2, \dots$.
+  6. **Trực Quan Hóa Vector Kép SVG & Tường Thuật APA 7th:**
+     - Panel A: Đồ thị Forest Plot biểu diễn hệ số AMCE kèm thanh sai số 95% Clustered CI so với đường chuẩn $0.0$ (màu xanh lục cho mức tăng xác suất, màu đỏ cho mức giảm).
+     - Panel B: Đồ thị Marginal Means biểu diễn xác suất lựa chọn tuyệt đối kèm đường chuẩn ngang giá $0.50$ Parity.
+     - Báo cáo học thuật APA 7th Edition tóm tắt đầy đủ cỡ mẫu hồ sơ $M$, số người trả lời $N$, các thuộc tính có tác động mạnh nhất và kết quả kiểm định vị trí / mệt mỏi.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/factorial-conjoint-amce`
+  - **Payload:** `FactorialConjointAMCERequest` (`choice_question_id`, `attribute_question_ids`, `task_question_id`, `position_question_id`, `reference_levels`, `interaction_pairs`, `scope`).
+  - **Response:** `FactorialConjointAMCEOut` (`status`, `sample_size_profiles`, `respondent_count`, `attributes_evaluated`, `reference_levels`, `amce_estimates`, `marginal_means`, `acie_interactions`, `validity_diagnostics`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `FACTORIAL_CONJOINT_AMCE_EVALUATED` vào chuỗi sổ cái SHA-256.

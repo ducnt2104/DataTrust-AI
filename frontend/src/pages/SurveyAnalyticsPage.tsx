@@ -167,6 +167,7 @@ import { ControlFunction2SRICard } from '../components/ControlFunction2SRICard';
 import { RICLPMCard } from '../components/RICLPMCard';
 import { AbadieComplierProfilingCard } from '../components/AbadieComplierProfilingCard';
 import { DiscreteRDHeapingCard } from '../components/DiscreteRDHeapingCard';
+import { FactorialConjointAMCECard } from '../components/FactorialConjointAMCECard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1890,6 +1891,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Regression Discontinuity with Discrete Running Variables & Heaping Engine (Kolesár & Rothe 2018; DataTrust Iteration 189) */}
       <DiscreteRDHeapingCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Factorial Conjoint Experiment Analysis & AMCE Engine (Hainmueller et al. 2014; DataTrust Iteration 190) */}
+      <FactorialConjointAMCECard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

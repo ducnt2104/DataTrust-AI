@@ -3207,6 +3207,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 57. Planned Next Iteration: Iteration 190
-- **Feature**: Factorial Conjoint Experiment Analysis & Average Marginal Component Effects (AMCE) Engine (Hainmueller, Hopkins, & Yamamoto 2014 Political Analysis; Leeper, Hobolt, & Tilley 2020; Egami & Imai 2019 JASA).
-- **Scope**: Implements nonparametric estimation of Average Marginal Component Effects (AMCE), Marginal Means (MM), and Average Component Interaction Effects (ACIE) for multi-attribute choice and rating conjoint experiments with cluster-robust standard errors, diagnostic tests for profile ordering and carryover effects, and dual-panel SVG visualizer.
+## 57. Iteration 190: Factorial Conjoint Experiment Analysis & AMCE Engine (Hainmueller et al. 2014; Leeper et al. 2020)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T18:18:00+07:00
+- **Scientific Foundation**:
+  - Nonparametric Average Marginal Component Effects (AMCE): Identifies and estimates causal attribute importance without parametric distribution assumptions on random utility errors (Hainmueller, Hopkins, & Yamamoto 2014 Political Analysis).
+  - Cluster-Robust Standard Errors (CR1 / Liang & Zeger 1986): Exactly clusters error disturbances at the respondent level $V_{	ext{cluster}} = (X'X)^{-1} (\sum X_i' e_i e_i' X_i) (X'X)^{-1}$, preventing artificial variance deflation from repeated tasks.
+  - Marginal Means (MM; Leeper, Hobolt, & Tilley 2020): Computes baseline-invariant choice probabilities $E[Y \mid X_k = l]$ centered at 0.50 parity in 2-profile choice designs, overcoming arbitrary baseline category dependence in subgroup comparisons.
+  - Average Component Interaction Effects (ACIE; Egami & Imai 2019 JASA): Estimates two-way attribute synergy and substitution effects with cluster-robust tests.
+  - Conjoint Internal Validity Diagnostics: Evaluates Profile Order Bias (Position 1 vs Position 2 choice rates) and Carryover / Fatigue effects across tasks.
+  - Responsive Dual-Panel SVG Visualizer: Panel A renders AMCE Forest Plot with 95% Clustered CIs relative to 0.0 baseline; Panel B renders Marginal Means plot relative to 0.50 parity line.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/factorial_conjoint_amce_engine.py (550 lines).
+  - Schemas: FactorialConjointAMCERequest, FactorialConjointAMCEOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/factorial-conjoint-amce with FACTORIAL_CONJOINT_AMCE_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_factorial_conjoint_amce_engine.py (4/4 passed in 0.34s).
+  - Route Tests: backend/tests/test_factorial_conjoint_amce_routes.py (2/2 passed in 1.43s).
+- **Frontend Components**:
+  - TypeScript Types: AMCEEstimateRow, MarginalMeanRow, ACIEInteractionRow, ConjointValidityDiagnostics, FactorialConjointAMCERequest, FactorialConjointAMCEResult in frontend/src/types/survey.ts.
+  - API Client Method: runFactorialConjointAMCE in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/FactorialConjointAMCECard.tsx (540 lines) with choice selector, attribute multi-selector, position & task inputs, 4 KPI cards (Profiles M, Respondents N, Position Bias, Fatigue), dual-panel SVG visualizer, tabs for AMCE table, Marginal Means, Internal Validity, and APA 7th narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 6/6 passed (82/82 cumulative passed across Iterations 171-190).
+  - Frontend Production Build: 2,155 modules transformed, 0 errors in 1.41s.
+  - Contract Documentation: Section 171 appended to docs/API_CONTRACT.md.
+
+---
+
+## 58. Planned Next Iteration: Iteration 191
+- **Feature**: Partial Identification & Non-Random Attrition Bounds Engine (Horowitz & Manski 2000 Econometrica; Manski & Pepper 2000; Lee 2009 Review of Economic Studies).
+- **Scope**: Implements worst-case Manski-Horowitz bounds, Monotone Instrumental Variable (MIV) bounds, and Monotone Treatment Response (MTR) bounds for survey non-response and multi-wave panel attrition, with sharp dual-panel SVG bounding frontiers.
