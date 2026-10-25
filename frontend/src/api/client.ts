@@ -219,7 +219,9 @@ import {
   QuantileSyntheticControlRequest,
   QuantileSyntheticControlResult,
   TWFEDecompositionRequest,
-  TWFEDecompositionResult
+  TWFEDecompositionResult,
+  FactorIVRequest,
+  FactorIVResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2494,5 +2496,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<TWFEDecompositionResult>(res);
+  },
+  async runFactorIV(
+    surveyId: string,
+    payload: FactorIVRequest
+  ): Promise<FactorIVResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/factor-iv`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<FactorIVResult>(res);
   }
 };

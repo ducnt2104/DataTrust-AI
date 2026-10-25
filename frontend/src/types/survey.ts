@@ -8217,3 +8217,73 @@ export interface TWFEDecompositionRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Factor Instrumental Variables & PC-2SLS (Bai & Ng 2010 Econometrica) Types ---
+export interface FactorSummaryItem {
+  factor_name: string;
+  factor_index: number;
+  eigenvalue: number;
+  variance_explained_pct: number;
+  top_loading_instruments: string[];
+}
+
+export interface FactorCriteriaItem {
+  k: number;
+  v_k: number;
+  ic_p1: number;
+  ic_p2: number;
+  pc_p1: number;
+  variance_explained_pct: number;
+  eigenvalue: number;
+  eigenvalue_ratio?: number;
+}
+
+export interface FactorIVSummary {
+  sample_size: number;
+  n_candidate_instruments_K: number;
+  n_factors_r: number;
+  selection_method: string;
+  total_variance_explained_pct: number;
+  first_stage_f_statistic: number;
+  first_stage_p_value: number;
+  first_stage_r2: number;
+  is_weak_instrument: boolean;
+  weak_instrument_guidance: string;
+  beta_factor_iv: number;
+  se_factor_iv: number;
+  t_statistic_factor_iv: number;
+  p_value_factor_iv: number;
+  ci_factor_iv_95: [number, number];
+  beta_ols_baseline: number;
+  se_ols_baseline: number;
+  endogeneity_gap: number;
+  hausman_durbin_wu_stat: number;
+  hausman_p_value: number;
+  endogeneity_detected: boolean;
+  sargan_j_statistic: number;
+  sargan_df: number;
+  sargan_p_value: number;
+  overidentification_valid: boolean;
+}
+
+export interface FactorIVResult {
+  status: string;
+  message?: string;
+  overall_summary?: FactorIVSummary;
+  factor_summaries?: FactorSummaryItem[];
+  criteria_table?: FactorCriteriaItem[];
+  instrument_loadings?: Record<string, any>[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface FactorIVRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  instrument_question_ids: string[];
+  covariate_question_ids?: string[];
+  n_factors?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

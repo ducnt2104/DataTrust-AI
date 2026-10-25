@@ -131,6 +131,7 @@ import { BCFCard } from '../components/BCFCard';
 import { ShiftShareIVCard } from '../components/ShiftShareIVCard';
 import { QuantileSyntheticControlCard } from '../components/QuantileSyntheticControlCard';
 import { TWFEDecompositionCard } from '../components/TWFEDecompositionCard';
+import { FactorIVCard } from '../components/FactorIVCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1494,6 +1495,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Two-Way Fixed Effects (TWFE) Decomposition & Negative Weights Diagnostics (de Chaisemartin & D'Haultfoeuille 2020 AER) */}
       <TWFEDecompositionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Factor Instrumental Variables & Principal Component 2SLS (Bai & Ng 2010 Econometrica) */}
+      <FactorIVCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

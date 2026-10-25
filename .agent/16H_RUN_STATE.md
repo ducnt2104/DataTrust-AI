@@ -2134,8 +2134,34 @@ eq 0\}$
 
 ---
 
-## 20. Planned Next Iteration: Iteration 153
-- **Feature**: Factor Instrumental Variables & Principal Component 2SLS Engine (Bai & Ng 2010 Econometrica; Stock & Watson 2002; Kapetanios, Marcellino, & Papailias 2019 JBES).
-- **Scope**: Resolves the "Curse of Many Instruments" in high-dimensional survey batteries by extracting dense latent factors $\hat{F} = Z \hat{\Lambda}$ via SVD/PCA, selecting optimal factor dimension $r^*$ with Bai-Ng $IC_{p1}$ criteria, computing factor-orthogonalized 2SLS estimates, and providing Cragg-Donald & Kleibergen-Paap weak instrument diagnostics.
+## 20. Iteration 153: Factor Instrumental Variables & Principal Component 2SLS Engine (Factor IV / PC-2SLS; Bai & Ng 2010 Econometrica; Kapetanios et al. 2019 JBES)
+- **Timestamp**: 2026-10-25T12:47:00+07:00
+- **Scientific Foundation**:
+  - Solves the "Curse of Many Instruments" (Many Instruments Bias; Bound et al. 1995; Staiger & Stock 1997) where conventional 2SLS is biased toward OLS when candidate instruments $K$ is non-negligible relative to $N$.
+  - Factor-Augmented Instrumental Variables: Compresses $K$ candidate instruments into dense latent factor instruments $\hat{F} = Z \hat{\Lambda}$ using Singular Value Decomposition (SVD).
+  - Optimal Dimension Selection $r^*$: Combines Bai & Ng (2002/2010) information criteria ($IC_{p1}, IC_{p2}, PC_{p1}$) with Ahn & Horenstein (2013 Econometrica) Eigenvalue Ratio $ER(k) = \lambda_k / \lambda_{k+1}$ to prevent finite-sample overfitting.
+  - PC-2SLS Estimation: Estimates causal effect $\beta_{\text{FIV}}$ with correct second-stage asymptotic variance, first-stage $F$-statistic (testing Stock-Yogo weak instrument threshold $F \ge 10$), Durbin-Wu-Hausman endogeneity test, and Sargan overidentification test.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/factor_iv_engine.py` (450 lines).
+  - Pydantic Schemas: `FactorIVRequest` and `FactorIVOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/factor-iv` with `FACTOR_IV_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_factor_iv_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_factor_iv_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `FactorSummaryItem`, `FactorCriteriaItem`, `FactorIVSummary`, `FactorIVResult`, `FactorIVRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runFactorIV` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/FactorIVCard.tsx` (510 lines) with outcome, treatment, candidate instruments multi-select checklist, factor count override, KPI stat cards ($\beta_{\text{FIV}}$, First-stage $F$, $r^*$ factors count, Endogeneity gap, Sargan $J$-test), dual-panel SVG visualizer (Scree plot & causal comparison), extracted factors summary, and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 2.05s**.
+  - Frontend Production Build: **2,119 modules transformed, 0 errors in 1.55s**.
+  - Contract Documentation: Section 134 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 21. Planned Next Iteration: Iteration 154
+- **Feature**: Nested Logit Structural Choice & Substitution Elasticity Engine (McFadden 1978 Nobel Prize; Train 2009; Berry 1994).
+- **Scope**: Relaxes the restrictive Independence of Irrelevant Alternatives (IIA) assumption in discrete choice surveys by partitioning choices into correlated nests, estimating inclusive value parameters $\lambda_m \in (0, 1]$, computing exact cross-elasticities, and estimating consumer welfare changes under counterfactual choice set modifications.
+
 
 

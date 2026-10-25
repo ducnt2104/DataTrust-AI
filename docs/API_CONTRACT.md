@@ -5525,3 +5525,30 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
 - **Niêm phong kiểm toán:** Ghi nhận `TWFE_DECOMPOSITION_EVALUATED` vào chuỗi sổ cái SHA-256.
 
 
+### 134. Factor Instrumental Variables & Principal Component 2SLS Engine (Factor IV / PC-2SLS; Bai & Ng 2010 Econometrica; Stock & Watson 2002; Kapetanios et al. 2019 JBES)
+- **Mục tiêu:** Giải quyết triệt để vấn đề "Lời nguyền Nhiều Công cụ" (Many Instruments Bias) và công cụ yếu (Weak Instruments) khi các cuộc khảo sát đo lường hàng chục hoặc hàng trăm chỉ báo tiềm năng ($Z_1, \dots, Z_K$). Khi $K$ lớn hoặc $K/N \to c > 0$, ước lượng 2SLS thông thường bị chệch về phía OLS và làm mất hoàn toàn tính nhận diện nhân quả. Động cơ thực hiện phương pháp Bai & Ng (2010), trích xuất các nhân tố tiềm ẩn đậm đặc $\hat{F} = Z \hat{\Lambda}$ thông qua phân rã giá trị suy biến (SVD), tự động tối ưu hóa số chiều nhân tố $r^*$ qua các tiêu chuẩn thông tin Bai & Ng (2002) ($IC_{p1}, IC_{p2}, PC_{p1}$) và tỷ số trị riêng Ahn-Horenstein (2013), thực thi hồi quy PC-2SLS trực giao hóa, kiểm định công cụ yếu Stock-Yogo ($F \ge 10$) và kiểm định ràng buộc nhận diện quá mức Sargan.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Mô hình Nhân tố Tiềm ẩn cho Biến Công cụ:**
+     $$Z_i = \Lambda F_i + e_i, \quad i = 1, \dots, N$$
+     - Chuẩn hóa ma trận công cụ $Z \in \mathbb{R}^{N \times K}$ về kỳ vọng 0 và phương sai 1.
+     - Phân rã SVD: $Z = U S V^T \implies \hat{F} = \sqrt{N} U_r, \quad \hat{\Lambda} = \frac{1}{\sqrt{N}} V_r S_r$.
+  2. **Tiêu chuẩn Lựa chọn Chiều Nhân tố Tối ưu (Bai & Ng 2002/2010):**
+     - Đánh giá sai số tái cấu trúc $V(k) = \frac{1}{N K} \| Z - \hat{F}_k \hat{\Lambda}_k^T \|_F^2$.
+     - Tiêu chuẩn phạt $IC_{p1}(k) = \ln(V(k)) + k \left( \frac{N + K}{N K} \right) \ln\left( \frac{N K}{N + K} \right)$.
+     - Kết hợp tỷ số trị riêng Ahn & Horenstein (2013): $ER(k) = \lambda_k / \lambda_{k+1}$ đảm bảo nhận diện chính xác cấu trúc thưa/dày trong mẫu hữu hạn.
+  3. **Hồi quy 2SLS Tăng cường Nhân tố (PC-2SLS):**
+     - Giai đoạn 1: $D = \hat{F} \gamma_F + X \gamma_X + u \implies \hat{D} = P_{[\hat{F}, X]} D$.
+     - Thống kê $F$ kiểm định độ mạnh của các nhân tố loại trừ $\hat{F}$ (Stock-Yogo rule: $F \ge 10$).
+     - Giai đoạn 2: $Y = \beta_{\text{FIV}} \hat{D} + X \Pi + \varepsilon$.
+     - Hiệu chỉnh ma trận hiệp phương sai tiệm cận của ước lượng $\hat{\beta}_{\text{FIV}}$ bằng phần dư thực tế $(Y - D \hat{\beta} - X \hat{\Pi})$.
+  4. **Kiểm định Chẩn đoán:**
+     - Kiểm định Nội sinh Durbin-Wu-Hausman: So sánh độ lệch giữa $\hat{\beta}_{\text{FIV}}$ và $\hat{\beta}_{\text{OLS}}$.
+     - Kiểm định Ràng buộc Nhận diện Quá mức Sargan-Hansen: $J = N \cdot R^2_{\text{sargan}} \sim \chi^2(r^* - 1)$ khi $r^* > 1$.
+     - Bảng ma trận tải trọng nhân tố (Factor Loadings) hiển thị mức độ đóng góp của từng câu hỏi khảo sát vào các nhân tố chính sách cốt lõi.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/factor-iv`
+  - **Payload:** `FactorIVRequest` (`outcome_question_id`, `treatment_question_id`, `instrument_question_ids`, `covariate_question_ids`, `n_factors`, `alpha_level`, `scope`).
+  - **Response:** `FactorIVOut` (`status`, `overall_summary`, `factor_summaries`, `criteria_table`, `instrument_loadings`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `FACTOR_IV_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+

@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.factor_iv_engine import estimate_factor_iv
 from app.engine.twfe_decomposition_engine import estimate_twfe_decomposition
 from app.engine.quantile_synthetic_control_engine import estimate_quantile_synthetic_control
 from app.engine.shift_share_iv_engine import estimate_shift_share_iv
@@ -110,6 +111,8 @@ from app.schemas import (
     QuantileSyntheticControlOut,
     TWFEDecompositionRequest,
     TWFEDecompositionOut,
+    FactorIVRequest,
+    FactorIVOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15389,6 +15392,128 @@ def run_twfe_decomposition_analysis(
                 "did_m": res.get("overall_summary", {}).get("did_m_estimate"),
                 "sum_neg_weights": res.get("overall_summary", {}).get("sum_negative_weights"),
                 "sigma_fe": res.get("overall_summary", {}).get("minimal_heterogeneity_sd_sigma_fe"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/factor-iv", response_model=FactorIVOut)
+def run_factor_iv_analysis(
+    survey_id: str,
+    payload: FactorIVRequest
+):
+    """
+    Factor Instrumental Variables & Principal Component 2SLS (PC-2SLS).
+    Bai, J., & Ng, S. (2010 Econometric Theory); Kapetanios, Marcellino, & Papailias (2019 JBES).
+    Overcomes many instruments bias and weak instruments by compressing candidate instruments Z
+    into dense latent factors F_hat selected via Bai-Ng Information Criteria (IC_p1), running 2SLS.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        z_ids = payload.instrument_question_ids
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.treatment_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    d_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                rec = {
+                    payload.outcome_question_id: y_val,
+                    payload.treatment_question_id: d_val
+                }
+
+                # Instruments
+                valid_z = True
+                for zid in z_ids:
+                    if zid in answers:
+                        try:
+                            rec[zid] = float(answers[zid])
+                        except (ValueError, TypeError):
+                            valid_z = False
+                    else:
+                        valid_z = False
+
+                # Covariates
+                valid_cov = True
+                for cid in cov_ids:
+                    if cid in answers:
+                        try:
+                            rec[cid] = float(answers[cid])
+                        except (ValueError, TypeError):
+                            valid_cov = False
+                    else:
+                        valid_cov = False
+
+                if valid_z and valid_cov:
+                    df_records.append(rec)
+
+        if len(df_records) < 20:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 20 bản ghi đầy đủ để ước lượng Factor IV (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_factor_iv(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                instrument_cols=z_ids,
+                covariate_cols=cov_ids if len(cov_ids) > 0 else None,
+                n_factors=payload.n_factors,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Factor IV: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="FACTOR_IV_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "n_instruments_k": len(z_ids),
+                "n_factors_r": res.get("overall_summary", {}).get("n_factors_r"),
+                "beta_fiv": res.get("overall_summary", {}).get("beta_factor_iv"),
+                "first_stage_f": res.get("overall_summary", {}).get("first_stage_f_statistic"),
                 "status": res.get("status")
             }
         )
