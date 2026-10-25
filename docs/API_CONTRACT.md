@@ -6751,3 +6751,36 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `PartialAttritionBoundsRequest` (`treatment_question_id`, `outcome_question_id`, `response_question_id`, `user_ymin`, `user_ymax`, `alpha`, `scope`).
   - **Response:** `PartialAttritionBoundsOut` (`status`, `sample_size`, `sample_treatment`, `sample_control`, `response_rate_treatment`, `response_rate_control`, `overall_attrition_rate`, `outcome_bounds`, `naive_complete_case`, `manski_horowitz_bounds`, `lee_trimming_bounds`, `mts_bounds`, `sensitivity_grid`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `PARTIAL_ATTRITION_BOUNDS_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 174. Randomized Response Technique (RRT) & Crosswise Sensitive Item Prevalence Engine (Warner 1965; Yu et al. 2008; Jann et al. 2012; van den Hout 2002)
+- **Mục tiêu:** Ước lượng chính xác và không chệch tỷ lệ hiện nhiễm của các hành vi nhạy cảm, gian lận, vi phạm quy chế hoặc các vấn đề nhạy cảm xã hội trong khảo sát, loại bỏ hoàn toàn sai lệch mong muốn xã hội (Social Desirability Bias - SDB) đồng thời bảo vệ tuyệt đối danh tính và quyền riêng tư của người trả lời.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hạn Chế Của Phương Pháp Hỏi Trực Tiếp (Direct Questioning Failure):**
+     - Khi hỏi trực tiếp về các chủ đề nhạy cảm, người trả lời thường có xu hướng nói dối hoặc từ chối trả lời do sợ bị đánh giá hoặc chịu hậu quả (Evasive Answer Bias), dẫn đến tỷ lệ thừa nhận bị thấp hơn rất nhiều so với thực tế ($\\hat{\\pi}_{\\text{Direct}} \\ll \\pi$).
+  2. **Mô Hình Crosswise Đột Phá (Yu, Tian, & Tang 2008 AISM; Jann, Jerke, & Krumpal 2012):**
+     - Người trả lời nhận đồng thời 2 câu hỏi: Câu hỏi nhạy cảm $A$ (tỷ lệ chưa biết $\\pi$) và câu hỏi phụ không nhạy cảm $B$ có xác suất khẳng định $p \\ne 0.50$ đã biết (ví dụ: tháng sinh của mẹ nằm trong nửa đầu năm).
+     - Người trả lời CHỈ báo cáo xem 2 câu trả lời có GIỐNG NHAU (cùng Có hoặc cùng Không) hay KHÁC NHAU. Người phỏng vấn không thể biết câu trả lời riêng lẻ cho câu hỏi nào.
+     - Tỷ lệ trả lời "Giống nhau" quan sát được $\\lambda$:
+       $$\\lambda = \\pi p + (1 - \\pi)(1 - p) = (2p - 1)\\pi + 1 - p$$
+     - Giải phương trình tìm tỷ lệ hiện nhiễm thực tế:
+       $$\\hat{\\pi}_{\\text{Crosswise}} = \\frac{\\hat{\\lambda} - (1 - p)}{2p - 1}$$
+     - Sai số chuẩn với hiệu chỉnh phóng đại phương sai (Variance Inflation Factor - VIF):
+       $$\\text{Var}(\\hat{\\pi}) = \\frac{\\lambda (1 - \\lambda)}{N (2p - 1)^2}$$
+  3. **Mô Hình Warner (1965) Cổ Điển & Câu Hỏi Không Liên Quan (Horvitz-Simmons 1967):**
+     - Warner (1965): Người trả lời quay số ngẫu nhiên với xác suất $p$ trả lời câu hỏi nhạy cảm $A$ và $1-p$ trả lời câu hỏi phủ định "Không $A$".
+     - Unrelated Question: Với xác suất $1-p$, trả lời câu hỏi không liên quan với tỷ lệ đã biết $p_U$:
+       $$\\hat{\\pi}_{\\text{Unrelated}} = \\frac{\\hat{\\lambda} - (1 - p)p_U}{p}$$
+  4. **Khoảng Cách Mong Muốn Xã Hội (Social Desirability Bias Gap) & Kiểm Định Under-Reporting:**
+     - So sánh tỷ lệ suy luận từ RRT với câu hỏi trực tiếp đối chứng:
+       $$\\Delta_{\\text{SDB}} = \\hat{\\pi}_{\\text{RRT}} - \\hat{\\pi}_{\\text{Direct}}$$
+     - Kiểm định giả thuyết 1 phía $H_0: \\Delta_{\\text{SDB}} \\le 0$ vs $H_1: \\Delta_{\\text{SDB}} > 0$ chứng minh sự tồn tại của hiện tượng che giấu/né tránh trong câu hỏi truyền thống.
+  5. **Hồi Quy Logistic RRT Đa Biến (van den Hout & van der Heijden 2002):**
+     - Ước lượng tác động của các biến nhân khẩu học và hành vi $X_i$ lên xác suất tiềm ẩn $\\pi_i(X_i) = \\frac{1}{1 + \\exp(-X_i \\beta)}$ thông qua tối đa hóa hàm hợp lý có ma trận nhiễu loạn ngẫu nhiên.
+  6. **Trực Quan Hóa Vector Kép SVG & Đường Đánh Đổi Bảo Mật:**
+     - Panel A: Đồ thị Forest Plot so sánh tỷ lệ RRT vs Direct Questioning kèm khoảng tin cậy 95% và khoảng cách SDB Gap.
+     - Panel B: Đường cong đánh đổi giữa mức độ bảo vệ riêng tư (%) và hệ số phóng đại phương sai VIF theo tham số ngẫu nhiên hóa $p \\in (0.55, 0.95)$.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/randomized-response`
+  - **Payload:** `RandomizedResponseRequest` (`rrt_question_id`, `model_type`, `p_randomizer`, `p_unrelated`, `direct_question_id`, `covariate_question_ids`, `alpha`, `scope`).
+  - **Response:** `RandomizedResponseOut` (`status`, `sample_size`, `model_type`, `model_label`, `randomization_probability`, `observed_affirmative_rate`, `estimated_prevalence`, `raw_unbounded_prevalence`, `std_error`, `ci_95`, `variance_inflation_factor`, `social_desirability_diagnostics`, `rrt_logistic_regression`, `efficiency_curve`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `RANDOMIZED_RESPONSE_EVALUATED` vào chuỗi sổ cái SHA-256.

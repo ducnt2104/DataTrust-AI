@@ -10603,3 +10603,61 @@ export interface PartialAttritionBoundsResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+
+// --- Randomized Response Technique (RRT) & Crosswise Sensitive Item Types (Iteration 193) ---
+export interface RRTSocialDesirabilityDiagnostics {
+  direct_prevalence: number;
+  direct_std_error: number;
+  direct_ci_95: [number, number];
+  sdb_gap_percentage_points: number;
+  gap_std_error: number;
+  z_statistic: number;
+  p_value_underreporting: number;
+  significant_underreporting: boolean;
+}
+
+export interface RRTLogisticTerm {
+  term: string;
+  coefficient: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  odds_ratio?: number | null;
+}
+
+export interface RRTEfficiencyPoint {
+  p_randomizer: number;
+  variance_inflation_factor: number;
+  privacy_protection_pct: number;
+}
+
+export interface RandomizedResponseRequest {
+  rrt_question_id: string;
+  model_type?: 'crosswise' | 'warner' | 'unrelated';
+  p_randomizer?: number;
+  p_unrelated?: number;
+  direct_question_id?: string;
+  covariate_question_ids?: string[];
+  alpha?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface RandomizedResponseResult {
+  status: string;
+  sample_size: number;
+  model_type: string;
+  model_label: string;
+  randomization_probability: number;
+  observed_affirmative_rate: number;
+  estimated_prevalence: number;
+  raw_unbounded_prevalence: number;
+  std_error: number;
+  ci_95: [number, number];
+  variance_inflation_factor: number;
+  social_desirability_diagnostics?: RRTSocialDesirabilityDiagnostics | null;
+  rrt_logistic_regression?: RRTLogisticTerm[] | null;
+  efficiency_curve: RRTEfficiencyPoint[];
+  svg_visualization: string;
+  apa_narrative: string;
+}

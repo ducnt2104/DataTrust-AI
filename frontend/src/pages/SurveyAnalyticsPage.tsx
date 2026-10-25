@@ -170,6 +170,7 @@ import { DiscreteRDHeapingCard } from '../components/DiscreteRDHeapingCard';
 import { FactorialConjointAMCECard } from '../components/FactorialConjointAMCECard';
 import { ManyWeakIVJIVECard } from '../components/ManyWeakIVJIVECard';
 import { PartialAttritionBoundsCard } from '../components/PartialAttritionBoundsCard';
+import { RandomizedResponseCard } from '../components/RandomizedResponseCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1923,6 +1924,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Partial Identification & Non-Random Attrition Bounds Engine (Horowitz & Manski 2000; Lee 2009; DataTrust Iteration 192) */}
       <PartialAttritionBoundsCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Randomized Response Technique (RRT) & Crosswise Sensitive Item Prevalence Engine (Warner 1965; Jann 2012; DataTrust Iteration 193) */}
+      <RandomizedResponseCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

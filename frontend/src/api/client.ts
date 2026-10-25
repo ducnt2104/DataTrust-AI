@@ -297,7 +297,9 @@ import {
   ManyWeakIVJIVERequest,
   ManyWeakIVJIVEResult,
   PartialAttritionBoundsRequest,
-  PartialAttritionBoundsResult
+  PartialAttritionBoundsResult,
+  RandomizedResponseRequest,
+  RandomizedResponseResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -3015,5 +3017,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<PartialAttritionBoundsResult>(res);
+  },
+
+  async runRandomizedResponse(
+    surveyId: string,
+    payload: RandomizedResponseRequest
+  ): Promise<RandomizedResponseResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/randomized-response`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<RandomizedResponseResult>(res);
   }
 };

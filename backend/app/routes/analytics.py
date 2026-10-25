@@ -1,3 +1,4 @@
+from app.engine.randomized_response_engine import run_randomized_response_analysis
 from app.engine.partial_attrition_bounds_engine import run_partial_attrition_bounds_analysis
 from app.engine.many_weak_iv_jive_engine import run_many_weak_iv_jive_analysis
 from app.engine.factorial_conjoint_amce_engine import run_factorial_conjoint_amce
@@ -227,6 +228,8 @@ from app.schemas import (
     ManyWeakIVJIVEOut,
     PartialAttritionBoundsRequest,
     PartialAttritionBoundsOut,
+    RandomizedResponseRequest,
+    RandomizedResponseOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -19091,6 +19094,86 @@ def run_partial_attrition_bounds_endpoint(
                             res.get("lee_trimming_bounds", {}).get("lower_bound"),
                             res.get("lee_trimming_bounds", {}).get("upper_bound")
                         ]
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/randomized-response", response_model=RandomizedResponseOut)
+def run_randomized_response_endpoint(
+    survey_id: str,
+    payload: RandomizedResponseRequest
+):
+    """
+    Randomized Response Technique (RRT) & Crosswise Sensitive Item Prevalence Engine
+    (Warner 1965; Yu et al. 2008; Jann et al. 2012).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        all_qids = [payload.rrt_question_id]
+        if payload.direct_question_id:
+            all_qids.append(payload.direct_question_id)
+        if payload.covariate_question_ids:
+            all_qids.extend(payload.covariate_question_ids)
+
+        for r_id, ans in data_by_resp.items():
+            rec = {qid: ans.get(qid) for qid in all_qids}
+            records.append(rec)
+
+        try:
+            res = run_randomized_response_analysis(
+                records=records,
+                rrt_question_id=payload.rrt_question_id,
+                model_type=payload.model_type or "crosswise",
+                p_randomizer=payload.p_randomizer or 0.70,
+                p_unrelated=payload.p_unrelated or 0.50,
+                direct_question_id=payload.direct_question_id,
+                covariate_question_ids=payload.covariate_question_ids,
+                alpha=payload.alpha or 0.05,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi phân tích Randomized Response: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="RANDOMIZED_RESPONSE_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "sample_size": res.get("sample_size"),
+                        "model_type": res.get("model_type"),
+                        "estimated_prevalence": res.get("estimated_prevalence"),
+                        "sdb_gap": res.get("social_desirability_diagnostics", {}).get("sdb_gap_percentage_points") if res.get("social_desirability_diagnostics") else None,
                     }
                 )
             except Exception:
