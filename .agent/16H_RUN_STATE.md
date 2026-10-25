@@ -2349,6 +2349,33 @@ eq 0\}$
 
 ---
 
-## 27. Planned Next Iteration: Iteration 160
-- **Feature**: High-Dimensional Causal Mediation & Latent Path Invariance Engine (HD-Mediation; Imai, Keele, & Tingley 2010 JASA; VanderWeele 2015; Zhao & Luo 2022 JRSS-B).
-- **Scope**: Implements high-dimensional causal mediation analysis when survey instruments measure dozens of candidate psychometric or behavioral mediators ($M_1, \dots, M_K$), decomposing total causal effects into Average Controlled Direct Effect (ACDE), Natural Direct Effect (NDE), and Natural Indirect Effects (NIE) with de-biasing and sensitivity to unobserved mediator-outcome confounding.
+## 27. Iteration 160: High-Dimensional Causal Mediation & Latent Path Invariance Engine (HD-Mediation; Imai, Keele, & Tingley 2010 JASA; VanderWeele 2015; Zhao & Luo 2022 JRSS-B)
+- **Timestamp**: 2026-10-25T13:42:00+07:00
+- **Scientific Foundation**:
+  - Decomposes Total Causal Treatment Effect ($\text{TE} = \mathbb{E}[Y(1) - Y(0)]$) into Natural Direct Effect ($\text{NDE} = \mathbb{E}[Y(1, M(0)) - Y(0, M(0))]$) and Natural Indirect Effect ($\text{NIE} = \mathbb{E}[Y(1, M(1)) - Y(1, M(0))]$) across high-dimensional survey mediator batteries ($M_1, \dots, M_p$).
+  - Overcomes Baron-Kenny collinearity breakdowns and high-dimensional variance inflation through L2-stabilized multivariable estimation.
+  - Component Pathway Contribution: Computes $\text{IE}_j = \alpha_j \cdot \beta_j$, Sobel standard errors, and percentage share of total mediation $\text{Share}_j$.
+  - Sequential Ignorability Sensitivity (Imai et al. 2010): Calculates exact critical correlation threshold $\rho^*$ at which unobserved mediator-outcome confounding eliminates the mediated effect. Classifies robustness into ROBUST ($|\rho^*| \ge 0.35$), MODERATE ($0.15 \le |\rho^*| < 0.35$), and SENSITIVE ($|\rho^*| < 0.15$).
+  - Latent Path Invariance Test: Employs Wald Chi-square test ($H_0: \boldsymbol{\beta}^{(1)} = \boldsymbol{\beta}^{(2)}$) across survey demographic subgroups to verify structural invariance of causal mediation pathways.
+  - Nonparametric Bootstrap: 50-100 resamples to construct robust percentile confidence intervals for TE, NDE, NIE, PM, and component pathways.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/high_dimensional_mediation_engine.py` (390 lines).
+  - Pydantic Schemas: `HighDimensionalMediationRequest` and `HighDimensionalMediationOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/high-dimensional-mediation` with `HIGH_DIMENSIONAL_MEDIATION_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_high_dimensional_mediation_engine.py` (3/3 passed in 0.33s).
+  - Route Tests: `backend/tests/test_high_dimensional_mediation_routes.py` (1/1 passed in 1.58s).
+- **Frontend Components**:
+  - TypeScript Types: `MediatorPathway`, `CausalEffectEstimate`, `HighDimensionalMediationResult`, `HighDimensionalMediationRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runHighDimensionalMediation` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/HighDimensionalMediationCard.tsx` (510 lines) with treatment selector, outcome selector, mediator battery multi-select checklist, confounder multi-select, subgroup invariance selector, bootstrap resample slider, KPI cards (TE, NDE, NIE, Mediated %, Critical $\rho^*$), interactive SVG path diagram, component pathways ranking table with Sobel p-values and sensitivity badges, and latent path invariance card.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed** (43/43 cumulative passed across recent iterations in 18.67s).
+  - Frontend Production Build: **2,126 modules transformed, 0 errors in 1.42s**.
+  - Contract Documentation: Section 141 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 28. Planned Next Iteration: Iteration 161
+- **Feature**: Panel Vector Autoregression & Survey Macro-Shock Impulse Response Engine (Panel VAR; Holtz-Eakin, Newey, & Rosen 1988 Econometrica; Love & Zicchino 2006).
+- **Scope**: Implements dynamic panel vector autoregression for multi-wave longitudinal surveys, using Helmert forward orthogonal transformations to eliminate individual fixed effects, estimating endogenous feedback loops between survey indicators, and tracing dynamic shock propagation via orthogonalized Impulse Response Functions (IRFs) and Forecast Error Variance Decompositions (FEVD).

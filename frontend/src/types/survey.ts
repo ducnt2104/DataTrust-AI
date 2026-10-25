@@ -8610,3 +8610,74 @@ export interface MultiCutoffRDRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- High-Dimensional Causal Mediation & Latent Path Invariance Types ---
+export interface MediatorPathway {
+  mediator_col: string;
+  alpha_treatment_to_med: number;
+  alpha_se: number;
+  alpha_pvalue: number;
+  beta_med_to_outcome: number;
+  beta_se: number;
+  beta_pvalue: number;
+  indirect_effect: number;
+  sobel_se: number;
+  sobel_pvalue: number;
+  mediation_share_pct: number;
+  critical_rho_sensitivity: number;
+  sensitivity_robustness: 'ROBUST' | 'MODERATE' | 'SENSITIVE';
+  ci_lower?: number;
+  ci_upper?: number;
+}
+
+export interface CausalEffectEstimate {
+  estimate: number;
+  se?: number;
+  p_value?: number;
+  ci_lower?: number;
+  ci_upper?: number;
+  percentage?: number;
+}
+
+export interface HighDimensionalMediationResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  n_mediators?: number;
+  treatment_variable?: string;
+  outcome_variable?: string;
+  confounder_variables?: string[];
+  total_effect?: CausalEffectEstimate;
+  natural_direct_effect?: CausalEffectEstimate;
+  natural_indirect_effect?: CausalEffectEstimate;
+  proportion_mediated?: CausalEffectEstimate;
+  sequential_ignorability_sensitivity?: {
+    dominant_rho_critical: number;
+    robustness: 'ROBUST' | 'MODERATE' | 'SENSITIVE';
+    interpretation: string;
+  };
+  mediator_pathways?: MediatorPathway[];
+  latent_path_invariance?: {
+    tested: boolean;
+    subgroup_col?: string;
+    groups_compared?: string[];
+    wald_statistic?: number;
+    p_value?: number;
+    is_invariant: boolean;
+    interpretation: string;
+  };
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface HighDimensionalMediationRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  mediator_question_ids: string[];
+  confounder_question_ids?: string[];
+  subgroup_question_id?: string;
+  n_boot?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.high_dimensional_mediation_engine import run_high_dimensional_mediation
 from app.engine.multi_cutoff_rd_engine import estimate_multi_cutoff_rd
 from app.engine.dpm_deconvolution_engine import estimate_dpm_deconvolution
 from app.engine.conformal_optimal_transport_engine import estimate_conformal_optimal_transport
@@ -131,6 +132,8 @@ from app.schemas import (
     DPMDeconvolutionOut,
     MultiCutoffRDRequest,
     MultiCutoffRDOut,
+    HighDimensionalMediationRequest,
+    HighDimensionalMediationOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -16214,6 +16217,138 @@ def run_multi_cutoff_rd_analysis(
                 "se_pooled": res.get("overall_summary", {}).get("se_pooled"),
                 "p_value_pooled": res.get("overall_summary", {}).get("p_value_pooled"),
                 "is_heterogeneous": res.get("overall_summary", {}).get("is_cutoff_heterogeneous"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/high-dimensional-mediation", response_model=HighDimensionalMediationOut)
+def run_high_dimensional_mediation_analysis(
+    survey_id: str,
+    payload: HighDimensionalMediationRequest
+):
+    """
+    High-Dimensional Causal Mediation & Latent Path Invariance Engine.
+    Imai, K., et al. (2010); VanderWeele, T. J. (2015); Zhao, Y., & Luo, X. (2022).
+    Decomposes total effect into direct (NDE) and indirect (NIE) pathways across high-dimensional
+    mediator batteries with sensitivity bounds (rho*) and subgroup latent path invariance testing.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        med_ids = payload.mediator_question_ids or []
+        cov_ids = payload.confounder_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.treatment_question_id in answers and payload.outcome_question_id in answers:
+                try:
+                    t_val = float(answers[payload.treatment_question_id])
+                    y_val = float(answers[payload.outcome_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                rec = {
+                    payload.treatment_question_id: t_val,
+                    payload.outcome_question_id: y_val
+                }
+
+                # Mediators
+                valid_meds = True
+                for m_id in med_ids:
+                    if m_id in answers:
+                        try:
+                            rec[m_id] = float(answers[m_id])
+                        except (ValueError, TypeError):
+                            valid_meds = False
+                    else:
+                        valid_meds = False
+
+                if not valid_meds:
+                    continue
+
+                # Confounders
+                valid_covs = True
+                for c_id in cov_ids:
+                    if c_id in answers:
+                        try:
+                            rec[c_id] = float(answers[c_id])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                    else:
+                        valid_covs = False
+
+                if not valid_covs:
+                    continue
+
+                # Subgroup
+                if payload.subgroup_question_id and payload.subgroup_question_id in answers:
+                    rec[payload.subgroup_question_id] = str(answers[payload.subgroup_question_id]).strip()
+
+                df_records.append(rec)
+
+        if len(df_records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 25 bản ghi hợp lệ để phân tích High-Dimensional Mediation (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = run_high_dimensional_mediation(
+                df=df,
+                treatment_col=payload.treatment_question_id,
+                outcome_col=payload.outcome_question_id,
+                mediator_cols=med_ids,
+                confounder_cols=cov_ids if cov_ids else None,
+                subgroup_col=payload.subgroup_question_id,
+                n_boot=payload.n_boot,
+                alpha=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình phân tích High-Dimensional Mediation: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="HIGH_DIMENSIONAL_MEDIATION_EVALUATED",
+            details={
+                "n_mediators": res.get("n_mediators"),
+                "total_effect": res.get("total_effect", {}).get("estimate"),
+                "nde": res.get("natural_direct_effect", {}).get("estimate"),
+                "nie": res.get("natural_indirect_effect", {}).get("estimate"),
+                "proportion_mediated": res.get("proportion_mediated", {}).get("percentage"),
+                "dominant_rho_crit": res.get("sequential_ignorability_sensitivity", {}).get("dominant_rho_critical"),
                 "status": res.get("status")
             }
         )

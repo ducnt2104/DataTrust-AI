@@ -5709,3 +5709,30 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `MultiCutoffRDRequest` (`outcome_question_id`, `running_question_id`, `cutoff_question_id`, `group_question_id`, `fixed_cutoffs`, `covariate_question_ids`, `bandwidth`, `alpha_level`, `scope`).
   - **Response:** `MultiCutoffRDOut` (`status`, `overall_summary`, `cutoff_summaries`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `MULTI_CUTOFF_RD_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 141. High-Dimensional Causal Mediation & Latent Path Invariance Engine (HD-Mediation; Imai, Keele, & Tingley 2010 JASA; VanderWeele 2015; Zhao & Luo 2022 JRSS-B)
+- **Mục tiêu:** Bóc tách và định lượng cơ chế lan truyền tác động nhân quả từ biến can thiệp chính sách $T$ (chương trình tập huấn, ưu đãi, thay đổi quy trình) đến chỉ tiêu kết quả mục tiêu $Y$ (sự hài lòng, lòng trung thành, mức độ cam kết) thông qua một tập biến trung gian đa chiều $M = (M_1, \dots, M_p)$ trong khảo sát. Khắc phục triệt để các hạn chế của hồi quy Baron-Kenny cổ điển khi số lượng biến trung gian lớn (đa cộng tuyến, thiên lệch thu hẹp do phạt LASSO, hoặc sai lệch do biến nhiễu tiềm ẩn giữa trung gian và kết quả). Động cơ triển khai phương pháp phân rã tác động nhân quả tự nhiên (Natural Direct Effect - NDE; Natural Indirect Effect - NIE), ước lượng đường dẫn ổn định L2, tính toán tỷ trọng trung gian đóng góp $\text{Share}_j$, phân tích độ nhạy bỏ qua tuần tự theo Imai et al. (2010) với tham số giới hạn $\rho^*$, suy diễn khoảng tin cậy Bootstrap phi tham số, và kiểm định tính bất biến của cấu trúc đường dẫn tiềm ẩn giữa các phân nhóm nhân khẩu học.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Phân rã Tác động Nhân quả Tự nhiên (Natural Direct & Indirect Effects):**
+     - Tổng tác động (Total Effect - TE): $\mathbb{E}[Y(1) - Y(0)] = \hat{\tau}_T$ từ mô hình $Y = \tau_0 + \tau_T T + X \tau_X + \varepsilon$.
+     - Hiệu ứng trực tiếp tự nhiên (NDE): $\mathbb{E}[Y(1, M(0)) - Y(0, M(0))] = \hat{\theta}_T$ từ mô hình $Y = \theta_0 + \theta_T T + \sum_{j=1}^p \beta_j M_j + X \delta + \varepsilon_Y$.
+     - Hiệu ứng gián tiếp thành phần: $\text{IE}_j = \hat{\alpha}_j \cdot \hat{\beta}_j$, với $\hat{\alpha}_j$ từ mô hình $M_j = \alpha_{0j} + \alpha_j T + X \gamma_j + \varepsilon_{Mj}$.
+     - Tổng hiệu ứng gián tiếp (NIE): $\text{NIE} = \sum_{j=1}^p \text{IE}_j$.
+     - Tỷ trọng tác động được trung gian hóa: $\text{PM} = \frac{\text{NIE}}{\text{TE}} \times 100\%$.
+  2. **Phân tích Độ nhạy Bỏ qua Tuần tự (Sequential Ignorability Sensitivity; Imai et al. 2010):**
+     - Giả định không có biến nhiễu không quan sát giữa $M_j$ và $Y$ được kiểm tra qua tham số tương quan phần dư $\rho = \text{Corr}(\varepsilon_{Mj}, \varepsilon_Y)$.
+     - Ngưỡng giới hạn $\rho^*$ triệt tiêu hiệu ứng gián tiếp:
+       $$\rho^*_j = \hat{\beta}_j \cdot \frac{\sigma_{Mj}}{\sigma_Y} \cdot \sqrt{\frac{1 - R_{Mj}^2}{1 - R_Y^2}}$$
+     - Đánh giá độ bền vững: Bền vững cao khi $|\rho^*| \ge 0.35$ (hiệu ứng không thể bị giải thích bởi các yếu tố nhiễu ẩn mức độ vừa).
+  3. **Kiểm định Bất biến Đường dẫn Tiềm ẩn (Latent Path Invariance Test):**
+     - Kiểm định giả thuyết vô hiệu $H_0: \boldsymbol{\beta}^{(1)} = \boldsymbol{\beta}^{(2)}$ giữa hai phân nhóm khảo sát $g_1, g_2$ qua thống kê Wald $\chi^2$:
+       $$\chi^2 = (\boldsymbol{\beta}^{(1)} - \boldsymbol{\beta}^{(2)})^T (\text{Cov}_1 + \text{Cov}_2)^{-1} (\boldsymbol{\beta}^{(1)} - \boldsymbol{\beta}^{(2)}) \sim \chi^2(p)$$
+     - Giá trị $p \ge 0.05$ khẳng định cơ chế lan truyền tác động nhân quả có tính bất biến và phổ quát trên các phân khúc đối tượng.
+  4. **Suy diễn Thống kê Bootstrap & Sơ đồ Luồng SVG:**
+     - Bootstrap $B$ lần có hoàn lại để xây dựng khoảng tin cậy phân vị $(1 - \alpha)$ cho TE, NDE, NIE, PM, và từng thành phần $\text{IE}_j$.
+     - Sơ đồ trực quan hóa vector luồng tác động nhân quả SVG thể hiện các nút $T$, $M_j$, $Y$, trọng số các đường dẫn $\alpha_j, \beta_j$, đường tác động trực tiếp và các chỉ số đo lường học thuật.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/high-dimensional-mediation`
+  - **Payload:** `HighDimensionalMediationRequest` (`treatment_question_id`, `outcome_question_id`, `mediator_question_ids`, `confounder_question_ids`, `subgroup_question_id`, `n_boot`, `alpha_level`, `scope`).
+  - **Response:** `HighDimensionalMediationOut` (`status`, `sample_size`, `n_mediators`, `total_effect`, `natural_direct_effect`, `natural_indirect_effect`, `proportion_mediated`, `sequential_ignorability_sensitivity`, `mediator_pathways`, `latent_path_invariance`, `svg_visualization`).
+- **Niêm phong kiểm toán:** Ghi nhận `HIGH_DIMENSIONAL_MEDIATION_EVALUATED` vào chuỗi sổ cái SHA-256.

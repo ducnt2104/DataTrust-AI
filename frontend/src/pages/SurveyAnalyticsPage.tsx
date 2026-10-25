@@ -138,6 +138,7 @@ import { LocalInstrumentalVariablesCard } from '../components/LocalInstrumentalV
 import { ConformalOptimalTransportCard } from '../components/ConformalOptimalTransportCard';
 import { DPMDeconvolutionCard } from '../components/DPMDeconvolutionCard';
 import { MultiCutoffRDCard } from '../components/MultiCutoffRDCard';
+import { HighDimensionalMediationCard } from '../components/HighDimensionalMediationCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1571,6 +1572,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Multi-Cutoff Regression Discontinuity & Boundary Treatment Effects (Cattaneo 2015; Bertanha 2020) */}
       <MultiCutoffRDCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* High-Dimensional Causal Mediation & Latent Path Invariance (Imai 2010; VanderWeele 2015; Zhao & Luo 2022) */}
+      <HighDimensionalMediationCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

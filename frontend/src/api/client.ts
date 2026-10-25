@@ -233,7 +233,9 @@ import {
   DPMDeconvolutionRequest,
   DPMDeconvolutionResult,
   MultiCutoffRDRequest,
-  MultiCutoffRDResult
+  MultiCutoffRDResult,
+  HighDimensionalMediationRequest,
+  HighDimensionalMediationResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2585,5 +2587,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<MultiCutoffRDResult>(res);
+  },
+  async runHighDimensionalMediation(
+    surveyId: string,
+    payload: HighDimensionalMediationRequest
+  ): Promise<HighDimensionalMediationResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/high-dimensional-mediation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<HighDimensionalMediationResult>(res);
   }
 };
