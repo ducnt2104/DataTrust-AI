@@ -9746,3 +9746,61 @@ export interface IVLATEQuantileResult {
   svg_visualization?: string;
   apa_narrative?: string;
 }
+
+
+export interface ConformalSubgroupCounts {
+  treated: number;
+  control: number;
+  calibration_set: number;
+  training_set: number;
+}
+
+export interface ConformalCutoffs {
+  cutoff_q0: number;
+  cutoff_q1: number;
+  coverage_control: number;
+  coverage_treated: number;
+}
+
+export interface ConformalTreatmentSummary {
+  ate_conformal: number;
+  avg_width_y0: number;
+  avg_width_y1: number;
+  avg_width_ite: number;
+  sig_positive_ite_pct: number;
+  sig_negative_ite_pct: number;
+}
+
+export interface ConformalSampleITEPoint {
+  observation_id: number;
+  treatment: number;
+  factual_outcome: number;
+  predicted_ite: number;
+  ite_lower_bound: number;
+  ite_upper_bound: number;
+  band_width: number;
+  significant: boolean;
+}
+
+export interface ConformalCausalRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  alpha?: number;
+  calibration_ratio?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface ConformalCausalResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  nominal_coverage?: number;
+  empirical_calibration_coverage?: number;
+  subgroup_counts?: ConformalSubgroupCounts;
+  conformal_cutoffs?: ConformalCutoffs;
+  treatment_effect_summary?: ConformalTreatmentSummary;
+  sample_ite_points?: ConformalSampleITEPoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}

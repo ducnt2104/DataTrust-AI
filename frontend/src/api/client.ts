@@ -271,7 +271,9 @@ import {
   CausalMatrixCompletionRequest,
   CausalMatrixCompletionResult,
   IVLATEQuantileRequest,
-  IVLATEQuantileResult
+  IVLATEQuantileResult,
+  ConformalCausalRequest,
+  ConformalCausalResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2833,5 +2835,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<IVLATEQuantileResult>(res);
+  },
+
+  async runConformalCausalInference(
+    surveyId: string,
+    payload: ConformalCausalRequest
+  ): Promise<ConformalCausalResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/conformal-causal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ConformalCausalResult>(res);
   }
 };

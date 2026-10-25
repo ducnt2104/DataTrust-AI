@@ -6340,3 +6340,32 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `IVLATEQuantileRequest` (`outcome_question_id`, `treatment_question_id`, `instrument_question_id`, `covariate_question_ids`, `num_quantiles`, `scope`).
   - **Response:** `IVLATEQuantileOut` (`status`, `sample_size`, `complier_share`, `first_stage_diff`, `mean_late`, `median_qte_complier`, `monotonicity_test`, `complier_inequality`, `quantile_curve`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `IV_LATE_QUANTILE_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 161. Conformal Causal Inference & Distribution-Free Counterfactual Prediction Bands Engine (Chernozhukov, Wüthrich, & Zhu 2021 JASA; Lei & Candès 2021 JRSS-B; Tibshirani et al. 2019 NeurIPS)
+- **Mục tiêu:** Thiết lập các dải dự báo khoảng tin cậy mẫu hữu hạn (finite-sample, non-asymptotic) và phi phân phối (distribution-free) cho các kết quả tiềm năng phản thực tế $Y_i(0), Y_i(1)$ và hiệu ứng can thiệp cá thể $\tau_i = Y_i(1) - Y_i(0)$. Phương pháp khắc phục triệt để các nhược điểm của suy luận nhân quả cổ điển (dựa vào xấp xỉ tiệm cận cỡ mẫu lớn CLT hoặc giả định phân phối chuẩn Gauss thường bị vi phạm trong mẫu khảo sát nhỏ, phân phối đuôi nặng, hoặc mô hình máy học phi tuyến tính phức tạp). Với thuật toán suy luận Conformal dưới dịch chuyển phân phối (Covariate Shift Conformal Inference), hệ thống đảm bảo xác suất bao phủ danh nghĩa $P(Y_i(d) \in \hat{C}_d(X_i)) \ge 1 - \alpha$ với mọi phân phối dữ liệu và mọi thuật toán máy học cơ sở.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Chia Tách Dữ Liệu Conformal (Split-Conformal Causal Framework):**
+     - Tập dữ liệu $N$ được phân chia ngẫu nhiên thành Tập huấn luyện mô hình cơ sở (Proper Training Set, tỷ lệ $1 - \rho$) và Tập hiệu chuẩn (Calibration Set, tỷ lệ $\rho \in [0.2, 0.5]$).
+     - Huấn luyện hai mô hình hồi quy phi tuyến tính $\hat{\mu}_0(X)$ và $\hat{\mu}_1(X)$ (Gradient Boosting / Ridge) trên phân nhóm đối chứng và can thiệp của tập proper training.
+  2. **Hiệu Chỉnh Trọng Số Dịch Chuyển Phân Phối (Covariate Shift Likelihood Ratio Weighting):**
+     - Do can thiệp không hoàn toàn ngẫu nhiên hóa tự do trong khảo sát quan sát, phân phối đặc trưng $P(X \mid D=1) \neq P(X \mid D=0)$.
+     - Áp dụng nguyên lý Tibshirani et al. (2019) và Lei & Candès (2021): khi dự báo kết quả phản thực tế $Y_i(0)$ cho một cá thể can thiệp ($D_i=1$), điểm nonconformity $R_i = |Y_i - \hat{\mu}_0(X_i)|$ trên tập hiệu chuẩn được gán trọng số tỷ số hợp lý:
+       $$w_i(x) = \frac{e(x)}{1 - e(x)}$$
+       trong đó $e(x) = P(D=1 \mid X)$ là điểm xu hướng (propensity score).
+  3. **Ngưỡng Cắt Phân Vị Nonconformity Có Trọng Số:**
+     - Điểm cắt $\hat{q}_d$ là giá trị nhỏ nhất sao cho tổng trọng số chuẩn hóa của các điểm có $R_i \le \hat{q}_d$ vượt quá mức bao phủ mục tiêu $1 - \alpha$:
+       $$\hat{q}_d = \inf \left\{ q : \sum_{i \in \text{Calib}_d} \tilde{w}_i \cdot \mathbf{1}\{R_i \le q\} \ge 1 - \alpha \right\}$$
+  4. **Dải Dự Báo Phản Thực Tế & Khoảng Tin Cậy Hiệu Ứng Cá Thể (ITE Bounds):**
+     - Dải conformal cho kết quả tiềm năng: $\hat{C}_d(X_i) = [\hat{\mu}_d(X_i) - \hat{q}_d, \hat{\mu}_d(X_i) + \hat{q}_d]$.
+     - Dải hiệu ứng cá thể theo bù trừ cận trên/dưới:
+       $$\hat{C}_{\tau}(X_i) = [\hat{\tau}(X_i) - (\hat{q}_0 + \hat{q}_1), \hat{\tau}(X_i) + (\hat{q}_0 + \hat{q}_1)]$$
+       với bảo đảm bao phủ mức chặn cận $1 - 2\alpha$ (hoặc chính xác theo score kết hợp).
+     - Đo lường độ rộng trung bình dải $\bar{W}_{\text{ITE}}$ và tỷ lệ các quan sát có hiệu ứng cá thể tách biệt hoàn toàn khỏi giá trị 0 (statistically significant individual beneficiaries).
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị dải ruy-băng Conformal Ribbon $[L_0(x), U_0(x)]$ ôm trọn các điểm quan sát thực nghiệm và phản thực tế.
+     - Panel B: Đồ thị phễu hiệu ứng cá thể Conformal ITE Funnel xếp hạng các đơn vị theo mức hưởng lợi dự báo kèm dải sai số phân vị.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/conformal-causal`
+  - **Payload:** `ConformalCausalRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `alpha`, `calibration_ratio`, `scope`).
+  - **Response:** `ConformalCausalOut` (`status`, `sample_size`, `nominal_coverage`, `empirical_calibration_coverage`, `subgroup_counts`, `conformal_cutoffs`, `treatment_effect_summary`, `sample_ite_points`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CONFORMAL_CAUSAL_EVALUATED` vào chuỗi sổ cái SHA-256.

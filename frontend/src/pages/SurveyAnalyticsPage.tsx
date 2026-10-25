@@ -157,6 +157,7 @@ import { DistributionalSyntheticControlCard } from '../components/Distributional
 import { CausalSensitivityBoundsCard } from '../components/CausalSensitivityBoundsCard';
 import { CausalMatrixCompletionCard } from '../components/CausalMatrixCompletionCard';
 import { IVLATEQuantileCard } from '../components/IVLATEQuantileCard';
+import { ConformalCausalCard } from '../components/ConformalCausalCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1780,6 +1781,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Nonparametric IV-LATE Quantile Decomposition (Abadie 2002; Frölich & Melly 2013) */}
       <IVLATEQuantileCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Conformal Causal Inference & Distribution-Free Counterfactual Bands (Chernozhukov 2021; Lei & Candès 2021) */}
+      <ConformalCausalCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

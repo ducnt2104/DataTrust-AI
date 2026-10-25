@@ -1,3 +1,4 @@
+from app.engine.conformal_causal_engine import run_conformal_causal_inference
 from app.engine.iv_late_quantile_engine import run_iv_late_quantile_decomposition
 from app.engine.causal_matrix_completion_engine import run_causal_matrix_completion
 from app.engine.causal_sensitivity_bounds_engine import run_causal_sensitivity_bounds
@@ -188,6 +189,8 @@ from app.schemas import (
     CausalMatrixCompletionOut,
     IVLATEQuantileRequest,
     IVLATEQuantileOut,
+    ConformalCausalRequest,
+    ConformalCausalOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17991,6 +17994,82 @@ def run_iv_late_quantile_endpoint(
                         "median_qte_complier": res.get("median_qte_complier"),
                         "sample_size": res.get("sample_size"),
                         "monotonicity_passed": res.get("monotonicity_test", {}).get("passed")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/conformal-causal", response_model=ConformalCausalOut)
+def run_conformal_causal_endpoint(
+    survey_id: str,
+    payload: ConformalCausalRequest
+):
+    """
+    Conformal Causal Inference & Distribution-Free Counterfactual Prediction Bands
+    (Chernozhukov et al. 2021 JASA; Lei & Candès 2021 JRSS-B).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "no_data",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            rec = {
+                "treatment": ans.get(payload.treatment_question_id),
+                "outcome": ans.get(payload.outcome_question_id),
+            }
+            if payload.covariate_question_ids:
+                for cid in payload.covariate_question_ids:
+                    rec[cid] = ans.get(cid)
+            records.append(rec)
+
+        res = run_conformal_causal_inference(
+            records=records,
+            treatment_col="treatment",
+            outcome_col="outcome",
+            covariate_cols=payload.covariate_question_ids,
+            alpha=payload.alpha,
+            calibration_ratio=payload.calibration_ratio
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="CONFORMAL_CAUSAL_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "nominal_coverage": res.get("nominal_coverage"),
+                        "empirical_calibration_coverage": res.get("empirical_calibration_coverage"),
+                        "ate_conformal": res.get("treatment_effect_summary", {}).get("ate_conformal"),
+                        "sample_size": res.get("sample_size")
                     }
                 )
             except Exception:

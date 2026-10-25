@@ -2912,3 +2912,35 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 ## 47. Planned Next Iteration: Iteration 180
 - **Feature**: Conformal Causal Inference & Distribution-Free Counterfactual Prediction Bands Engine (Chernozhukov, Wüthrich, & Zhu 2021 JASA; Lei & Candès 2021 JRSS-B).
 - **Scope**: Implements exact non-asymptotic conformal prediction intervals for counterfactual outcomes and individual treatment effects with finite-sample 1-alpha coverage guarantees, propensity-weighted non-conformity scores under covariate shift, and conformalized quantile regression (CQR).
+
+
+## 47. Iteration 180: Conformal Causal Inference & Distribution-Free Counterfactual Prediction Bands Engine (Chernozhukov 2021; Lei & Candès 2021)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T16:28:00+07:00
+- **Scientific Foundation**:
+  - Finite-Sample Distribution-Free Conformal Inference: Provides exact non-asymptotic coverage guarantees P(Y_i(d) in C_d(X_i)) >= 1 - alpha for any data distribution and any machine learning base algorithm (Chernozhukov, Wüthrich, & Zhu 2021 JASA; Lei & Candès 2021 JRSS-B).
+  - Split-Conformal Framework: Divides sample into Proper Training split (fitting base ML models) and Calibration split (evaluating nonconformity scores R_i = |Y_i - mu_d(X_i)|).
+  - Covariate Shift Likelihood Ratio Weighting: Compensates for observational selection bias by weighting nonconformity scores with propensity odds w_i(x) = e(x) / (1 - e(x)) (Tibshirani et al. 2019 NeurIPS).
+  - Counterfactual Bands & ITE Bounds: Constructs individual conformal bounds [L_i(0), U_i(0)], [L_i(1), U_i(1)] and individual treatment effect uncertainty intervals [tau_L, tau_U].
+  - Responsive Dual-Panel SVG Visualization: Panel A displays the counterfactual conformal ribbon [L_0, U_0] across ordered observations; Panel B illustrates the sorted Individual Treatment Effect (ITE) funnel with 95% conformal intervals.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/conformal_causal_engine.py (410 lines).
+  - Schemas: ConformalCausalRequest, ConformalCausalOut, ConformalSubgroupCounts, ConformalCutoffs, ConformalTreatmentSummary, ConformalSampleITEPoint in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/conformal-causal with CONFORMAL_CAUSAL_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_conformal_causal_engine.py (3/3 passed in 0.36s).
+  - Route Tests: backend/tests/test_conformal_causal_routes.py (1/1 passed in 2.01s).
+- **Frontend Components**:
+  - TypeScript Types: ConformalSubgroupCounts, ConformalCutoffs, ConformalTreatmentSummary, ConformalSampleITEPoint, ConformalCausalRequest, ConformalCausalResult in frontend/src/types/survey.ts.
+  - API Client Method: runConformalCausalInference in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/ConformalCausalCard.tsx (485 lines) with Treatment, Outcome, and Covariates selectors, alpha levels (0.01, 0.05, 0.10), calibration ratio slider, 5 KPI cards (Nominal coverage, Empirical calibration coverage, Conformal ATE, Avg ITE width, Statistically significant ITE %), dual-panel SVG visualizer, tabs for ITE samples table, subgroup splits & cutoffs, methodology guarantees, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (40/40 cumulative passed across Iterations 171-180 in 21.10s).
+  - Frontend Production Build: 2,145 modules transformed, 0 errors in 1.19s.
+  - Contract Documentation: Section 161 appended to docs/API_CONTRACT.md.
+
+---
+
+## 48. Planned Next Iteration: Iteration 181
+- **Feature**: Bayesian Causal Forests & Targeted Nonparametric Selection Engine (Hahn, Murray, & Carvalho 2020 Bayesian Analysis; Hill 2011 JCGS).
+- **Scope**: Implements Bayesian Additive Regression Trees with targeted propensity regularization (BCF), decomposing response surface into prognostic mu(x) and treatment effect tau(x) components to resolve regularization-induced confounding.
