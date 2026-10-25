@@ -8854,3 +8854,60 @@ export interface ContinuousPolicyShiftRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Generalized Synthetic Control & Latent Interactive Factor (Xu 2017) Types ---
+export interface GsynthEventStudyPoint {
+  relative_time: number;
+  att: number;
+  se: number;
+  p_value: number;
+  ci_95: [number, number];
+  n_treated_units: number;
+  is_post_treatment: boolean;
+}
+
+export interface GsynthTreatedUnitSummary {
+  unit: string;
+  adoption_time: number;
+  pre_rmspe: number;
+  post_mean_effect: number;
+}
+
+export interface GeneralizedSyntheticControlResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  n_treated_units?: number;
+  n_control_units?: number;
+  n_time_periods?: number;
+  n_latent_factors?: number;
+  variance_explained_ratio?: number[];
+  overall_att?: {
+    estimate: number;
+    se: number;
+    p_value: number;
+    ci_95: [number, number];
+    interpretation: string;
+  };
+  pre_treatment_diagnostics?: {
+    mean_pre_rmspe: number;
+    mean_pre_placebo: number;
+    parallel_trends_supported: boolean;
+  };
+  event_study_trajectory?: GsynthEventStudyPoint[];
+  treated_unit_summaries?: GsynthTreatedUnitSummary[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface GeneralizedSyntheticControlRequest {
+  outcome_question_id: string;
+  unit_question_id: string;
+  time_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids?: string[];
+  n_factors?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

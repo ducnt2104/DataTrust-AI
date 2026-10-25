@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.generalized_synthetic_control_engine import run_generalized_synthetic_control
 from app.engine.continuous_policy_shift_engine import run_continuous_policy_shift
 from app.engine.dynamic_spatial_panel_engine import run_dynamic_spatial_panel
 from app.engine.network_spillover_engine import run_network_spillover_analysis
@@ -143,6 +144,8 @@ from app.schemas import (
     DynamicSpatialPanelOut,
     ContinuousPolicyShiftRequest,
     ContinuousPolicyShiftOut,
+    GeneralizedSyntheticControlRequest,
+    GeneralizedSyntheticControlOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -16710,6 +16713,106 @@ def run_continuous_policy_shift_endpoint(
                 "optimal_dosage": res.get("treatment_support", {}).get("optimal_dosage"),
                 "policy_delta": res.get("policy_shift", {}).get("delta_shift"),
                 "policy_effect": res.get("policy_shift", {}).get("average_policy_effect"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/generalized-synthetic-control", response_model=GeneralizedSyntheticControlOut)
+def run_generalized_synthetic_control_endpoint(
+    survey_id: str,
+    payload: GeneralizedSyntheticControlRequest
+):
+    """
+    Generalized Synthetic Control & Latent Interactive Factor Engine (Gsynth).
+    Xu, Y. (2017 Political Analysis); Gobillon & Magnac (2016); Athey et al. (2021).
+    Estimates the Average Treatment Effect on the Treated (ATT) across multiple treated units
+    with staggered adoption timings and time-varying unobserved confounders modeled via
+    latent interactive fixed effects (lambda_i' f_t).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        cov_ids = payload.covariate_question_ids or []
+        for r_id, ans in data_by_resp.items():
+            if (
+                payload.outcome_question_id in ans and
+                payload.unit_question_id in ans and
+                payload.time_question_id in ans and
+                payload.treatment_question_id in ans
+            ):
+                item = {
+                    "resp_id": r_id,
+                    payload.outcome_question_id: ans[payload.outcome_question_id],
+                    payload.unit_question_id: ans[payload.unit_question_id],
+                    payload.time_question_id: ans[payload.time_question_id],
+                    payload.treatment_question_id: ans[payload.treatment_question_id]
+                }
+                for c_id in cov_ids:
+                    if c_id in ans:
+                        item[c_id] = ans[c_id]
+                records.append(item)
+
+        if len(records) < 15:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 15 bản ghi hợp lệ để ước lượng Generalized Synthetic Control (hiện có: {len(records)})."
+            }
+
+        try:
+            res = run_generalized_synthetic_control(
+                records=records,
+                outcome_col=payload.outcome_question_id,
+                unit_col=payload.unit_question_id,
+                time_col=payload.time_question_id,
+                treatment_col=payload.treatment_question_id,
+                covariate_cols=cov_ids if cov_ids else None,
+                n_factors=payload.n_factors,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Generalized Synthetic Control: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="GENERALIZED_SYNTHETIC_CONTROL_EVALUATED",
+            details={
+                "n_obs": res.get("sample_size"),
+                "n_treated_units": res.get("n_treated_units"),
+                "n_control_units": res.get("n_control_units"),
+                "overall_att": res.get("overall_att", {}).get("estimate"),
+                "p_value": res.get("overall_att", {}).get("p_value"),
                 "status": res.get("status")
             }
         )

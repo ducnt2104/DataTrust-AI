@@ -5828,3 +5828,38 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `ContinuousPolicyShiftRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `grid_points`, `shift_delta`, `bandwidth`, `alpha_level`, `scope`).
   - **Response:** `ContinuousPolicyShiftOut` (`status`, `sample_size`, `outcome_variable`, `treatment_variable`, `covariates_controlled`, `bandwidth`, `treatment_support`, `policy_shift`, `dose_response_curve`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CONTINUOUS_POLICY_SHIFT_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 145. Generalized Synthetic Control & Latent Interactive Factor Engine (Gsynth; Xu 2017 Political Analysis; Gobillon & Magnac 2016; Athey et al. 2021)
+- **Mục tiêu:** Mở rộng phương pháp kiểm soát tổng hợp cổ điển (Synthetic Control của Abadie et al.) sang các thiết kế khảo sát dữ liệu bảng phức tạp (Panel Survey Designs) với nhiều đơn vị can thiệp (Multiple Treated Units), thời điểm tiếp nhận can thiệp phân tầng theo thời gian (Staggered Adoption / Heterogeneous Timing), và các yếu tố gây nhiễu không quan sát được biến thiên theo thời gian (Time-Varying Unobserved Confounders). Động cơ áp dụng mô hình hiệu ứng cố định tương tác tiềm ẩn (Interactive Fixed Effects - IFE; Bai 2009 Econometrica; Xu 2017 Political Analysis), phân rã ma trận thặng dư nhóm đối chứng thành các nhân tố thời gian tiềm ẩn $f_t$ (Latent Time Factors) và trọng số tải trọng của từng đơn vị $\lambda_i$ (Unit Factor Loadings) thông qua Phân tích Giá trị Kỳ dị (SVD/PCA), dự phóng kết quả tiềm năng đối chứng $\hat{Y}_{it}(0)$ và ước lượng chuỗi tác động can thiệp động theo thời gian tương đối (Event-Study Dynamic ATT).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Mô Hình Hiệu Ứng Cố Định Tương Tác Cấu Trúc (Structural Interactive Fixed Effects Model):**
+     $$Y_{it} = D_{it} \tau_{it} + X_{it}' \beta + \lambda_i' f_t + \alpha_i + \xi_t + \varepsilon_{it}$$
+     - $D_{it} \in \{0, 1\}$: Chỉ số can thiệp chính sách nhị phân tại đơn vị $i$ ở thời điểm $t$.
+     - $\tau_{it}$: Tác động can thiệp cá thể (Individual Treatment Effect).
+     - $\lambda_i \in \mathbb{R}^r$: Vector tải trọng nhân tố tiềm ẩn của đơn vị $i$ (Unobserved Unit Traits).
+     - $f_t \in \mathbb{R}^r$: Vector nhân tố xu hướng thời gian tiềm ẩn tại thời điểm $t$ (Macro Shocks / Dynamic Trends).
+     - $\alpha_i, \xi_t$: Hiệu ứng cố định đơn vị và thời gian hai chiều (Two-Way Fixed Effects).
+     - $X_{it}$: Ma trận biến kiểm soát biến thiên theo thời gian (Time-Varying Covariates).
+  2. **Trích Xuất Nhân Tố Tiềm Ẩn Trên Tập Đối Chứng (SVD / PCA on Pure Controls):**
+     - Trên tập đối chứng thuần túy ($D_{it} = 0$), khử xu hướng hai chiều: $R_0 = Y_0 - \bar{Y}_{\cdot t} - \bar{Y}_{i \cdot} + \mu - X_0 \hat{\beta}$.
+     - Phân tích SVD: $R_0 = U \Sigma V^T$, trích xuất $r$ nhân tố chủ đạo: $\hat{F} = U_{:, :r} \sqrt{T}$.
+  3. **Hồi Quy Dự Phóng Tải Trọng Đơn Vị Can Thiệp (Pre-Treatment Projection):**
+     - Với mỗi đơn vị can thiệp $i$ có thời điểm áp dụng $T_{0, i}$, sử dụng các kỳ tiền can thiệp ($t < T_{0, i}$):
+       $$[\hat{\alpha}_i, \hat{\lambda}_i]^T = \arg\min_{\alpha, \lambda} \sum_{t < T_{0,i}} \left( Y_{it} - \mu - \xi_t - X_{it}' \hat{\beta} - \alpha - \lambda' \hat{f}_t \right)^2 + \gamma \|\lambda\|_2^2$$
+       Giải hệ phương trình OLS/Ridge chính quy hóa trên ma trận thiết kế tiền can thiệp $W_{\text{pre}} = [\mathbf{1}, \hat{F}_{\text{pre}}]$.
+  4. **Nội Suy Đối Chứng Tiềm Năng & Tác Động ATT Động (Counterfactual Imputation & Dynamic ATT):**
+     - Đối chứng nội suy: $\hat{Y}_{it}(0) = \mu + \xi_t + X_{it}' \hat{\beta} + \hat{\alpha}_i + \hat{\lambda}_i' \hat{f}_t$.
+     - Tác động cá thể: $\hat{\tau}_{it} = Y_{it} - \hat{Y}_{it}(0)$.
+     - Chuỗi tác động theo thời gian tương đối (Event Study Trajectory; $s = t - T_{0, i}$):
+       $$\text{ATT}(s) = \frac{1}{N_{\text{tr}, s}} \sum_{i: s = t - T_{0, i}} \hat{\tau}_{it}$$
+       với khoảng tin cậy 95% và kiểm định giả dược tiền can thiệp (Pre-Treatment Placebo Test; $\text{ATT}(s) \approx 0$ khi $s < 0$).
+  5. **Độ Chuẩn Xác Tiền Can Thiệp (Pre-Treatment Baseline RMSPE):**
+     $$\text{RMSPE}_{\text{pre}} = \sqrt{\frac{1}{\sum T_{0, i}} \sum_{i \in \text{Treated}} \sum_{t < T_{0, i}} (Y_{it} - \hat{Y}_{it}(0))^2}$$
+  6. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Quỹ đạo thực tế trung bình của nhóm can thiệp (Solid Blue) đối chiếu với quỹ đạo đối chứng tổng hợp $Y(0)$ (Dashed Orange).
+     - Panel B: Đồ thị Event Study ATT theo thời gian tương đối ($s = t - T_0$) cùng dải băng tin cậy 95% (Confidence Ribbon) và đường mốc baseline 0.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/generalized-synthetic-control`
+  - **Payload:** `GeneralizedSyntheticControlRequest` (`outcome_question_id`, `unit_question_id`, `time_question_id`, `treatment_question_id`, `covariate_question_ids`, `n_factors`, `alpha_level`, `scope`).
+  - **Response:** `GeneralizedSyntheticControlOut` (`status`, `sample_size`, `n_treated_units`, `n_control_units`, `n_time_periods`, `n_latent_factors`, `variance_explained_ratio`, `overall_att`, `pre_treatment_diagnostics`, `event_study_trajectory`, `treated_unit_summaries`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `GENERALIZED_SYNTHETIC_CONTROL_EVALUATED` vào chuỗi sổ cái SHA-256.

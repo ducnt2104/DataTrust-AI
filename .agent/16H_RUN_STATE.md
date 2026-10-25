@@ -2458,6 +2458,34 @@ eq 0\}$
 
 ---
 
-## 31. Planned Next Iteration: Iteration 164
-- **Feature**: Generalized Synthetic Control & Latent Interactive Factor Engine (Gsynth / Matrix Factor Models; Xu 2017 Political Analysis; Gobillon & Magnac 2016; Athey et al. 2021).
-- **Scope**: Extends classical Synthetic Control (Abadie et al.) to panel survey designs with multiple treated units, staggered adoption dates, and time-varying unobserved confounders modeled via latent interactive fixed effects ($u_i' f_t$). Computes Average Treatment Effect on the Treated (ATT), counterfactual trajectory curves with parametric/jackknife confidence bands, and factor rank tests.
+## 31. Iteration 164: Generalized Synthetic Control & Latent Interactive Factor Engine (Gsynth; Xu 2017 Political Analysis; Gobillon & Magnac 2016; Athey et al. 2021)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T14:17:00+07:00
+- **Scientific Foundation**:
+  - Generalizes synthetic control methods to complex panel survey designs with multiple treated units and heterogeneous staggered adoption timings ($T_{0,i}$).
+  - Relaxes the parallel trends assumption of standard DID by decomposing unobserved time-varying confounders into latent interactive fixed effects (IFE; Bai 2009 Econometrica; Xu 2017 Political Analysis): $Y_{it} = D_{it} \tau_{it} + X_{it}' \beta + \lambda_i' f_t + \alpha_i + \xi_t + \varepsilon_{it}$.
+  - SVD/PCA Factor Extraction: Identifies $r$ latent time factors $f_t$ from the pure control donor pool residual covariance matrix.
+  - Pre-Treatment Ridge Projection: Projects treated unit pre-treatment baselines ($t < T_{0,i}$) onto factor trajectories to recover individual loading vectors $\lambda_i$.
+  - Event-Study Dynamic ATT Trajectory: Aligns dynamic treatment effects by relative event time $s = t - T_{0,i}$ with 95% confidence intervals and pre-treatment placebo balance diagnostics (baseline RMSPE).
+  - Responsive Dual-Panel SVG: Visualizes observed treated vs synthetic counterfactual trajectory along with event-study ATT dynamic confidence ribbon.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/generalized_synthetic_control_engine.py` (410 lines).
+  - Pydantic Schemas: `GeneralizedSyntheticControlRequest` and `GeneralizedSyntheticControlOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/generalized-synthetic-control` with `GENERALIZED_SYNTHETIC_CONTROL_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_generalized_synthetic_control_engine.py` (2/2 passed in 0.31s).
+  - Route Tests: `backend/tests/test_generalized_synthetic_control_routes.py` (1/1 passed in 1.77s).
+- **Frontend Components**:
+  - TypeScript Types: `GsynthEventStudyPoint`, `GsynthTreatedUnitSummary`, `GeneralizedSyntheticControlResult`, `GeneralizedSyntheticControlRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runGeneralizedSyntheticControl` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/GeneralizedSyntheticControlCard.tsx` (520 lines) with outcome, unit, time, treatment selectors, latent factor rank dropdown, covariates checklist, 4 KPI cards (Overall ATT, Pre-RMSPE, Panel Size, Factor Architecture), dual-panel SVG visualizer, event-study trajectory table, unit summaries, and APA narrative with copy action.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed** (55/55 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,130 modules transformed, 0 errors in 1.31s**.
+  - Contract Documentation: Section 145 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 32. Planned Next Iteration: Iteration 165
+- **Feature**: Choice-Based Conjoint Hierarchical Bayes with Market Simulator & WTP Engine (CBC-HB; Rossi, Allenby, & McCulloch 2005; Train 2009 Discrete Choice Methods).
+- **Scope**: Implements full Choice-Based Conjoint (CBC) estimation using Gibbs Sampling / MCMC Hierarchical Bayes or Variational Bayes to estimate individual-level respondent part-worth utilities ($\beta_i \sim \mathcal{N}(\mu, \Sigma)$), Willingness-to-Pay (WTP) distribution for product attributes/levels, and an interactive Choice Simulator computing counterfactual market share allocations under first-choice, randomized first-choice, and logit share-of-preference rules.

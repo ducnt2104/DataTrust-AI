@@ -241,7 +241,9 @@ import {
   DynamicSpatialPanelRequest,
   DynamicSpatialPanelResult,
   ContinuousPolicyShiftRequest,
-  ContinuousPolicyShiftResult
+  ContinuousPolicyShiftResult,
+  GeneralizedSyntheticControlRequest,
+  GeneralizedSyntheticControlResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2637,5 +2639,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ContinuousPolicyShiftResult>(res);
+  },
+  async runGeneralizedSyntheticControl(
+    surveyId: string,
+    payload: GeneralizedSyntheticControlRequest
+  ): Promise<GeneralizedSyntheticControlResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/generalized-synthetic-control`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<GeneralizedSyntheticControlResult>(res);
   }
 };

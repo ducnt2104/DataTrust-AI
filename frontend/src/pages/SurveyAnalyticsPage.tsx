@@ -142,6 +142,7 @@ import { HighDimensionalMediationCard } from '../components/HighDimensionalMedia
 import { NetworkSpilloverCard } from '../components/NetworkSpilloverCard';
 import { DynamicSpatialPanelCard } from '../components/DynamicSpatialPanelCard';
 import { ContinuousPolicyShiftCard } from '../components/ContinuousPolicyShiftCard';
+import { GeneralizedSyntheticControlCard } from '../components/GeneralizedSyntheticControlCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1615,6 +1616,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Continuous Policy Shift & Doubly Robust Dosage Response (Kennedy et al. 2017 JASA; Chernozhukov et al. 2022) */}
       <ContinuousPolicyShiftCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Generalized Synthetic Control & Latent Interactive Factor Engine (Xu 2017 Political Analysis; Bai 2009; Gobillon & Magnac 2016) */}
+      <GeneralizedSyntheticControlCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,
