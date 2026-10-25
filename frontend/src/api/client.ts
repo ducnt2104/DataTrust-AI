@@ -277,7 +277,9 @@ import {
   BayesianCausalForestRequest,
   BayesianCausalForestResult,
   SpatialDIDRequest,
-  SpatialDIDResult
+  SpatialDIDResult,
+  EntropyBalancingRequest,
+  EntropyBalancingResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2875,5 +2877,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<SpatialDIDResult>(res);
+  },
+
+  async runEntropyBalancing(
+    surveyId: string,
+    payload: EntropyBalancingRequest
+  ): Promise<EntropyBalancingResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/entropy-balancing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<EntropyBalancingResult>(res);
   }
 };

@@ -9925,3 +9925,67 @@ export interface SpatialDIDResult {
   svg_visualization?: string;
   apa_narrative?: string;
 }
+
+
+// --- Entropy Balancing (Hainmueller 2012) Interfaces ---
+export interface EntropyBalancingCovariateBalance {
+  covariate_id: string;
+  covariate_name: string;
+  mean_treated: number;
+  mean_control_unweighted: number;
+  mean_control_weighted: number;
+  smd_unweighted: number;
+  smd_weighted: number;
+  var_ratio_unweighted: number;
+  var_ratio_weighted: number;
+}
+
+export interface EntropyBalancingEffect {
+  att: number;
+  se: number;
+  t_stat: number;
+  p_value: number;
+  ci_lower: number;
+  ci_upper: number;
+}
+
+export interface EntropyBalancingDiagnostics {
+  converged: boolean;
+  iterations: number;
+  entropy_loss: number;
+  effective_sample_size: number;
+  ess_ratio: number;
+  max_weight: number;
+  min_weight: number;
+  max_smd_post: number;
+}
+
+export interface EntropyBalancingSampleWeight {
+  unit_index: number;
+  raw_outcome: number;
+  entropy_weight: number;
+  normalized_multiplier: number;
+}
+
+export interface EntropyBalancingRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  moment_orders?: number[];
+  tolerance?: number;
+  max_iterations?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface EntropyBalancingResult {
+  status: string;
+  sample_size: number;
+  treated_count: number;
+  control_count: number;
+  treatment_effect: EntropyBalancingEffect;
+  covariate_balance: EntropyBalancingCovariateBalance[];
+  diagnostics: EntropyBalancingDiagnostics;
+  sample_weights: EntropyBalancingSampleWeight[];
+  svg_visualization: string;
+  apa_narrative: string;
+}

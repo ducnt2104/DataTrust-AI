@@ -3008,3 +3008,36 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 ## 50. Planned Next Iteration: Iteration 183
 - **Feature**: Generalized Synthetic Control with Interactive Fixed Effects & Cross-Validation Matrix Factorization Engine (GSC; Xu 2017 Political Analysis; Gobillon & Magnac 2016).
 - **Scope**: Combines interactive fixed effects factor model with synthetic controls under staggered policy adoption, estimating time-varying latent factors and unit factor loadings via nuclear norm cross-validation to impute counterfactual trajectories Y_it(0).
+
+
+## 50. Iteration 183: Entropy Balancing & Exact Moment-Condition Causal Reweighting Engine (Hainmueller 2012; Zhao & Percival 2017)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T17:02:00+07:00
+- **Scientific Foundation**:
+  - Resolves Finite-Sample Covariate Imbalance & Extreme Weights: Traditional propensity score weighting (IPW / PSM) frequently produces severe finite-sample imbalances in higher-order moments and generates astronomical weights that destabilize causal estimates.
+  - Relative Entropy Dual Optimization: Minimizes Kullback-Leibler divergence D(w || q) = sum_i w_i * log(w_i / q_i) subject to exact moment matching conditions sum_i w_i * c_k(X_i) = m_k, solved globally via unconstrained strictly convex dual optimization with Newton-Raphson / BFGS and analytical Hessian Cov_w(C, C).
+  - Doubly Robust Guarantee (Zhao & Percival 2017 JRSS-B): Consistently estimates ATT if either the propensity score follows a linear logistic model or the outcome regression function is linear in the moment functions.
+  - Multi-Order Moment Matching: Supports 1st moment (means) and 2nd moment (variances), with automated fallback to ensure interior primal-dual feasibility.
+  - Diagnostic Suite: Standardized Mean Differences (SMD), Variance Ratios, Effective Sample Size (ESS = 1 / sum w_i^2), and maximum weight concentration.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays Love Plot (dot plot comparing raw vs entropy-balanced absolute SMDs against the 0.10 threshold); Panel B displays the entropy balancing weights distribution histogram with reference uniform weight marker q = 1/N.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/entropy_balancing_engine.py (555 lines).
+  - Schemas: EntropyBalancingRequest, EntropyBalancingCovariateBalance, EntropyBalancingEffect, EntropyBalancingDiagnostics, EntropyBalancingOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/entropy-balancing with ENTROPY_BALANCING_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_entropy_balancing_engine.py (3/3 passed in 0.35s).
+  - Route Tests: backend/tests/test_entropy_balancing_routes.py (1/1 passed in 1.82s).
+- **Frontend Components**:
+  - TypeScript Types: EntropyBalancingCovariateBalance, EntropyBalancingEffect, EntropyBalancingDiagnostics, EntropyBalancingSampleWeight, EntropyBalancingRequest, EntropyBalancingResult in frontend/src/types/survey.ts.
+  - API Client Method: runEntropyBalancing in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/EntropyBalancingCard.tsx (535 lines) with Treatment, Outcome, and Covariates selectors, moment order selector (1st vs 2nd), tolerance selector, 5 KPI cards (ATT Effect with 95% CI & p-value, ESS & ratio %, Max |SMD| post-weighting, Entropy loss, Sample counts), dual-panel SVG visualizer, tabs for Covariate Balance table, Sample Weights table, Mathematical Methodology, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (45/45 cumulative passed across Iterations 171-183 in 27.59s).
+  - Frontend Production Build: 2,148 modules transformed, 0 errors in 1.91s.
+  - Contract Documentation: Section 164 appended to docs/API_CONTRACT.md.
+
+---
+
+## 51. Planned Next Iteration: Iteration 184
+- **Feature**: Covariate Balancing Propensity Score & Generalized Method of Moments Engine (CBPS; Imai & Ratkovic 2014 JRSS-B; Fong, Hazlett, & Imai 2018 Ann. Appl. Stat.).
+- **Scope**: Implements parametric and nonparametric GMM / empirical likelihood CBPS, simultaneously maximizing treatment assignment likelihood and minimizing covariate imbalance score equations for both binary and continuous treatments.

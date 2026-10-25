@@ -6424,3 +6424,36 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `SpatialDIDRequest` (`treatment_question_id`, `outcome_question_id`, `lat_field`, `lon_field`, `time_question_id`, `covariate_question_ids`, `weight_matrix_type`, `knn_k`, `distance_power`, `scope`).
   - **Response:** `SpatialDIDOut` (`status`, `sample_size`, `spatial_weight_type`, `direct_att`, `spillover_att`, `total_att`, `moran_test`, `model_fit`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `SPATIAL_DID_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 164. Entropy Balancing & Exact Moment-Condition Causal Reweighting Engine (Hainmueller 2012 Political Analysis; Zhao & Percival 2017 JRSS-B; Zubizarreta 2015 JASA)
+- **Mục tiêu:** Ước lượng hiệu ứng can thiệp trung bình trên nhóm đối tượng can thiệp (ATT) bằng cách giải bài toán quy hoạch lồi đối ngẫu để tìm các trọng số không âm $w_i \ge 0$ cho nhóm đối chứng thỏa mãn chính xác các điều kiện moment mẫu mục tiêu của nhóm can thiệp (trung bình, phương sai, độ bất đối xứng) trong khi cực tiểu hóa độ lệch tương đối Kullback-Leibler so với trọng số gốc $q_i$. Phương pháp giải quyết triệt để các hạn chế nghiêm trọng của mô hình gán xu hướng truyền thống (IPW / Propensity Score Matching): mất cân bằng hữu hạn mẫu, trọng số cực đoan ngoại lai và sai lệch mô hình tham số.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Bài Toán Quy Hoạch Tối Tiểu Entropy Tương Đối (Relative Entropy Minimization):**
+     - Cực tiểu hóa hàm mục tiêu entropy tương đối của Kullback-Leibler:
+       $$\min_{\mathbf{w}} D(w \parallel q) = \sum_{i \in \mathcal{C}} w_i \log(w_i / q_i)$$
+       với $q_i = 1/N_{\mathcal{C}}$ (hoặc trọng số thiết kế khảo sát ban đầu).
+  2. **Hệ Thống Ràng Buộc Moment Mẫu Chính Xác (Exact Sample Moment Constraints):**
+     - Ràng buộc cân bằng moment $R$ bậc cho $K$ biến đồng biến:
+       $$\sum_{i \in \mathcal{C}} w_i c_{rk}(X_i) = m_{rk} = \frac{1}{N_{\mathcal{T}}} \sum_{j \in \mathcal{T}} c_{rk}(X_j), \quad \forall r \in \{1, 2\}, k \in \{1, \dots, K\}$$
+       và chuẩn hóa $\sum_{i \in \mathcal{C}} w_i = 1$ với $w_i \ge 0$.
+     - Bậc 1: Cân bằng chính xác kỳ vọng trung bình ($E[X_k \mid D=1]$).
+     - Bậc 2: Cân bằng chính xác phương sai mẫu của nhóm can thiệp.
+  3. **Bài Toán Đối Ngẫu Không Ràng Buộc & Thuật Toán Tối Ưu Hóa Lồi (Convex Dual Problem):**
+     - Bài toán đối ngẫu unconstrained strictly convex:
+       $$\min_{\lambda} \log\left( \sum_{i \in \mathcal{C}} q_i \exp(- C_i \lambda) \right) + \lambda' m$$
+     - Gradient và Hessian phân tích:
+       $$\nabla_\lambda = m - \sum_{i \in \mathcal{C}} w_i(\lambda) C_i, \quad \mathbf{H}_\lambda = \text{Cov}_w(C, C) \succeq 0$$
+       cho phép thuật toán BFGS / Newton-Raphson hội tụ toàn cục với tốc độ bậc hai.
+  4. **Tính Kép Bền Vững (Doubly Robust Guarantee; Zhao & Percival 2017 JRSS-B):**
+     - Nếu cơ chế gán can thiệp tuân theo mô hình logit tuyến tính $P(D=1 \mid X) = \text{logit}^{-1}(X'\gamma)$ hoặc hàm hồi quy kết quả đối chứng $E[Y(0) \mid X] = X'\beta$ là tuyến tính theo các hàm moment, ước lượng ATT luôn nhất quán tiệm cận $\hat{\tau}_{\text{ATT}} \xrightarrow{p} \tau_{\text{ATT}}$.
+  5. **Bộ Chỉ Số Chẩn Đoán & Biểu Đồ Vector Kép SVG:**
+     - Standardized Mean Differences (SMD) trước và sau tái lập trọng số (ngưỡng khắt khe $|\text{SMD}| < 0.10$).
+     - Tỷ số phương sai (Variance Ratio $\approx 1.0$).
+     - Dung lượng mẫu hiệu dụng: $\text{ESS} = 1 / \sum w_i^2$.
+     - Panel A: Love Plot biểu diễn đường cong suy giảm sai lệch chuẩn hóa trước vs sau cân bằng.
+     - Panel B: Biểu đồ cột phân phối trọng số cân bằng entropy kèm vạch mốc trọng số đồng đều gốc $q = 1/N_{\mathcal{C}}$.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/entropy-balancing`
+  - **Payload:** `EntropyBalancingRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `moment_orders`, `tolerance`, `max_iterations`, `scope`).
+  - **Response:** `EntropyBalancingOut` (`status`, `sample_size`, `treated_count`, `control_count`, `treatment_effect`, `covariate_balance`, `diagnostics`, `sample_weights`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `ENTROPY_BALANCING_EVALUATED` vào chuỗi sổ cái SHA-256.

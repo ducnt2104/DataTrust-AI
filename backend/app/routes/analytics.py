@@ -1,3 +1,4 @@
+from app.engine.entropy_balancing_engine import run_entropy_balancing
 from app.engine.spatial_did_engine import run_spatial_diff_in_diff
 from app.engine.bayesian_causal_forest_engine import run_bayesian_causal_forest
 from app.engine.conformal_causal_engine import run_conformal_causal_inference
@@ -197,6 +198,8 @@ from app.schemas import (
     BayesianCausalForestOut,
     SpatialDIDRequest,
     SpatialDIDOut,
+    EntropyBalancingRequest,
+    EntropyBalancingOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -18250,6 +18253,86 @@ def run_spatial_did_endpoint(
                         "spillover_att": res.get("spillover_effect", {}).get("estimate"),
                         "total_impact": res.get("total_impact", {}).get("estimate"),
                         "moran_i": res.get("morans_i_diagnostic", {}).get("moran_i"),
+                        "sample_size": res.get("sample_size")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/entropy-balancing", response_model=EntropyBalancingOut)
+def run_entropy_balancing_endpoint(
+    survey_id: str,
+    payload: EntropyBalancingRequest
+):
+    """
+    DataTrust Entropy Balancing & Exact Moment-Condition Causal Reweighting Engine.
+    Hainmueller (2012); Zhao & Percival (2017); Zubizarreta (2015).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            rec = {
+                "treatment": ans.get(payload.treatment_question_id),
+                "outcome": ans.get(payload.outcome_question_id),
+            }
+            if payload.covariate_question_ids:
+                for cid in payload.covariate_question_ids:
+                    rec[cid] = ans.get(cid)
+            records.append(rec)
+
+        try:
+            res = run_entropy_balancing(
+                records=records,
+                treatment_col="treatment",
+                outcome_col="outcome",
+                covariate_cols=payload.covariate_question_ids,
+                moment_orders=payload.moment_orders or [1],
+                tolerance=payload.tolerance or 1e-5,
+                max_iterations=payload.max_iterations or 500
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi Entropy Balancing: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="ENTROPY_BALANCING_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "att": res.get("treatment_effect", {}).get("att"),
+                        "se": res.get("treatment_effect", {}).get("se"),
+                        "p_value": res.get("treatment_effect", {}).get("p_value"),
+                        "effective_sample_size": res.get("diagnostics", {}).get("effective_sample_size"),
                         "sample_size": res.get("sample_size")
                     }
                 )

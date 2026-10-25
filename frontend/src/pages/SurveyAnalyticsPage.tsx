@@ -160,6 +160,7 @@ import { IVLATEQuantileCard } from '../components/IVLATEQuantileCard';
 import { ConformalCausalCard } from '../components/ConformalCausalCard';
 import { BayesianCausalForestCard } from '../components/BayesianCausalForestCard';
 import { SpatialDIDCard } from '../components/SpatialDIDCard';
+import { EntropyBalancingCard } from '../components/EntropyBalancingCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1813,6 +1814,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Semiparametric Spatial Difference-in-Differences & Spillover Causal Engine (Delgado & Florax 2015; Butts 2021) */}
       <SpatialDIDCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Entropy Balancing & Exact Moment-Condition Causal Reweighting Engine (Hainmueller 2012; Zhao & Percival 2017) */}
+      <EntropyBalancingCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,
