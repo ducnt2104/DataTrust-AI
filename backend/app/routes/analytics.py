@@ -1,3 +1,4 @@
+from app.engine.dynamic_panel_gmm_engine import DynamicPanelGMMEngine
 from app.engine.extreme_bounds_engine import ExtremeBoundsEngine
 from app.engine.bsem_engine import compute_bsem_analysis
 from app.engine.dynamic_factor_model_engine import compute_dynamic_factor_analysis
@@ -67,6 +68,8 @@ from app.schemas import (
     PolicyLearningOut,
     RDDLocalRandomizationRequest,
     RDDLocalRandomizationOut,
+    DynamicPanelGMMRequest,
+    DynamicPanelGMMOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -13807,6 +13810,98 @@ def run_rdd_local_randomization_analysis(
                 "n_samples": len(y_list),
                 "tau_diff_means": res.get("diagnostics", {}).get("tau_diff_means") if res.get("diagnostics") else None,
                 "permutation_p_val": res.get("diagnostics", {}).get("permutation_p_value") if res.get("diagnostics") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/dynamic-panel-gmm", response_model=DynamicPanelGMMOut)
+def run_dynamic_panel_gmm_analysis(
+    survey_id: str,
+    payload: DynamicPanelGMMRequest
+):
+    """
+    Dynamic Panel System & Difference GMM (Arellano-Bond 1991, Blundell-Bond 1998, Windmeijer 2005).
+    Estimates autoregressive persistence and exogenous covariates in longitudinal panel survey data
+    while controlling for unobserved time-invariant heterogeneity and Nickell (1981) dynamic panel bias.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        resp_data: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_data:
+                resp_data[rid] = {}
+            resp_data[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+        panel_records = []
+
+        for resp_id, answers in resp_data.items():
+            if (payload.unit_id_question_id not in answers or
+                payload.time_question_id not in answers or
+                payload.outcome_question_id not in answers):
+                continue
+
+            has_all_covs = True
+            rec = {
+                "unit_id": str(answers[payload.unit_id_question_id]),
+                "time": answers[payload.time_question_id],
+                "outcome": answers[payload.outcome_question_id]
+            }
+            for cid in cov_ids:
+                if cid not in answers:
+                    has_all_covs = False
+                    break
+                rec[cid] = answers[cid]
+
+            if has_all_covs:
+                panel_records.append(rec)
+
+        res = DynamicPanelGMMEngine.estimate(
+            panel_data=panel_records,
+            unit_id_col="unit_id",
+            time_col="time",
+            outcome_col="outcome",
+            covariate_cols=cov_ids,
+            method=payload.method,
+            two_step=payload.two_step,
+            windmeijer_correction=payload.windmeijer_correction,
+            max_instrument_lags=payload.max_instrument_lags
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="DYNAMIC_PANEL_GMM_EVALUATED",
+            details={
+                "unit_qid": payload.unit_id_question_id,
+                "time_qid": payload.time_question_id,
+                "outcome_qid": payload.outcome_question_id,
+                "method": payload.method,
+                "two_step": payload.two_step,
+                "windmeijer": payload.windmeijer_correction,
                 "status": res.get("status")
             }
         )

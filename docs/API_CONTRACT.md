@@ -4978,3 +4978,51 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép phân phối điểm khối lượng và phân phối hoán vị giả thuyết không.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition theo Cattaneo, Frandsen, & Titiunik (2015).
 - **Niêm phong kiểm toán:** Tự động ghi nhận `RDD_LOCAL_RANDOMIZATION_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 120. Dynamic Panel System & Difference GMM (Arellano-Bond 1991, Blundell-Bond 1998, Windmeijer 2005)
+
+- **Mục đích & Cơ sở Khoa học:**
+  1. **Thiên lệch Nickell trong Dữ liệu Bảng Động (Nickell 1981 Dynamic Panel Bias):**
+     - Khi nghiên cứu dữ liệu bảng dọc (Longitudinal Panel Survey) qua nhiều đợt sóng thời gian ($t = 1, \dots, T$), mô hình chứa biến trễ phụ thuộc $Y_{i,t-1}$:
+       $$Y_{i,t} = \alpha Y_{i,t-1} + \beta' X_{i,t} + \eta_i + \varepsilon_{i,t}$$
+     - Ước lượng OLS bị chệch dương nghiêm trọng do biến trễ $Y_{i,t-1}$ tương quan dương với hiệu ứng cố định cá nhân $\eta_i$ ($\mathbb{E}[Y_{i,t-1}\eta_i] > 0 \implies \hat{\alpha}_{\text{OLS}} > \alpha$).
+     - Ngược lại, ước lượng Within-Groups / Fixed Effects biến đổi khử trung bình cũng bị chệch âm với quy mô $\mathcal{O}(1/T)$ (Nickell 1981) do biến trễ khử trung bình $(Y_{i,t-1} - \bar{Y}_{i,-1})$ tương quan âm với sai số ngẫu nhiên khử trung bình $(\varepsilon_{i,t} - \bar{\varepsilon}_i)$ ($\hat{\alpha}_{\text{FE}} < \alpha$).
+  2. **Ước lượng GMM Sai phân (Difference GMM - Arellano & Bond 1991):**
+     - Loại bỏ hiệu ứng cố định cá nhân $\eta_i$ bằng phép lấy sai phân bậc nhất:
+       $$\Delta Y_{i,t} = \alpha \Delta Y_{i,t-1} + \beta' \Delta X_{i,t} + \Delta \varepsilon_{i,t}$$
+     - Sử dụng các biến cấp độ trễ từ $t-2$ trở về trước $(Y_{i,t-2}, Y_{i,t-3}, \dots)$ làm biến công cụ hợp lệ cho $\Delta Y_{i,t-1}$, thỏa mãn điều kiện trực giao $\mathbb{E}[Y_{i,t-s} \Delta \varepsilon_{i,t}] = 0$ với mọi $s \ge 2$.
+  3. **Ước lượng GMM Hệ thống (System GMM - Blundell & Bond 1998):**
+     - Khi chuỗi thời gian có độ dai dẳng cao ($\alpha \to 1$) hoặc tỷ lệ phương sai $\sigma_{\eta}^2 / \sigma_{\varepsilon}^2$ lớn, các công cụ sai phân trở nên yếu (weak instruments).
+     - System GMM xếp chồng hệ phương trình sai phân bậc nhất và phương trình cấp độ ban đầu, bổ sung các công cụ sai phân trễ $\Delta Y_{i,t-1}$ cho phương trình cấp độ dưới giả định điều kiện ban đầu chuẩn hóa $\mathbb{E}[\Delta Y_{i,2} \eta_i] = 0$.
+  4. **Hiệu chỉnh Sai số Mẫu Hữu hạn Windmeijer (2005) & Kiểm soát Số lượng Biến Công cụ:**
+     - Ước lượng Two-Step GMM sử dụng ma trận trọng số tối ưu ước lượng từ phần dư bước một khiến sai số chuẩn quy ước bị đánh giá thấp nghiêm trọng trong mẫu hữu hạn. Hệ thống triển khai ma trận hiệu chỉnh $D$ theo Windmeijer (2005) để khôi phục độ tin cậy của kiểm định giả thuyết $z$ và khoảng tin cậy 95%.
+     - Giới hạn độ trễ công cụ tối đa (`max_instrument_lags`) nhằm ngăn ngừa hiện tượng bùng nổ biến công cụ (instrument proliferation; Roodman 2009), hạn chế làm suy yếu kiểm định Hansen $J$.
+  5. **Bộ Kiểm định Chẩn đoán Đặc tả Toàn diện:**
+     - **Nickell Bounds Check:** Kiểm chứng xem ước lượng GMM có nằm trong khoảng kinh tế lượng hợp lệ $\hat{\alpha}_{\text{FE}} \le \hat{\alpha}_{\text{GMM}} \le \hat{\alpha}_{\text{OLS}}$ hay không.
+     - **Arellano-Bond AR(1) & AR(2) Tests:** Kiểm định tự tương quan trong phần dư sai phân bậc nhất $\Delta \varepsilon_{i,t}$. Kỳ vọng $AR(1)$ có ý nghĩa thống kê ($p < .05$) do cấu trúc sai phân, và $AR(2)$ không có ý nghĩa thống kê ($p > .05$) để bảo đảm biến công cụ trễ bậc 2 không tương quan với sai số.
+     - **Hansen $J$-Test:** Kiểm định tính ngoại sinh tổng thể của tập hợp biến công cụ vượt mức (overidentifying restrictions; $H_0$: các công cụ là hợp lệ, kỳ vọng $p > .05$).
+  6. **Đồ thị SVG Kép Khoa học:**
+     - Panel A: Forest Plot biểu diễn giới hạn Nickell bounds ($\hat{\alpha}_{\text{FE}}$, $\hat{\alpha}_{\text{GMM}}$, $\hat{\alpha}_{\text{OLS}}$) kèm khoảng tin cậy 95% và vạch giới hạn lý thuyết.
+     - Panel B: Thẻ chẩn đoán kết quả kiểm định Arellano-Bond $AR(1)$, $AR(2)$ và Hansen $J$ với trạng thái PASS/FAIL trực quan.
+  7. **Đoạn Thuyết minh Học thuật Chuẩn APA 7th Edition:**
+     - Tự động biên soạn theo chuẩn mực kinh tế lượng Arellano & Bond (1991), Blundell & Bond (1998) và Windmeijer (2005).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/dynamic-panel-gmm`
+- **Request Body (`DynamicPanelGMMRequest`):**
+  - `unit_id_question_id`: UUID câu hỏi định danh đơn vị (Unit ID).
+  - `time_question_id`: UUID câu hỏi đợt khảo sát / thời gian (Wave / Time).
+  - `outcome_question_id`: UUID câu hỏi đo lường biến kết quả $Y$.
+  - `covariate_question_ids`: Danh sách UUID các biến giải thích kiểm soát ngoại sinh $X$ (Tùy chọn).
+  - `method`: `"system"` (Mặc định) hoặc `"difference"`.
+  - `two_step`: `true` (Mặc định) hoặc `false`.
+  - `windmeijer_correction`: `true` (Mặc định) hoặc `false`.
+  - `max_instrument_lags`: Số độ trễ công cụ tối đa (Mặc định 3).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`DynamicPanelGMMOut`):**
+  - `status`: `"SUCCESS"` hoặc `"INSUFFICIENT_SAMPLE"`.
+  - `model_type`: `"DYNAMIC_PANEL_SYSTEM_GMM"` hoặc `"DYNAMIC_PANEL_DIFFERENCE_GMM"`.
+  - `diagnostics`: Cỡ mẫu đơn vị bảng $N$, tổng quan sát $NT$, số đợt sóng thời gian $T$, số lượng biến công cụ, hệ số tự hồi quy $\hat{\alpha}_{\text{GMM}}$ kèm sai số chuẩn, cận trên OLS $\hat{\alpha}_{\text{OLS}}$, cận dưới Fixed Effects $\hat{\alpha}_{\text{FE}}$, kết quả kiểm tra Nickell bounds, thống kê kiểm định $AR(1)$, $AR(2)$ và Hansen $J$ kèm p-values.
+  - `parameters`: Bảng chi tiết ước lượng tham số, sai số chuẩn hiệu chỉnh Windmeijer, z-statistic, p-value, khoảng tin cậy 95% và cờ ý nghĩa thống kê.
+  - `svg_visualization`: Đồ thị SVG khoa học kép Nickell Bounds Forest Plot & Specification Test Scorecard.
+  - `apa_narrative`: Đoạn thuyết minh học thuật chuẩn APA 7th Edition theo Blundell & Bond (1998) và Windmeijer (2005).
+- **Niêm phong kiểm toán:** Tự động ghi nhận `DYNAMIC_PANEL_GMM_EVALUATED` vào chuỗi sổ cái SHA-256.

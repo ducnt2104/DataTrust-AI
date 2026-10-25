@@ -7374,3 +7374,62 @@ export interface RDDLocalRandomizationRequest {
 
 
 
+
+
+// --- Dynamic Panel System & Difference GMM (Arellano-Bond 1991, Blundell-Bond 1998, Windmeijer 2005) ---
+export interface DynamicPanelGMMDiagnostics {
+  num_panel_units: number;
+  total_observations: number;
+  time_waves: number;
+  method: string;
+  two_step: boolean;
+  windmeijer_correction: boolean;
+  instrument_count: number;
+  alpha_gmm: number;
+  se_alpha_gmm: number;
+  alpha_ols_bound: number;
+  alpha_fe_bound: number;
+  nickell_bound_passed: boolean;
+  ar1_z: number;
+  ar1_p_value: number;
+  ar2_z: number;
+  ar2_p_value: number;
+  ar2_valid: boolean;
+  hansen_j_statistic: number;
+  hansen_df: number;
+  hansen_p_value: number;
+  hansen_valid: boolean;
+}
+
+export interface DynamicPanelGMMParameter {
+  parameter: string;
+  estimate: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_lower: number;
+  ci_upper: number;
+  is_significant: boolean;
+}
+
+export interface DynamicPanelGMMResult {
+  status: string;
+  model_type?: string;
+  message?: string;
+  diagnostics?: DynamicPanelGMMDiagnostics;
+  parameters?: DynamicPanelGMMParameter[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface DynamicPanelGMMRequest {
+  unit_id_question_id: string;
+  time_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  method?: 'system' | 'difference';
+  two_step?: boolean;
+  windmeijer_correction?: boolean;
+  max_instrument_lags?: number;
+  scope?: 'all' | 'verified_clean';
+}

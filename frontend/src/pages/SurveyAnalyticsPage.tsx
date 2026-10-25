@@ -117,6 +117,7 @@ import { InteractiveFixedEffectsCard } from '../components/InteractiveFixedEffec
 import { MultipleMediatorsCard } from '../components/MultipleMediatorsCard';
 import { PolicyLearningCard } from '../components/PolicyLearningCard';
 import { RDDLocalRandomizationCard } from '../components/RDDLocalRandomizationCard';
+import { DynamicPanelGMMCard } from '../components/DynamicPanelGMMCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1340,6 +1341,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* RDD Local Randomization for Discrete Running Variables (Cattaneo, Frandsen, & Titiunik 2015 JCA) */}
       <RDDLocalRandomizationCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Dynamic Panel System & Difference GMM (Arellano & Bond 1991; Blundell & Bond 1998; Windmeijer 2005) */}
+      <DynamicPanelGMMCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

@@ -1752,3 +1752,27 @@
   - All 12 previously failing test suites are now passing cleanly.
   - Overall test suite: **559 / 559 tests passed (100%)**.
   - Frontend production build: **0 errors**.
+
+## 3. Iteration 139: Dynamic Panel System & Difference GMM (Arellano-Bond 1991; Blundell-Bond 1998; Windmeijer 2005)
+- **Timestamp**: 2026-10-25T11:00:00+07:00
+- **Scientific Econometric Foundation**:
+  - Solves the Nickell (1981) dynamic panel bias ($\mathcal{O}(1/T)$ downward bias of within-groups fixed effects and upward bias of pooled OLS) in longitudinal survey panels with lagged dependent variables $Y_{i,t-1}$.
+  - Difference GMM (Arellano & Bond 1991): First-difference transformation $\Delta Y_{i,t} = \alpha \Delta Y_{i,t-1} + \beta' \Delta X_{i,t} + \Delta \varepsilon_{i,t}$ using lagged levels $Y_{i,t-2}, \dots$ as instruments.
+  - System GMM (Blundell & Bond 1998): Stacked moment equations combining first-differenced and level equations to resolve weak instruments when persistence $\alpha \to 1$.
+  - Two-step GMM with Windmeijer (2005) finite-sample corrected standard error covariance matrix $V_{\text{corrected}} = V_{\hat{\delta}} + D V_{\hat{\delta}} + V_{\hat{\delta}} D' + D V_{(1)} D'$.
+  - Model specification tests: Arellano-Bond AR(1) and AR(2) autocorrelation tests on differenced residuals, Hansen $J$-test of overidentifying moment restrictions, and Nickell bounds validation ($\alpha_{\text{FE}} \le \alpha_{\text{GMM}} \le \alpha_{\text{OLS}}$).
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/dynamic_panel_gmm_engine.py` (648 lines).
+  - Pydantic Schemas: `DynamicPanelGMMRequest` and `DynamicPanelGMMOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/dynamic-panel-gmm` with `DYNAMIC_PANEL_GMM_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_dynamic_panel_gmm_engine.py` (4/4 tests passed).
+  - Route Tests: `backend/tests/test_dynamic_panel_gmm_routes.py` (1/1 multi-wave end-to-end test passed).
+- **Frontend Components**:
+  - TypeScript Types: `DynamicPanelGMMRequest`, `DynamicPanelGMMDiagnostics`, `DynamicPanelGMMParameter`, `DynamicPanelGMMResult` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runDynamicPanelGMM` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/DynamicPanelGMMCard.tsx` (360 lines) with interactive controls, Nickell bounds badge, parameter inference table, scientific dual-panel SVG visualizer, and APA 7th Edition narrative generator with one-click copy.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Full Backend Test Suite: **564 passed / 564 total (100% pass rate in 317.79s)**.
+  - Frontend Production Build: **2,105 modules transformed, 0 errors in 4.21s**.
+  - Contract Documentation: Section 120 appended to `docs/API_CONTRACT.md`.

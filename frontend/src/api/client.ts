@@ -191,7 +191,9 @@ import {
   PolicyLearningRequest,
   PolicyLearningResult,
   RDDLocalRandomizationRequest,
-  RDDLocalRandomizationResult
+  RDDLocalRandomizationResult,
+  DynamicPanelGMMRequest,
+  DynamicPanelGMMResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2296,5 +2298,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<RDDLocalRandomizationResult>(res);
+  },
+
+  // --- Dynamic Panel System & Difference GMM (Arellano-Bond 1991, Blundell-Bond 1998, Windmeijer 2005) ---
+  async runDynamicPanelGMM(
+    surveyId: string,
+    payload: DynamicPanelGMMRequest
+  ): Promise<DynamicPanelGMMResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/dynamic-panel-gmm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<DynamicPanelGMMResult>(res);
   }
 };
