@@ -6060,3 +6060,32 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `CausalMediationSensitivityRequest` (`treatment_question_id`, `mediator_question_id`, `outcome_question_id`, `covariate_question_ids`, `target_treatment_val`, `scope`).
   - **Response:** `CausalMediationSensitivityOut` (`status`, `treatment_field`, `mediator_field`, `outcome_field`, `covariate_fields`, `sample_diagnostics`, `path_estimates`, `baseline_effects`, `sensitivity_analysis`, `svg_chart`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_MEDIATION_SENSITIVITY_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 152. Dynamic Discrete Choice Structural Dynamic Programming Engine (Rust 1987 Econometrica NFXP; Aguirregabiria & Mira 2010; Arcidiacono & Ellickson 2011)
+- **Mục tiêu:** Ước lượng các tham sở cấu trúc sâu (Deep Structural Preference & Cost Parameters) chi phối hành vi tối ưu hóa động dài hạn (Forward-looking intertemporal decision making) của đối tượng khảo sát hoặc tác nhân kinh tế (ví dụ: quyết định duy trì/nâng cấp tài sản công nghệ, đổi mới thiết bị, gắn bó hoặc rời bỏ tổ chức). Điểm vượt trội của kinh tế lượng cấu trúc động (Dynamic Discrete Choice - DDC) so với các mô hình rút gọn (Reduced-form Logit/Probit) là khả năng dự báo chính xác các kịch bản chính sách mới lạ chưa từng xuất hiện trong quá khứ mà không bị vi phạm phê phán Lucas (Lucas Critique 1976).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Phương Trình Giá Trị Bellman Động (Bellman Optimality Equation):**
+     - Giả định tác nhân tối đa hóa dòng hữu dụng chiết khấu kỳ vọng:
+       max E[ sum_{t=0}^infty beta^t (u(s_t, d_t) + epsilon_{t}(d_t)) ]
+     - Với cú sốc ngẫu nhiên epsilon_{t}(d) tuân theo phân phối Giá trị Cực trị Loại I độc lập (Type I Extreme Value / Gumbel), hàm giá trị mong đợi trước khi quan sát epsilon (Integrated Value Function V(s)) thỏa mãn ánh xạ co Bellman:
+       V(s) = ln( sum_{d in {0, 1}} exp( u(s, d; theta) + beta * sum_{s'} p(s' | s, d) * V(s') ) ) + gamma_Euler
+  2. **Thuật Toán Nested Fixed Point (NFXP - Rust 1987 Econometrica):**
+     - Vòng lặp bên trong (Inner Loop): Sử dụng phương pháp lặp điểm bất động Banach kết hợp gia tốc hội tụ (Contraction mapping iteration) để tìm nghiệm duy nhất V*(s; theta) cho mỗi bộ tham số thử nghiệm theta = (RC, theta_1, theta_2).
+     - Vòng lặp bên ngoài (Outer Loop): Ước lượng hợp lý cực đại (Maximum Likelihood Estimation - MLE) sử dụng thuật toán tối ưu hóa L-BFGS-B hoặc Nelder-Mead:
+       LL(theta) = sum_{i=1}^N ln P(d_i | s_i; theta, V*)
+  3. **Mô Phỏng Phân Phối Dừng & Ngưỡng Cân Bằng Chính Sách (Counterfactual Policy & Ergodic Distribution):**
+     - Xác suất lựa chọn tối ưu (Choice Probability):
+       P(d=1 | s) = exp( v(s, 1) ) / ( exp( v(s, 0) ) + exp( v(s, 1) ) )
+     - Xác định ngưỡng trạng thái cân bằng s* tại đó P(Replace | s*) = 0.50.
+     - Mô phỏng chính sách can thiệp ngược thực tế: Trợ cấp chi phí thay thế RC_cf = RC * (1 - subsidy_pct / 100), tái giải nghiệm Bellman để thu được ngưỡng hành vi mới s*_cf và tính toán mức độ chuyển dịch xác suất thay thế.
+     - Phân phối dừng Markov (Ergodic Stationary Distribution pi(s)): Tính toán phân phối trạng thái trong dài hạn thỏa mãn pi * P_trans = pi thông qua thuật toán Power Iteration 150 bước lặp ổn định.
+  4. **Biểu Đồ Vector SVG Kép Tích Hợp:**
+     - Panel A: Đồ thị đường cong hàm giá trị Bellman V(s) theo mức độ trạng thái hao mòn s.
+     - Panel B: Đồ thị hàm xác suất quyết định P(Replace | s) so sánh trực quan giữa kịch bản Hiện trạng (Baseline) và kịch bản Trợ cấp can thiệp (Counterfactual Subsidy), kèm các điểm ngưỡng cân bằng s* và s*_cf.
+- **API Endpoint:** POST /api/surveys/{survey_id}/analytics/dynamic-discrete-choice
+  - **Payload:** DynamicDiscreteChoiceRequest (state_question_id, decision_question_id, discount_factor, 
+um_discretized_states, counterfactual_subsidy_pct, lpha_level, scope).
+  - **Response:** DynamicDiscreteChoiceOut (status, sample_size, 
+um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_thresholds, state_profiles, svg_visualization, pa_narrative).
+- **Niêm phong kiểm toán:** Ghi nhận DYNAMIC_DISCRETE_CHOICE_EVALUATED vào chuỗi sổ cái SHA-256.

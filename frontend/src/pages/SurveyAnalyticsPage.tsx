@@ -148,6 +148,7 @@ import { BoundaryKernelDeconvolutionCard } from '../components/BoundaryKernelDec
 import { TargetedMaximumLikelihoodCard } from '../components/TargetedMaximumLikelihoodCard';
 import { CopulaEndogeneityCard } from '../components/CopulaEndogeneityCard';
 import { CausalSurvivalRMSTCard } from '../components/CausalSurvivalRMSTCard';
+import { DynamicDiscreteChoiceCard } from '../components/DynamicDiscreteChoiceCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1681,6 +1682,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Causal Survival Analysis & RMST Engine (Royston & Parmar 2013; Díaz et al. 2019; Knaus 2022) */}
       <CausalSurvivalRMSTCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Dynamic Discrete Choice Structural Dynamic Programming Engine (Rust 1987 NFXP) */}
+      <DynamicDiscreteChoiceCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

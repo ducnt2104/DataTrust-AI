@@ -9194,3 +9194,58 @@ export interface CausalSurvivalRMSTRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Dynamic Discrete Choice Structural Dynamic Programming (Rust 1987 NFXP) Types ---
+export interface DDCStructuralParameter {
+  estimate: number;
+  se?: number;
+  ci_95?: [number, number];
+  p_value?: number;
+}
+
+export interface DDCEquilibriumThresholds {
+  baseline_threshold_state: number;
+  counterfactual_threshold_state: number;
+  baseline_stationary_rate_pct: number;
+  counterfactual_stationary_rate_pct: number;
+  rate_delta_pct: number;
+}
+
+export interface DDCStateProfile {
+  state_bin: number;
+  state_value: number;
+  expected_value_maintain: number;
+  expected_value_replace: number;
+  choice_prob_baseline: number;
+  choice_prob_counterfactual: number;
+  stationary_density_pct: number;
+}
+
+export interface DynamicDiscreteChoiceResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  num_states?: number;
+  discount_factor?: number;
+  log_likelihood?: number;
+  structural_parameters?: {
+    replacement_cost_rc: DDCStructuralParameter;
+    linear_operating_cost_th1: DDCStructuralParameter;
+    quadratic_operating_cost_th2: DDCStructuralParameter;
+  };
+  equilibrium_thresholds?: DDCEquilibriumThresholds;
+  state_profiles?: DDCStateProfile[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface DynamicDiscreteChoiceRequest {
+  state_question_id: string;
+  decision_question_id: string;
+  discount_factor?: number;
+  num_discretized_states?: number;
+  counterfactual_subsidy_pct?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

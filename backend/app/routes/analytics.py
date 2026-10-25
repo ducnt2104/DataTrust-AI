@@ -2,6 +2,7 @@ import pandas as pd
 from app.engine.targeted_maximum_likelihood_engine import run_targeted_maximum_likelihood_estimation
 from app.engine.copula_endogeneity_engine import run_copula_endogeneity_analysis
 from app.engine.causal_survival_rmst_engine import run_causal_survival_rmst_analysis
+from app.engine.dynamic_discrete_choice_engine import run_dynamic_discrete_choice_estimation
 from app.engine.boundary_kernel_deconvolution_engine import run_boundary_kernel_deconvolution
 from app.engine.hierarchical_bayes_conjoint_engine import run_hierarchical_bayes_conjoint
 from app.engine.generalized_synthetic_control_engine import run_generalized_synthetic_control
@@ -161,6 +162,8 @@ from app.schemas import (
     CopulaEndogeneityOut,
     CausalSurvivalRMSTRequest,
     CausalSurvivalRMSTOut,
+    DynamicDiscreteChoiceRequest,
+    DynamicDiscreteChoiceOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17273,6 +17276,90 @@ def run_causal_survival_rmst_endpoint(
                 "tau_horizon": res.get("tau_horizon"),
                 "rmst_difference": res.get("causal_rmst_difference", {}).get("estimate"),
                 "p_value": res.get("causal_rmst_difference", {}).get("p_value"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/dynamic-discrete-choice", response_model=DynamicDiscreteChoiceOut)
+def run_dynamic_discrete_choice_endpoint(
+    survey_id: str,
+    payload: DynamicDiscreteChoiceRequest
+):
+    """
+    Dynamic Discrete Choice Structural Dynamic Programming Engine (Rust 1987 NFXP).
+    Estimates forward-looking Bellman decision processes, structural capital upgrade costs,
+    and counterfactual subsidy policies without ad-hoc static restrictions.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                "id": r_id,
+                "answers": ans
+            })
+
+        if len(records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 25 bản ghi hợp lệ để thực hiện phân tích Dynamic Discrete Choice (hiện có: {len(records)})."
+            }
+
+        try:
+            res = run_dynamic_discrete_choice_estimation(
+                records=records,
+                state_question_id=payload.state_question_id,
+                decision_question_id=payload.decision_question_id,
+                discount_factor=payload.discount_factor,
+                num_discretized_states=payload.num_discretized_states,
+                counterfactual_subsidy_pct=payload.counterfactual_subsidy_pct,
+                alpha_level=payload.alpha_level,
+                scope=payload.scope
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình phân tích Dynamic Discrete Choice: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="DYNAMIC_DISCRETE_CHOICE_EVALUATED",
+            details={
+                "n_obs": res.get("sample_size"),
+                "replacement_cost_rc": res.get("structural_parameters", {}).get("replacement_cost_rc", {}).get("estimate"),
+                "baseline_threshold": res.get("equilibrium_thresholds", {}).get("baseline_threshold_state"),
+                "counterfactual_threshold": res.get("equilibrium_thresholds", {}).get("counterfactual_threshold_state"),
                 "status": res.get("status")
             }
         )

@@ -2651,6 +2651,33 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 38. Planned Next Iteration: Iteration 171
-- **Feature**: Causal Tree & Honest Recursive Interaction Partitioning Engine (Athey & Imbens 2016 PNAS; Wager & Athey 2018 JASA).
-- **Scope**: Partitions heterogeneous survey respondents into distinct subgroup treatment effect leaves (tau_hat(x) = Y_bar_1(L) - Y_bar_0(L)) using sample splitting ("Honesty": one half for tree construction, one half for unbiased leaf effect estimation), maximizing treatment effect variance across leaves while penalizing leaf sample size.
+## 38. Iteration 171: Dynamic Discrete Choice Structural Dynamic Programming Engine (Rust 1987 Econometrica NFXP; Aguirregabiria & Mira 2010; Arcidiacono & Ellickson 2011)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T15:11:00+07:00
+- **Scientific Foundation**:
+  - Estimates deep structural preference and replacement cost parameters governing forward-looking dynamic intertemporal decision making (Rust 1987 Econometrica).
+  - Nested Fixed Point Algorithm (NFXP): Inner loop computes Bellman contraction mapping value function V*(s) to numerical tolerance 1e-7; outer loop maximizes log-likelihood over structural cost parameters (Replacement Cost RC, linear operating cost theta_1, quadratic operating cost theta_2) using L-BFGS-B / Nelder-Mead.
+  - Markov State Transitions & Stationary Ergodic Distribution: Solves for long-run state distribution pi(s) using unconditional 150-iteration power iteration on transition matrix P_policy.
+  - Counterfactual Policy Simulation: Evaluates policy intervention (e.g. 20% replacement cost subsidy) without falling prey to Lucas Critique (1976), recalculating counterfactual equilibrium threshold s*_cf and replacement frequency delta.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays Bellman value function V(s) across discretized states; Panel B displays choice probability curve P(Replace | s) comparing baseline vs subsidy policy with equilibrium cutoff points s* and s*_cf.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/dynamic_discrete_choice_engine.py` (380 lines).
+  - Schemas: `DynamicDiscreteChoiceRequest`, `DynamicDiscreteChoiceOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/dynamic-discrete-choice` with `DYNAMIC_DISCRETE_CHOICE_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_dynamic_discrete_choice_engine.py` (2/2 passed in 0.96s).
+  - Route Tests: `backend/tests/test_dynamic_discrete_choice_routes.py` (1/1 passed in 1.95s).
+- **Frontend Components**:
+  - TypeScript Types: `DDCStructuralParameter`, `DDCEquilibriumThresholds`, `DDCStateProfile`, `DynamicDiscreteChoiceResult`, `DynamicDiscreteChoiceRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runDynamicDiscreteChoice` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/DynamicDiscreteChoiceCard.tsx` (380 lines) with state, decision selectors, discount factor, states discretization slider, subsidy % slider, 4 KPI cards (RC cost, Operating cost theta_1, Baseline cutoff s*, Subsidy cutoff s*_cf), dual-panel SVG visualizer, state profile table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed** (81/81 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,136 modules transformed, 0 errors in 1.30s**.
+  - Contract Documentation: Section 152 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 39. Planned Next Iteration: Iteration 172
+- **Feature**: Synthetic Difference-in-Differences with Multi-Period Staggered Adoption & Regularized Unit-Time Weights (SDID-Staggered; Arkhangelsky et al. 2021 AER; Clarke et al. 2023).
+- **Scope**: Combines Synthetic Control unit weights omega_i and Difference-in-Differences time weights lambda_t with L2 regularization to estimate treatment effects under staggered policy rollout across survey cohorts.
