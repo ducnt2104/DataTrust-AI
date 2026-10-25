@@ -2055,3 +2055,34 @@ eq 0\}$
 ## 16. Planned Next Iteration: Iteration 150
 - **Feature**: Shift-Share Instrumental Variables & Rotemberg Diagnostics (Goldsmith-Pinkham, Sorkin, & Swift 2020 AER; Borusyak, Hull, & Jaravel 2022 Restud; Adao, Kolesár, & Morales 2019).
 - **Scope**: Bartik instruments for multi-sector / regional survey exposures, Rotemberg share decompositions to identify which industry/quota shares drive causal identification, and spatial correlation-robust inference.
+
+
+## 17. Iteration 150: Shift-Share Instrumental Variables & Rotemberg Decomposition Engine (Bartik IV; Goldsmith-Pinkham, Sorkin, & Swift 2020 AER; Adao, Kolesár, & Morales 2019 QJE)
+- **Timestamp**: 2026-10-25T12:23:00+07:00
+- **Scientific Foundation**:
+  - Implements the foundational Shift-Share / Bartik Instrumental Variable design ($Z_i = \sum_k z_{ik} g_k$) for surveys with portfolio share composition exposures.
+  - Implements the Goldsmith-Pinkham, Sorkin, & Swift (2020 AER) theorem: numerical equivalence of 2SLS Bartik estimation to a weighted average of just-identified share IVs $\hat{\beta}_{\text{2SLS}} = \sum_k \hat{\alpha}_k \hat{\beta}_k$.
+  - Rotemberg Weights $\hat{\alpha}_k$: Exact closed-form identification weights isolating which specific category shares drive the entire empirical causal estimate ($\sum \hat{\alpha}_k = 1.0$), with Herfindahl-Hirschman (HHI) concentration metrics.
+  - Adao, Kolesár, & Morales (AKM 2019 QJE) standard errors: Corrects for unobserved cross-sectional correlation induced by shared category shocks across distant units, preventing spurious statistical significance.
+  - Overidentification & Exclusion Restriction Test: Sargan chi-square test across positive-weight shares to detect violations of instrument validity.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/shift_share_iv_engine.py` (420 lines).
+  - Pydantic Schemas: `ShiftShareIVRequest` and `ShiftShareIVOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/shift-share-iv` with `SHIFT_SHARE_IV_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_shift_share_iv_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_shift_share_iv_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `RotembergItem`, `ShiftShareIVResult`, `ShiftShareIVRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runShiftShareIV` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/ShiftShareIVCard.tsx` (430 lines) with outcome, endogenous treatment, multi-share checklist, controls selector, KPI stat cards (2SLS $\beta$, First-stage F-stat, SE_AKM, Rotemberg HHI), dual-panel SVG visualizer (Rotemberg weights bar chart & 2SLS second-stage causal response slope), full Rotemberg decomposition table, overidentification diagnostics box, and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 1.89s**.
+  - Frontend Production Build: **2,116 modules transformed, 0 errors in 2.05s**.
+  - Contract Documentation: Section 131 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 18. Planned Next Iteration: Iteration 151
+- **Feature**: Quantile Synthetic Control & Distributional Counterfactuals Engine (Gunsilius 2023 Econometrica; Chernozhukov, Kasahara, & Schrimpf 2020).
+- **Scope**: Extends classic synthetic control from scalar mean $E[Y]$ matching to the full empirical quantile function and distribution of outcomes across donor units via Wasserstein distance minimization, estimating counterfactual CDFs, quantiles, and Gini inequality impacts.

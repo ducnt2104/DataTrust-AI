@@ -213,7 +213,9 @@ import {
   CausalSensitivityRequest,
   CausalSensitivityResult,
   BCFRequest,
-  BCFResult
+  BCFResult,
+  ShiftShareIVRequest,
+  ShiftShareIVResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2454,5 +2456,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<BCFResult>(res);
+  },
+
+  async runShiftShareIV(
+    surveyId: string,
+    payload: ShiftShareIVRequest
+  ): Promise<ShiftShareIVResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/shift-share-iv`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ShiftShareIVResult>(res);
   }
 };

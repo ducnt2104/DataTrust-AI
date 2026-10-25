@@ -5445,3 +5445,26 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `BCFRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `n_posterior_draws`, `alpha_ridge`, `scope`).
   - **Response:** `BCFOut` (`status`, `overall_summary`, `subgroups`, `individual_sample`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `BCF_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 131. Shift-Share Instrumental Variables & Rotemberg Decomposition Engine (Bartik IV; Goldsmith-Pinkham, Sorkin, & Swift 2020 AER; Borusyak, Hull, & Jaravel 2022 Restud; Adao, Kolesár, & Morales 2019 QJE)
+- **Mục tiêu:** Mở rộng khả năng suy diễn nhân quả cho các cuộc khảo sát kinh tế, thị trường lao động và phân tích tổ chức có cấu trúc phơi nhiễm danh mục tỷ trọng (portfolio share exposures $z_{ik}$) trước các cú sốc vĩ mô hoặc chính sách tổng thể ($g_k$). Thay vì xem công cụ Bartik $Z_i = \sum_k z_{ik} g_k$ như một "hộp đen", động cơ thực hiện định lý tương đương của Goldsmith-Pinkham et al. (2020), phân rã ước lượng 2SLS thành tổng có trọng số của các công cụ riêng lẻ từng thành phần với Trọng số Rotemberg ($\hat{\alpha}_k$), ước lượng sai số chuẩn Adao-Kolesár-Morales (AKM 2019) chống tương quan cụm ngẫu nhiên do chia sẻ chung cú sốc, và kiểm định tính đồng nhất ngoại sinh Sargan.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Thiết lập Công cụ Bartik & Hồi quy 2SLS:**
+     $$Z_i = \sum_{k=1}^K z_{ik} g_k$$
+     - Giai đoạn 1: $D_i = \gamma_0 + \gamma_1 Z_i + X_i \Gamma + u_i$, kiểm định công cụ yếu qua F-statistic ($F \ge 10$).
+     - Giai đoạn 2: $Y_i = \beta_0 + \beta_{\text{2SLS}} \hat{D}_i + X_i \Pi + \varepsilon_i$.
+  2. **Định lý Phân rã Trọng số Rotemberg (Goldsmith-Pinkham et al. 2020 AER):**
+     $$\hat{\beta}_{\text{2SLS}} = \sum_{k=1}^K \hat{\alpha}_k \hat{\beta}_k, \quad \hat{\alpha}_k = \frac{g_k z_k^T M_X D}{Z^T M_X D}$$
+     - $\sum_{k=1}^K \hat{\alpha}_k = 1.0$: Trọng số Rotemberg $\hat{\alpha}_k$ định lượng chính xác tỷ lệ phần trăm sức mạnh nhận diện nhân quả mà ngành/thành phần $k$ đóng góp vào toàn bộ ước lượng.
+     - $\hat{\beta}_k = \frac{z_k^T M_X Y}{z_k^T M_X D}$: Ước lượng nhân quả chỉ dựa duy nhất vào tỷ trọng ngành $k$.
+     - Chỉ số tập trung Herfindahl-Hirschman (HHI) của các trọng số dương đo lường rủi ro tập trung nhận diện.
+  3. **Sai số Chuẩn Chống Tương quan Phơi nhiễm (AKM 2019 QJE):**
+     - Sai số chuẩn thông thường (Omitted Cross-Unit Correlation) bị đánh giá thấp nghiêm trọng do các đơn vị có cơ cấu tỷ trọng $z_{ik}$ tương đồng sẽ có phần dư tương quan nhau ngay cả khi ở các địa bàn độc lập.
+     - Phương sai AKM: $V_{\text{AKM}} = (Z^T M_X D)^{-2} \sum_{k=1}^K \left( \sum_{i=1}^N z_{ik} \hat{\varepsilon}_i g_k \right)^2$.
+  4. **Kiểm định Ngoại sinh & Đồng nhất (Overidentification Test):**
+     - Kiểm định Sargan qua các thành phần có $\hat{\alpha}_k > 0$ so sánh độ lệch $(\hat{\beta}_k - \hat{\beta}_{\text{2SLS}})$ nhằm phát hiện sự vi phạm giả định loại trừ ngoại sinh (exclusion restriction).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/shift-share-iv`
+  - **Payload:** `ShiftShareIVRequest` (`outcome_question_id`, `treatment_question_id`, `share_question_ids`, `shocks`, `covariate_question_ids`, `alpha_level`, `scope`).
+  - **Response:** `ShiftShareIVOut` (`status`, `overall_summary`, `rotemberg_decomposition`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `SHIFT_SHARE_IV_EVALUATED` vào chuỗi sổ cái SHA-256.

@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.shift_share_iv_engine import estimate_shift_share_iv
 from app.engine.bcf_engine import estimate_bayesian_causal_forest
 from app.engine.causal_sensitivity_bias_engine import estimate_causal_sensitivity_bias
 from app.engine.conformal_counterfactual_engine import estimate_conformal_counterfactuals
@@ -101,6 +102,8 @@ from app.schemas import (
     CausalSensitivityBiasOut,
     BCFRequest,
     BCFOut,
+    ShiftShareIVRequest,
+    ShiftShareIVOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15017,6 +15020,134 @@ def run_bcf_analysis(
                 "treatment_qid": payload.treatment_question_id,
                 "posterior_ate_mean": res.get("overall_summary", {}).get("posterior_ate_mean"),
                 "prob_positive_ate": res.get("overall_summary", {}).get("posterior_prob_positive_ate"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/shift-share-iv", response_model=ShiftShareIVOut)
+def run_shift_share_iv_analysis(
+    survey_id: str,
+    payload: ShiftShareIVRequest
+):
+    """
+    Shift-Share / Bartik Instrumental Variables & Rotemberg Decomposition.
+    Goldsmith-Pinkham, Sorkin, & Swift (2020 AER); Adao, Kolesár, & Morales (2019 QJE).
+    Calculates 2SLS treatment effects using portfolio share exposures z_ik and aggregate shocks g_k,
+    decomposing identification power into exact Rotemberg weights alpha_k with AKM robust standard errors.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        sh_ids = payload.share_question_ids
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.treatment_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    d_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                record = {
+                    payload.outcome_question_id: y_val,
+                    payload.treatment_question_id: d_val
+                }
+
+                # Shares
+                valid_shares = True
+                for sid in sh_ids:
+                    if sid in answers:
+                        try:
+                            record[sid] = float(answers[sid])
+                        except (ValueError, TypeError):
+                            valid_shares = False
+                            break
+                    else:
+                        valid_shares = False
+                        break
+
+                if not valid_shares:
+                    continue
+
+                # Covariates
+                valid_covs = True
+                for cid in cov_ids:
+                    if cid in answers:
+                        try:
+                            record[cid] = float(answers[cid])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                            break
+                    else:
+                        valid_covs = False
+                        break
+
+                if valid_covs:
+                    df_records.append(record)
+
+        if len(df_records) < 30:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng phản hồi (N={len(df_records)}) chưa đạt tối thiểu 30 mẫu cho phân tích Shift-Share IV."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_shift_share_iv(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                share_cols=sh_ids,
+                shocks=payload.shocks,
+                covariate_cols=cov_ids,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Shift-Share IV: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="SHIFT_SHARE_IV_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "beta_2sls": res.get("overall_summary", {}).get("beta_2sls"),
+                "first_stage_f": res.get("overall_summary", {}).get("first_stage_f_statistic"),
+                "rotemberg_hhi": res.get("overall_summary", {}).get("rotemberg_hhi"),
                 "status": res.get("status")
             }
         )

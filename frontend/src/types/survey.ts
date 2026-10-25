@@ -8043,3 +8043,50 @@ export interface BCFRequest {
   alpha_ridge?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Shift-Share Instrumental Variables & Rotemberg Diagnostics (Goldsmith-Pinkham et al. 2020) Types ---
+export interface RotembergItem {
+  share_variable: string;
+  rotemberg_weight: number;
+  rotemberg_weight_pct: number;
+  share_shock_value: number;
+  just_identified_beta: number;
+  first_stage_cov: number;
+}
+
+export interface ShiftShareIVResult {
+  status: string;
+  message?: string;
+  overall_summary?: {
+    sample_size: number;
+    n_shares_k: number;
+    first_stage_f_statistic: number;
+    is_weak_instrument: boolean;
+    beta_2sls: number;
+    se_conventional: number;
+    se_akm_robust: number;
+    t_statistic: number;
+    p_value: number;
+    confidence_interval_95: [number, number];
+    rotemberg_hhi: number;
+    sum_positive_rotemberg_weights: number;
+    sum_negative_rotemberg_weights: number;
+    top_5_shares_weight_share: number;
+    overid_sargan_stat: number;
+    overid_p_value: number;
+  };
+  rotemberg_decomposition?: RotembergItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ShiftShareIVRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  share_question_ids: string[];
+  shocks?: number[];
+  covariate_question_ids?: string[];
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}
