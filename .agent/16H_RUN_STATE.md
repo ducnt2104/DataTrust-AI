@@ -3071,6 +3071,33 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 52. Planned Next Iteration: Iteration 185
-- **Feature**: Robust E-Values & Multi-Bias Causal Sensitivity Decomposition Engine (VanderWeele & Ding 2017 Annals of Internal Medicine; Mathur & VanderWeele 2020 Biometrics).
-- **Scope**: Implements exact E-value calculations for point estimates and 95% confidence interval bounds across risk ratios, odds ratios, hazard ratios, and standardized mean differences (Cohen's d), decomposing unmeasured confounding, selection bias, and differential misclassification with interactive bias contour surfaces.
+## 52. Iteration 185: Robust E-Values & Multi-Bias Causal Sensitivity Decomposition Engine (VanderWeele & Ding 2017 Ann. Intern. Med.; Mathur & VanderWeele 2020 Biometrics)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T17:18:00+07:00
+- **Scientific Foundation**:
+  - Unmeasured Confounding Sensitivity: Quantifies the minimum association an unmeasured confounder must have with both treatment and outcome (on the risk ratio scale) to explain away the observed effect or its 95% confidence interval bound.
+  - Scale Invariance & Conversions: Full support for Risk Ratios (RR), Odds Ratios (OR; square root conversion), Hazard Ratios (HR; survival conversion), Standardized Mean Differences (Cohen's d; logit mapping), and Risk Differences (RD; baseline risk mapping).
+  - Multi-Bias Sensitivity Decomposition: Tripartite decomposition across unmeasured confounding bias (B_U), selection bias (B_S), and differential measurement error (B_M), computing composite joint E-value = B^(1/3) + sqrt(B^(1/3) * (B^(1/3) - 1)).
+  - Empirical Benchmark Grounding: Systematic comparison against 5 established benchmarks (Smoking-Lung Cancer RR=9.0, Socioeconomic Status-Health RR=2.5, Education-Income RR=2.0, Obesity-Diabetes RR=3.5, Air Pollution-Cardiovascular RR=1.3).
+  - Responsive Dual-Panel SVG Visualizer: Panel A plots the continuous sensitivity contour hyperbola RR_UD vs RR_EU for both point estimate and 95% CI bound; Panel B renders horizontal benchmark bars highlighting the robust causal zone.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/e_value_causal_engine.py (360 lines).
+  - Schemas: EValueRequest, EValueResults, EValueBenchmark, EValueOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/e-value-sensitivity with E_VALUE_SENSITIVITY_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_e_value_causal_engine.py (3/3 passed in 0.33s).
+  - Route Tests: backend/tests/test_e_value_causal_routes.py (1/1 passed in 1.90s).
+- **Frontend Components**:
+  - TypeScript Types: EValueResults, EValueBenchmark, EValueRequest, EValueResult in frontend/src/types/survey.ts.
+  - API Client Method: runEValueSensitivity in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/EValueSensitivityCard.tsx (510 lines) with Effect Measure selector (RR, OR, HR, Cohen's d, RD), Point Estimate and 95% CI inputs, Multi-Bias toggles and parameters (B_U, B_S, B_M), 5 KPI cards (E-Value Point, E-Value 95% CI, Multi-Bias E-Value, Robustness Rating, Benchmarks Exceeded count), dual-panel SVG visualizer, tabs for Benchmarks table, Sensitivity Grid, Mathematical Foundations, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (53/53 cumulative passed across Iterations 171-185 in 26.14s).
+  - Frontend Production Build: 2,150 modules transformed, 0 errors in 2.21s.
+  - Contract Documentation: Section 166 appended to docs/API_CONTRACT.md.
+
+---
+
+## 53. Planned Next Iteration: Iteration 186
+- **Feature**: Doubly Robust Targeted Maximum Likelihood Estimation (TMLE) & Cross-Validated Augmented Inverse Probability Weighting (AIPW) Engine (van der Laan & Rose 2011; Schuler & Rose 2017; Chernozhukov et al. 2018).
+- **Scope**: Implements semiparametric efficient estimation of ATE/ATT with cross-validated Super Learner ensembles (LASSO, Ridge, Random Forest, GLM), targeted clever covariate fluctuation epsilon solving the efficient influence curve P_n D^*(Q^*, g) = 0, semiparametric efficiency bound attainment, robust sandwich SE, and dual-panel diagnostic visualizations.

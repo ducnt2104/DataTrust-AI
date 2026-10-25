@@ -10069,3 +10069,49 @@ export interface CBPSResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+
+// --- Robust E-Values & Multi-Bias Causal Sensitivity (VanderWeele & Ding 2017) Interfaces ---
+export interface EValueResults {
+  rr_equivalent: number;
+  ci_lower_rr: number;
+  ci_upper_rr: number;
+  is_protective: boolean;
+  e_value_estimate: number;
+  e_value_ci: number;
+  ci_closest_to_null: number;
+  ci_already_spans_null: boolean;
+  selection_bias_factor: number;
+  misclassification_factor: number;
+  adjusted_rr_after_selection_and_measurement: number;
+  e_value_confounding_remaining: number;
+  e_value_joint_equal_biases: number;
+}
+
+export interface EValueBenchmark {
+  name: string;
+  rr_benchmark: number;
+}
+
+export interface EValueRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  effect_type?: 'OLS_CONTINUOUS' | 'RR' | 'OR' | 'HR' | 'COHEN_D';
+  selection_bias_rr?: number;
+  misclassification_rr?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface EValueResult {
+  status: string;
+  sample_size: number;
+  effect_type: string;
+  point_estimate: number;
+  standard_error: number;
+  outcome_sd: number;
+  e_value_results: EValueResults;
+  benchmarks: EValueBenchmark[];
+  svg_visualization: string;
+  apa_narrative: string;
+}

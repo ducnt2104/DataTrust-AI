@@ -6488,3 +6488,33 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `CBPSRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `method`, `estimand`, `max_iterations`, `tolerance`, `scope`).
   - **Response:** `CBPSOut` (`status`, `sample_size`, `treated_count`, `control_count`, `estimand`, `causal_effect`, `covariate_balance`, `diagnostics`, `overlap_metrics`, `sample_points`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CBPS_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 166. Robust E-Values & Multi-Bias Causal Sensitivity Decomposition Engine (VanderWeele & Ding 2017 Ann. Intern. Med.; Mathur & VanderWeele 2020 Biometrics)
+- **Mục tiêu:** Cung cấp chỉ số nhạy cảm suy diễn nhân quả E-value định lượng mức độ kết hợp tối thiểu mà một yếu tố gây nhiễu chưa đo lường (unmeasured confounder) cần có với cả biến can thiệp và biến kết quả để triệt tiêu hoàn toàn hiệu ứng nhân quả quan sát được, phân rã đa chiều thiên lệch (confounding bias, selection bias, measurement error) theo phương pháp luận Mathur & VanderWeele (2020).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định Nghĩa Toán Học E-Value Chuẩn (VanderWeele & Ding 2017):**
+     - Với tỷ số nguy cơ quan sát được $RR \ge 1$:
+       $$E\text{-value} = RR + \sqrt{RR(RR - 1)}$$
+     - Nếu $RR < 1$, chuẩn hóa về $1/RR$ trước khi tính.
+     - E-value cho cận khoảng tin cậy $CI$:
+       - Nếu $RR > 1$: $E\text{-value}_{CI} = LL + \sqrt{LL(LL - 1)}$ nếu $LL > 1$, ngược lại bằng $1.0$.
+       - Nếu $RR < 1$: $E\text{-value}_{CI} = (1/UL) + \sqrt{(1/UL)(1/UL - 1)}$ nếu $UL < 1$, ngược lại bằng $1.0$.
+  2. **Chuyển Đổi Tương Đương Giữa Các Thước Đo Hiệu Ứng (Effect Measure Scale Conversions):**
+     - Tỷ số odds (Odds Ratio - OR): xấp xỉ căn bậc hai hoặc biến đổi bệnh hiếm $RR \approx \sqrt{OR}$ (phương pháp xấp xỉ tỷ lệ lưu hành của VanderWeele 2017).
+     - Tỷ số rủi ro nguy cơ (Hazard Ratio - HR): biến đổi theo thời gian sống $RR \approx \frac{1 - 0.5^{\sqrt{HR}}}{1 - 0.5^{\sqrt{1/HR}}}$.
+     - Chênh lệch trung bình chuẩn hóa (Cohen's $d$): biến đổi hàm logit $RR \approx \exp(d \times 0.91)$ theo Chinn (2000) và VanderWeele (2017).
+     - Hiệu số nguy cơ (Risk Difference - RD): quy đổi thông qua tỷ lệ quy kết cơ sở $p_0$.
+  3. **Phân Rã Đa Thiên Lệch (Multi-Bias Sensitivity Decomposition; Smith & VanderWeele 2019):**
+     - Đánh giá đồng thời 3 nguồn sai lệch: thiên lệch gây nhiễu $B_U$, thiên lệch chọn mẫu $B_S$, và sai số đo lường $B_M$:
+       $$RR_{\text{observed}} \le RR_{\text{true}} \times B_U \times B_S \times B_M$$
+     - Tính toán $E\text{-value}_{\text{multi}} = B^{1/3} + \sqrt{B^{1/3}(B^{1/3} - 1)}$ bảo đảm tính bao trùm cho cả 3 tác nhân sai lệch tiềm ẩn.
+  4. **So Sánh Đối Chuẩn Thực Nghiệm (Empirical Benchmarks Comparison):**
+     - Đối chiếu E-value của nghiên cứu với các yếu tố gây nhiễu kinh điển đã biết trong y sinh học và khoa học xã hội (Hút thuốc lá & Ung thư phổi: $RR \approx 9.0$; Địa vị kinh tế xã hội & Sức khỏe: $RR \approx 2.5$; Trình độ học vấn & Thu nhập: $RR \approx 2.0$; Béo phì & Đái tháo đường: $RR \approx 3.5$; Ô nhiễm không khí & Bệnh tim mạch: $RR \approx 1.3$).
+  5. **Biểu Đồ Vector SVG Kép & Mặt Bề Mặt Đồng Mức Nhạy Cảm (Contour Surface Visualizer):**
+     - Panel A: Đường đồng mức tham số nhạy cảm $RR_{UD}$ vs $RR_{EU}$ biểu diễn siêu mặt biên gây nhiễu tối thiểu triệt tiêu hiệu ứng quan sát được và triệt tiêu cận CI 95%.
+     - Panel B: Biểu đồ thanh đối chuẩn E-value của nghiên cứu so với 5 yếu tố gây nhiễu thực nghiệm kinh điển, chỉ rõ vùng an toàn vững chắc (Robust Region).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/e-value-sensitivity`
+  - **Payload:** `EValueRequest` (`treatment_question_id`, `outcome_question_id`, `effect_measure`, `point_estimate`, `ci_lower`, `ci_upper`, `baseline_risk`, `unmeasured_confounding_bias`, `selection_bias`, `measurement_error`, `scope`).
+  - **Response:** `EValueOut` (`status`, `effect_measure`, `point_estimate`, `ci_lower`, `ci_upper`, `e_value_point`, `e_value_ci`, `multi_bias_e_value`, `benchmarks`, `robustness_assessment`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `E_VALUE_SENSITIVITY_EVALUATED` vào chuỗi sổ cái SHA-256.

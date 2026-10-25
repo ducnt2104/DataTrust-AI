@@ -162,6 +162,7 @@ import { BayesianCausalForestCard } from '../components/BayesianCausalForestCard
 import { SpatialDIDCard } from '../components/SpatialDIDCard';
 import { EntropyBalancingCard } from '../components/EntropyBalancingCard';
 import { CBPSCard } from '../components/CBPSCard';
+import { EValueSensitivityCard } from '../components/EValueSensitivityCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1835,6 +1836,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Covariate Balancing Propensity Score & GMM Causal Engine (Imai & Ratkovic 2014) */}
       <CBPSCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Robust E-Values & Multi-Bias Causal Sensitivity Decomposition (VanderWeele & Ding 2017) */}
+      <EValueSensitivityCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

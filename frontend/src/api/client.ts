@@ -281,7 +281,9 @@ import {
   EntropyBalancingRequest,
   EntropyBalancingResult,
   CBPSRequest,
-  CBPSResult
+  CBPSResult,
+  EValueRequest,
+  EValueResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2903,5 +2905,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<CBPSResult>(res);
+  },
+
+  async runEValueSensitivity(
+    surveyId: string,
+    payload: EValueRequest
+  ): Promise<EValueResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/e-value-sensitivity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<EValueResult>(res);
   }
 };
