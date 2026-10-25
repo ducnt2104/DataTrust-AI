@@ -2763,6 +2763,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 42. Planned Next Iteration: Iteration 175
-- **Feature**: Double/Debiased Machine Learning with Multiway Cluster-Robust Cross-Fitting Engine (Cluster-DML; Chiang, Kato, Ma, & Sasaki 2022 Journal of Econometrics; Belloni et al. 2016).
-- **Scope**: Extends Double Machine Learning (Chernozhukov et al. 2018) to complex survey sampling designs with multiway hierarchical clusters (e.g. school-classrooms, region-firms, interviewer effects), ensuring Neyman orthogonality and cluster-split sample cross-fitting.
+## 42. Iteration 175: Multiway Cluster-Robust Double Machine Learning Engine (Cluster-DML; Chiang, Kato, Ma, & Sasaki 2022 JBES)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T15:43:00+07:00
+- **Scientific Foundation**:
+  - Eliminates false-positive statistical significance and spurious confidence intervals in Double/Debiased Machine Learning (Chernozhukov et al. 2018) when survey observations share group-level unobservables (Chiang et al. 2022 JBES).
+  - Cluster-Split Cross-Fitting: Assigns entire clusters intact to cross-fitting folds, completely preventing intra-cluster information leakage across training and test splits.
+  - Partially Linear Neyman Orthogonal Scores: Implements residual-on-residual DML2 estimation psi(W; theta, eta) = (Y - l(X) - theta(D - m(X)))(D - m(X)).
+  - Multiway Cluster-Robust Huber-White Sandwich Covariance: Computes cluster-level score sums and asymptotic variance Var(theta) = J^{-1} Omega J^{-1}.
+  - SE Inflation & Intra-Cluster Correlation (ICC) Diagnostics: Quantifies SE_cluster / SE_naive ratio (often 2.0x-3.0x) and cluster-level variance components.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays the forest plot comparing Cluster-Robust DML vs Naive i.i.d. DML vs Standard OLS; Panel B illustrates the distribution of orthogonalized residuals across clusters.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/cluster_dml_engine.py (380 lines).
+  - Schemas: ClusterDMLRequest, ClusterDMLOut, ClusterDMLEstimates, etc. in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/cluster-dml with CLUSTER_DML_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_cluster_dml_engine.py (3/3 passed in 0.96s).
+  - Route Tests: backend/tests/test_cluster_dml_routes.py (1/1 passed in 2.32s).
+- **Frontend Components**:
+  - TypeScript Types: ClusterDMLPoint, ClusterDMLEstimates, ClusterDMLDiagnostics, ClusterDMLResult, ClusterDMLRequest in frontend/src/types/survey.ts.
+  - API Client Method: runClusterDML in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/ClusterDMLCard.tsx (510 lines) with cluster, treatment, outcome, covariates checklist, n_splits, ML algorithm selector, 4 KPI cards (Cluster-Robust theta, SE Inflation ratio, Intra-Cluster Correlation ICC, Clusters count), dual-panel SVG visualizer, model performance metrics, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (20/20 cumulative passed across Iterations 171-175 in 11.03s).
+  - Frontend Production Build: 2,140 modules transformed, 0 errors in 1.24s.
+  - Contract Documentation: Section 156 appended to docs/API_CONTRACT.md.
+
+---
+
+## 43. Planned Next Iteration: Iteration 176
+- **Feature**: Distributional Synthetic Controls & Counterfactual Density Decomposition Engine (Chernozhukov, Kasahara, & Schrimpf 2021 Econometrics Journal; Gunsilius 2023).
+- **Scope**: Extends classical Synthetic Control Methods (Abadie et al. 2010) from scalar mean outcomes to full counterfactual outcome distributions and densities via Wasserstein barycenters and quantile aggregation. Isolates inequality shifts, tail impacts, and stochastic dominance under synthetic intervention.

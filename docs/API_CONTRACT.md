@@ -6182,3 +6182,34 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `DiffInDiscontinuitiesRequest` (`running_question_id`, `cutoff`, `period_question_id`, `outcome_question_id`, `unit_question_id`, `post_period_val`, `bandwidth`, `kernel_type`, `alpha_level`, `scope`).
   - **Response:** `DiffInDiscontinuitiesOut` (`status`, `sample_size_total`, `sample_size_effective_h`, `cutoff_threshold`, `post_period_label`, `estimates`, `diagnostics`, `bandwidth_sensitivity`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `DIFF_IN_DISCONTINUITIES_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 156. Multiway Cluster-Robust Double Machine Learning Engine (Cluster-DML; Chiang, Kato, Ma, & Sasaki 2022 JBES)
+- **Mục tiêu:** Ước lượng hiệu ứng can thiệp nhân quả bán tham số (Semi-Parametric Causal Treatment Effect $\theta_0$) trong các tập dữ liệu khảo sát có cấu trúc phân tầng hoặc phụ thuộc theo cụm (Clustered Survey Sampling, ví dụ: nhân viên trong cùng phòng ban/chi nhánh, học sinh trong cùng lớp/trường, hộ gia đình trong cùng cụm dân cư). Khắc phục triệt để hiện tượng rò rỉ thông tin trong cross-fitting chuẩn vốn làm thu hẹp sai số chuẩn giả tạo ($2\times - 3\times$) và tạo ra ý nghĩa thống kê ảo (Type I error rate lên tới $40\% - 60\%$).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Neyman Orthogonal Score Dạng Mô hình Bán Tuyến tính (Partially Linear Regression):**
+     - Phương trình kết quả: $Y_{ig} = D_{ig} \theta_0 + g(X_{ig}) + U_{ig}$
+     - Phương trình can thiệp: $D_{ig} = m(X_{ig}) + V_{ig}$
+     - Hàm điểm trực giao Neyman:
+       $$\psi(W; \theta, \eta) = (Y - \ell(X) - \theta (D - m(X))) \cdot (D - m(X))$$
+       trong đó $\ell(X) = \mathbb{E}[Y \mid X] = D \theta_0 + g(X)$ và $m(X) = \mathbb{E}[D \mid X]$.
+  2. **Cross-Fitting Phân Cụm (Cluster-Split Cross-Fitting):**
+     - Toàn bộ các quan sát thuộc cùng một cụm $g \in \{1, \dots, G\}$ luôn được phân bổ toàn vẹn vào cùng một nếp gấp $k \in \{1, \dots, K\}$.
+     - Mô hình máy học (ML nuisance models $\hat{\ell}_{-k}$ và $\hat{m}_{-k}$) được huấn luyện trên $K-1$ cụm còn lại, sau đó dự báo phần dư trực giao trên cụm ngoại mẫu fold $k$. Điều này bảo toàn hoàn toàn tính độc lập ngoại mẫu và chặn đứng rò rỉ tương quan nội cụm (Intra-Cluster Correlation).
+  3. **Ước lượng Hiệu ứng Can thiệp & Ma trận Hiệp phương sai Sandwich Phân cụm:**
+     - Ước lượng gộp đa nếp gấp:
+       $$\hat{\theta} = \frac{\sum_{i} \hat{V}_i \hat{U}_i}{\sum_{i} \hat{V}_i^2}$$
+     - Ma trận hiệp phương sai vững theo cụm (Cluster-Robust Sandwich Covariance Matrix):
+       $$\hat{J} = \frac{1}{N} \sum_{i} \hat{V}_i^2$$
+       $$\hat{\Omega} = \frac{G}{G - 1} \frac{N - 1}{N - p} \sum_{g=1}^G \left( \sum_{i \in \mathcal{C}_g} \hat{V}_i (\hat{U}_i - \hat{\theta} \hat{V}_i) \right)^2$$
+       $$\widehat{\text{Var}}(\hat{\theta}) = \hat{J}^{-1} \hat{\Omega} \hat{J}^{-1}$$
+  4. **Chẩn Đoán Cụm & Hệ Số Lạm Phát Sai Số Chuẩn (Cluster Diagnostics & SE Inflation Factor):**
+     - Tính toán Hệ số tương quan nội cụm (Intra-Cluster Correlation $\rho_{\text{ICC}}$).
+     - Định lượng Hệ số Lạm phát Sai số Chuẩn (SE Inflation Ratio $\text{SE}_{\text{cluster}} / \text{SE}_{\text{naive}}$): Cảnh báo rõ nguy cơ ngụy tạo ý nghĩa thống kê của suy luận i.i.d. truyền thống.
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị rừng (Forest Plot) so sánh trực quan Ước lượng & Khoảng tin cậy 95% giữa Cluster-Robust DML vs Naive i.i.d. DML vs OLS chuẩn.
+     - Panel B: Đồ thị phân phối phần dư trực giao theo từng cụm (Cluster Residual Distributions), làm nổi bật sự dị biệt và phương sai biến thiên giữa các cụm khảo sát.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/cluster-dml`
+  - **Payload:** `ClusterDMLRequest` (`cluster_question_id`, `treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `n_splits`, `ml_algorithm`, `alpha_level`, `scope`).
+  - **Response:** `ClusterDMLOut` (`status`, `sample_size`, `num_clusters`, `estimates`, `cluster_diagnostics`, `algorithm_performance`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CLUSTER_DML_EVALUATED` vào chuỗi sổ cái SHA-256.

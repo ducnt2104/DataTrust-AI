@@ -261,7 +261,9 @@ import {
   RIFOaxacaDecompositionRequest,
   RIFOaxacaDecompositionResult,
   DiffInDiscontinuitiesRequest,
-  DiffInDiscontinuitiesResult
+  DiffInDiscontinuitiesResult,
+  ClusterDMLRequest,
+  ClusterDMLResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2767,5 +2769,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<DiffInDiscontinuitiesResult>(res);
+  },
+  async runClusterDML(
+    surveyId: string,
+    payload: ClusterDMLRequest
+  ): Promise<ClusterDMLResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/cluster-dml`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ClusterDMLResult>(res);
   }
 };

@@ -9460,3 +9460,61 @@ export interface DiffInDiscontinuitiesRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Cluster-Robust Double Machine Learning (Cluster-DML; Chiang et al. 2022) Types ---
+export interface ClusterDMLProfileItem {
+  cluster_id: string;
+  sample_size: number;
+  treatment_mean: number;
+  outcome_mean: number;
+  cluster_score: number;
+  contribution_pct: number;
+}
+
+export interface ClusterDMLEstimates {
+  theta: number;
+  se_cluster: number;
+  ci_95_cluster: [number, number];
+  t_stat_cluster: number;
+  p_value_cluster: number;
+  is_significant: boolean;
+  se_naive: number;
+  ci_95_naive: [number, number];
+  p_value_naive: number;
+  se_inflation_ratio: number;
+}
+
+export interface ClusterDMLDiagnostics {
+  num_clusters: number;
+  avg_cluster_size: number;
+  min_cluster_size: number;
+  max_cluster_size: number;
+  intra_cluster_correlation_icc: number;
+  r2_outcome_ml: number;
+  r2_treatment_ml: number;
+  ml_algorithm: string;
+  k_folds: number;
+}
+
+export interface ClusterDMLResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  estimates?: ClusterDMLEstimates;
+  diagnostics?: ClusterDMLDiagnostics;
+  cluster_profiles?: ClusterDMLProfileItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ClusterDMLRequest {
+  cluster_question_id: string;
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  n_splits?: number;
+  ml_model?: 'random_forest' | 'gradient_boost' | 'ridge';
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

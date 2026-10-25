@@ -152,6 +152,7 @@ import { DynamicDiscreteChoiceCard } from '../components/DynamicDiscreteChoiceCa
 import { SyntheticDiffInDiffCard } from '../components/SyntheticDiffInDiffCard';
 import { RIFOaxacaDecompositionCard } from '../components/RIFOaxacaDecompositionCard';
 import { DiffInDiscontinuitiesCard } from '../components/DiffInDiscontinuitiesCard';
+import { ClusterDMLCard } from '../components/ClusterDMLCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1725,6 +1726,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Difference-in-Discontinuities Design Engine (Diff-in-Disc / RD-DID; Grembi et al. 2016 AER) */}
       <DiffInDiscontinuitiesCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Multiway Cluster-Robust Double Machine Learning (Cluster-DML; Chiang et al. 2022 JBES) */}
+      <ClusterDMLCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

@@ -1,3 +1,4 @@
+from app.engine.cluster_dml_engine import run_cluster_dml
 from app.engine.diff_in_disc_engine import run_diff_in_discontinuities
 from app.engine.rif_oaxaca_decomposition_engine import run_rif_oaxaca_decomposition
 from app.engine.synthetic_diff_in_diff_engine import compute_synthetic_diff_in_diff
@@ -173,6 +174,8 @@ from app.schemas import (
     RIFOaxacaDecompositionOut,
     DiffInDiscontinuitiesRequest,
     DiffInDiscontinuitiesOut,
+    ClusterDMLRequest,
+    ClusterDMLOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17598,6 +17601,83 @@ def run_diff_in_discontinuities_endpoint(
                         "tau": res.get("estimates", {}).get("diff_in_disc_tau"),
                         "gamma_0": res.get("estimates", {}).get("baseline_pre_jump_gamma0"),
                         "cutoff": payload.cutoff
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/cluster-dml", response_model=ClusterDMLOut)
+def run_cluster_dml_endpoint(
+    survey_id: str,
+    payload: ClusterDMLRequest
+):
+    """
+    Multiway Cluster-Robust Double/Debiased Machine Learning (Chiang et al. 2022 Journal of Econometrics).
+    Estimates causal treatment effects under arbitrary intra-cluster correlation using
+    cluster-split cross-fitting and Neyman orthogonal scores.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                "cluster": ans.get(payload.cluster_question_id),
+                "treatment": ans.get(payload.treatment_question_id),
+                "outcome": ans.get(payload.outcome_question_id),
+                **{cq: ans.get(cq) for cq in payload.covariate_question_ids}
+            })
+
+        res = run_cluster_dml(
+            records=records,
+            cluster_col="cluster",
+            treatment_col="treatment",
+            outcome_col="outcome",
+            covariate_cols=payload.covariate_question_ids,
+            n_splits=payload.n_splits,
+            ml_model=payload.ml_model,
+            alpha_level=payload.alpha_level
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="CLUSTER_DML_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "theta": res.get("estimates", {}).get("theta"),
+                        "se_cluster": res.get("estimates", {}).get("se_cluster"),
+                        "se_inflation": res.get("estimates", {}).get("se_inflation_ratio"),
+                        "num_clusters": res.get("diagnostics", {}).get("num_clusters")
                     }
                 )
             except Exception:
