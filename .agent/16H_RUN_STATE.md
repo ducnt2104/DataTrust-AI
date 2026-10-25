@@ -1961,3 +1961,34 @@ eq 0\}$
   - Backend Unit & Route Tests: **5/5 passed in 1.90s**.
   - Frontend Production Build: **2,112 modules transformed, 0 errors in 1.16s**.
   - Contract Documentation: Section 127 appended to `docs/API_CONTRACT.md`.
+
+
+## 11. Iteration 147: Conformal Counterfactual Risk Inference Engine (Chernozhukov, Wüthrich, & Zhu 2021 JASA; Lei & Candès 2021 JASA)
+- **Timestamp**: 2026-10-25T12:05:00+07:00
+- **Scientific Foundation**:
+  - Overcomes standard causal estimation limitations by providing distribution-free, finite-sample valid prediction intervals for individual counterfactual outcomes: $Y_i(1) \in \hat{C}_1(X_i)$, $Y_i(0) \in \hat{C}_0(X_i)$, and individual treatment effects $\tau_i \in \hat{C}_\tau(X_i)$.
+  - Implements split conformal quantile prediction with propensity score weighting (Tibshirani et al. 2019; Lei & Candès 2021) to adjust for covariate shift in observational survey designs.
+  - Generates simultaneous individual treatment effect intervals $\hat{C}_\tau(X_i) = [\tau_{i, \text{lower}}, \tau_{i, \text{upper}}]$ under Bonferroni calibration ensuring exact $1 - \alpha$ finite-sample coverage without distributional assumptions.
+  - Downside Harm Risk Profiling: Identifies sub-populations where $\tau_{i, \text{lower}} < 0$ despite positive overall ATE, computing 5% Conditional Value-at-Risk (CVaR Expected Shortfall).
+  - Classifies actionable policy recommendations: `ROLLOUT` (Strict Benefit $\tau_{LB} > 0$), `SAFEGUARDS` (Downside Risk $\tau_{LB} \le 0 \le \tau_{UB}$), `CONTRAINDICATED` ($\tau_{UB} < 0$), and `MONITOR`.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/conformal_counterfactual_engine.py` (470 lines).
+  - Pydantic Schemas: `ConformalCounterfactualRequest` and `ConformalCounterfactualOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/conformal-counterfactual` with `CONFORMAL_COUNTERFACTUAL_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_conformal_counterfactual_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_conformal_counterfactual_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `ConformalCounterfactualSubgroup`, `ConformalCounterfactualIndividual`, `ConformalCounterfactualResult`, `ConformalCounterfactualRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runConformalCounterfactual` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/ConformalCounterfactualCard.tsx` (470 lines) with target outcome and treatment selectors, covariate multi-selector, subgroup stratifier, miscoverage level $\alpha$ selector (90%, 95%, 80%), propensity weighting toggle, KPI stat cards (Target Coverage, Estimated ATE, Downside Risk Rate, Strict Benefit Rate, 5% CVaR), dual-panel SVG visualizer (Individual ITE Bands & Subgroup Risk Profiles), subgroup risk table, individual counterfactual prediction table with search/filtering, calibration diagnostics box, and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 3.12s**.
+  - Frontend Production Build: **2,113 modules transformed, 0 errors in 1.14s**.
+  - Contract Documentation: Section 128 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 12. Planned Next Iteration: Iteration 148
+- **Feature**: Causal Matrix Completion with Staggered Rollout & Nuclear Norm Regularization (Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021 JASA).
+- **Scope**: Panel survey data with staggered adoption of interventions across units and time periods, completing unobserved counterfactual potential outcomes via low-rank matrix factorization (Singular Value Thresholding / Nuclear Norm minimization).

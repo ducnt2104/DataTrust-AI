@@ -125,6 +125,7 @@ import { LARFCard } from '../components/LARFCard';
 import { MTECard } from '../components/MTECard';
 import { LeeBoundsCard } from '../components/LeeBoundsCard';
 import { SurrogateIndexCard } from '../components/SurrogateIndexCard';
+import { ConformalCounterfactualCard } from '../components/ConformalCounterfactualCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1428,6 +1429,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Surrogate Index Long-Term Causal Evaluation (Athey, Chetty, Imbens, & Kang 2019) */}
       <SurrogateIndexCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Conformal Counterfactual Risk Inference (Chernozhukov et al. 2021; Lei & Candes 2021) */}
+      <ConformalCounterfactualCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

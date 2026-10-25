@@ -7847,3 +7847,84 @@ export interface SurrogateIndexRequest {
   ridge_lambda?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Conformal Counterfactual Risk Inference Types (Chernozhukov et al. 2021; Lei & Candes 2021) ---
+export interface ConformalCounterfactualSubgroup {
+  group_name: string;
+  sample_size: number;
+  mean_ite: number;
+  mean_ite_lower: number;
+  mean_ite_upper: number;
+  downside_risk_rate: number;
+  strictly_beneficial_rate: number;
+  strictly_harmful_rate: number;
+  policy_recommendation: string;
+  recommendation_code: 'ROLLOUT' | 'CONTRAINDICATED' | 'SAFEGUARDS' | 'MONITOR';
+}
+
+export interface ConformalCounterfactualIndividual {
+  unit_id: number;
+  treatment_observed: number;
+  outcome_observed: number;
+  propensity_score: number;
+  predicted_y1: number;
+  predicted_y0: number;
+  y1_conformal_interval: [number, number];
+  y0_conformal_interval: [number, number];
+  ite_point_estimate: number;
+  ite_conformal_interval: [number, number];
+  downside_risk: boolean;
+  risk_status: string;
+}
+
+export interface ConformalCounterfactualResult {
+  status: string;
+  message?: string;
+  overall_summary?: {
+    sample_size: number;
+    treated_count: number;
+    control_count: number;
+    miscoverage_alpha: number;
+    target_coverage_pct: number;
+    estimated_ate: number;
+    ate_conformal_interval: [number, number];
+    downside_risk_rate: number;
+    strictly_beneficial_rate: number;
+    strictly_harmful_rate: number;
+    ambiguous_rate: number;
+    var_downside_5pct: number;
+    cvar_downside_5pct: number;
+    mean_ite_interval_length: number;
+  };
+  calibration_diagnostics?: {
+    propensity_auc: number;
+    propensity_overlap_min: number;
+    propensity_overlap_max: number;
+    propensity_overlap_median_treated: number;
+    propensity_overlap_median_control: number;
+    treated_calibration_size: number;
+    treated_training_size: number;
+    control_calibration_size: number;
+    control_training_size: number;
+    treated_nonconformity_cutoff: number;
+    control_nonconformity_cutoff: number;
+    ite_band_half_width: number;
+    weighted_conformal_shift_applied: boolean;
+  };
+  subgroup_risk_profiles?: ConformalCounterfactualSubgroup[];
+  individual_predictions_sample?: ConformalCounterfactualIndividual[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ConformalCounterfactualRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids: string[];
+  miscoverage_alpha?: number;
+  calibration_ratio?: number;
+  use_propensity_weighting?: boolean;
+  subgroup_question_id?: string;
+  scope?: 'all' | 'verified_clean';
+}

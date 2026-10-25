@@ -5363,3 +5363,34 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG trực quan hóa kép Forest Plot & Trọng số đại diện.
   - `apa_narrative`: Thuyết minh học thuật chuẩn mực APA 7th Edition theo Athey et al. (2019).
 - **Niêm phong kiểm toán:** Ghi nhận `SURROGATE_INDEX_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 128. Conformal Counterfactual Risk Inference Engine (Chernozhukov, Wüthrich, & Zhu 2021 JASA; Lei & Candès 2021 JASA)
+- **Mục tiêu:** Khắc phục triệt để hạn chế của suy diễn nhân quả truyền thống (chỉ cung cấp ước lượng điểm ATE hoặc CATE mà không phản ánh độ bất định hay rủi ro cá thể; giả định ngặt nghèo về phân phối chuẩn/tuyến tính). Động cơ xây dựng các khoảng dự báo phản thực nghiệm chính xác hữu hạn không phụ thuộc phân phối (Distribution-Free, Finite-Sample Valid Conformal Prediction Intervals) cho từng cá thể: $Y_i(1) \in \hat{C}_1(X_i)$, $Y_i(0) \in \hat{C}_0(X_i)$, và hiệu ứng can thiệp cá thể $Y_i(1) - Y_i(0) \in \hat{C}_\tau(X_i)$, đồng thời lượng hóa rủi ro tổn hại (Downside Harm Risk) và phân định chính sách triển khai an toàn.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hiệu chỉnh Dịch chuyển Phối biến (Covariate Shift Conformal Calibration; Tibshirani et al. 2019; Lei & Candès 2021):**
+     - Trong nghiên cứu quan sát, phân bố $X \mid W=1$ khác với $X \mid W=0$.
+     - Khi dự báo $Y(1)$ cho nhóm chứng ($W=0$), các điểm hiệu chuẩn lấy từ nhóm can thiệp ($W=1$). Trọng số tỉ số mật độ likelihood ratio:
+       $$w_i^{(1)} \propto \frac{1 - e(X_i)}{e(X_i)}$$
+     - Ngược lại, khi dự báo $Y(0)$ cho nhóm can thiệp ($W=1$):
+       $$w_i^{(0)} \propto \frac{e(X_i)}{1 - e(X_i)}$$
+       với $e(X) = P(W=1 \mid X)$ là điểm số xu hướng (propensity score).
+  2. **Điểm Không Phù Hợp & Phân Vị Conformal Trọng Số (Weighted Conformal Quantiles):**
+     - Trên tập hiệu chuẩn $\mathcal{D}_{w, \text{cal}}$, tính điểm số phần dư $R_i^{(w)} = |Y_i - \hat{\mu}_w(X_i)|$.
+     - Ngưỡng cắt non-conformity $\hat{Q}_{w}$ được xác định bằng phân vị theo trọng số tại mức $1 - \alpha/2$ (hiệu chỉnh Bonferroni nhằm bảo đảm bao phủ đồng thời $1 - \alpha$):
+       $$\sum_{i \in \text{cal}} p_i \mathbb{I}(R_i^{(w)} \le \hat{Q}_{w}) \ge 1 - \alpha/2$$
+  3. **Khoảng Hiệu Ứng Can Thiệp Cá Thể (Individual Treatment Effect Interval $\hat{C}_\tau(X)$):**
+     $$\hat{C}_\tau(X_i) = [\tau_{i, \text{lower}}, \tau_{i, \text{upper}}] = [\hat{\mu}_1(X_i) - \hat{\mu}_0(X_i) - (\hat{Q}_1 + \hat{Q}_0), \hat{\mu}_1(X_i) - \hat{\mu}_0(X_i) + (\hat{Q}_1 + \hat{Q}_0)]$$
+     - Định lý Lei & Candès (2021) bảo đảm xác suất bao phủ $P(Y_i(1) - Y_i(0) \in \hat{C}_\tau(X_i)) \ge 1 - \alpha$ trong mọi cỡ mẫu hữu hạn $N$, không cần giả định phân phối sai số hay mô hình hàm đúng.
+  4. **Hồ Sơ Rủi Ro Tổn Hại (Downside Harm Risk Profiling & CVaR):**
+     - Đánh dấu cá thể có rủi ro tổn hại nếu $\tau_{i, \text{lower}} < 0$ (mặc dù ATE có thể dương).
+     - Phân loại 4 nhóm chính sách:
+       - *Strict Benefit* ($\tau_{\text{lower}} > 0$): Triển khai ưu tiên (ROLLOUT).
+       - *Strict Harm* ($\tau_{\text{upper}} < 0$): Chống chỉ định (CONTRAINDICATED).
+       - *Downside Risk Present* ($\tau_{\text{lower}} \le 0 \le \tau_{\text{upper}}$): Cần rào chắn an toàn (SAFEGUARDS).
+       - *Ambiguous*: Giám sát thông thường (MONITOR).
+     - Đo lường mức rủi ro đuôi tệ nhất qua Conditional Value-at-Risk (CVaR 5% Expected Shortfall).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/conformal-counterfactual`
+  - **Payload:** `ConformalCounterfactualRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `miscoverage_alpha`, `calibration_ratio`, `use_propensity_weighting`, `subgroup_question_id`, `scope`).
+  - **Response:** `ConformalCounterfactualOut` (`status`, `overall_summary`, `calibration_diagnostics`, `subgroup_risk_profiles`, `individual_predictions_sample`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CONFORMAL_COUNTERFACTUAL_EVALUATED` vào chuỗi sổ cái SHA-256.

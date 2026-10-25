@@ -207,7 +207,9 @@ import {
   LeeBoundsRequest,
   LeeBoundsResult,
   SurrogateIndexRequest,
-  SurrogateIndexResult
+  SurrogateIndexResult,
+  ConformalCounterfactualRequest,
+  ConformalCounterfactualResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2412,5 +2414,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<SurrogateIndexResult>(res);
+  },
+
+  async runConformalCounterfactual(
+    surveyId: string,
+    payload: ConformalCounterfactualRequest
+  ): Promise<ConformalCounterfactualResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/conformal-counterfactual`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ConformalCounterfactualResult>(res);
   }
 };
