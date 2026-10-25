@@ -9804,3 +9804,74 @@ export interface ConformalCausalResult {
   svg_visualization?: string;
   apa_narrative?: string;
 }
+
+
+export interface BCFSubgroupCounts {
+  treated: number;
+  control: number;
+}
+
+export interface BCFATEEstimates {
+  posterior_mean: number;
+  posterior_sd: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+  prob_positive_effect: number;
+}
+
+export interface BCFATTEstimates {
+  posterior_mean: number;
+  posterior_sd: number;
+  ci_lower_95: number;
+  ci_upper_95: number;
+}
+
+export interface BCFMCMCDiagnostics {
+  residual_std: number;
+  residual_variance: number;
+  effective_sample_size: number;
+}
+
+export interface BCFPropensityQuintile {
+  quintile: number;
+  quintile_label: string;
+  sample_count: number;
+  cate_mean: number;
+  cate_ci_lower: number;
+  cate_ci_upper: number;
+}
+
+export interface BCFSampleCATE {
+  observation_id: number;
+  treatment: number;
+  propensity_score: number;
+  prognostic_baseline: number;
+  cate_point_estimate: number;
+  cate_lower_bci: number;
+  cate_upper_bci: number;
+}
+
+export interface BayesianCausalForestRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  num_mcmc_draws?: number;
+  credibility_level?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface BayesianCausalForestResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  mcmc_draws_count?: number;
+  effective_sample_size?: number;
+  subgroup_counts?: BCFSubgroupCounts;
+  ate_estimates?: BCFATEEstimates;
+  att_estimates?: BCFATTEstimates;
+  mcmc_diagnostics?: BCFMCMCDiagnostics;
+  propensity_quintiles?: BCFPropensityQuintile[];
+  sample_cate_estimates?: BCFSampleCATE[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}

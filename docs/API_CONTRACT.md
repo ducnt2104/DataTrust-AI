@@ -6369,3 +6369,30 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `ConformalCausalRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `alpha`, `calibration_ratio`, `scope`).
   - **Response:** `ConformalCausalOut` (`status`, `sample_size`, `nominal_coverage`, `empirical_calibration_coverage`, `subgroup_counts`, `conformal_cutoffs`, `treatment_effect_summary`, `sample_ite_points`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CONFORMAL_CAUSAL_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 162. Bayesian Causal Forests & Targeted Nonparametric Selection Engine (BCF; Hahn, Murray, & Carvalho 2020 Bayesian Analysis; Hill 2011 JCGS)
+- **Mục tiêu:** Ước lượng phân phối hậu nghiệm đầy đủ của hiệu ứng can thiệp trung bình (ATE), hiệu ứng can thiệp trên nhóm đối tượng can thiệp (ATT) và hiệu ứng can thiệp cá thể dị biệt (CATE) dưới sự hiện diện của sai lệch lựa chọn (selection on observables) và cấu trúc phi tuyến tính phức tạp. Phương pháp giải quyết triệt để hiện tượng sai chệch do hiệu chỉnh gây ra (Regularization-Induced Confounding - RIC) - một điểm yếu kinh điển của các mô hình học máy thông thường (BART, Random Forest, Causal Forests) khi áp đặt cơ chế co co (shrinkage penalty) đồng thời lên cả hiệu ứng tiên lượng nền và hiệu ứng can thiệp.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Cấu Trúc Mô Hình BCF (Bayesian Causal Forest Decomposition):**
+     - Bề mặt phản ứng được phân rã thành hai thành phần cây phụ gia độc lập:
+       $$Y_i = \mu(x_i, \hat{\pi}(x_i)) + \tau(x_i) \cdot D_i + \epsilon_i, \quad \epsilon_i \sim \mathcal{N}(0, \sigma^2)$$
+       trong đó $\mu(x, \hat{\pi}(x))$ đại diện cho hàm tiên lượng dự báo kết quả đối chứng $Y(0)$, và $\tau(x)$ đại diện cho hàm hiệu ứng can thiệp có điều kiện (CATE).
+  2. **Tiên Nghiệm Trơn Mục Tiêu Khử Nhiễu RIC (Targeted Smooth Priors):**
+     - Bằng cách đưa điểm xu hướng gán can thiệp $\hat{\pi}(x) = P(D=1 \mid X=x)$ trực tiếp vào không gian đặc trưng của hàm tiên lượng $\mu$, BCF cho phép mô hình linh hoạt hấp thụ sự phụ thuộc mạnh mẽ giữa biến giải thích và xác suất can thiệp mà không làm co méo bề mặt hiệu ứng $\tau(x)$.
+     - Hàm $\tau(x)$ được gán tiên nghiệm co co mạnh hơn hướng về hiệu ứng hằng số hoặc 0, giảm thiểu phương sai ước lượng cá thể.
+  3. **Lấy Mẫu Phân Phối Hậu Nghiệm MCMC (MCMC Posterior Simulation):**
+     - Thực hiện chuỗi lấy mẫu Gibbs $S \in [50, 500]$ cho phân phối hậu nghiệm của các tham số:
+       $$\text{ATE}^{(s)} = \frac{1}{N} \sum_{i=1}^N \tau^{(s)}(x_i), \quad \text{ATT}^{(s)} = \frac{1}{N_1} \sum_{i: D_i=1} \tau^{(s)}(x_i)$$
+       với phương sai phần dư tuân theo phân phối Inverse-Gamma: $\sigma^2 \sim \text{Inv-Gamma}(\nu/2, \nu\lambda/2)$.
+  4. **Khoảng Tin Cậy Bayes & Phân Tích Dị Biệt Ngũ Phân Vị:**
+     - Thiết lập Khoảng Tin cậy Bayes (Bayesian Credible Interval - BCI) 95% có tính giải thích trực tiếp về mặt xác suất: $P(\text{ATE} \in [\text{BCI}_L, \text{BCI}_U] \mid \mathcal{D}) = 0.95$.
+     - Tính xác suất hậu nghiệm hiệu ứng mang giá trị dương: $P(\text{ATE} > 0 \mid \mathcal{D})$.
+     - Phân rã dị biệt hiệu ứng can thiệp theo 5 ngũ phân vị (Q1 đến Q5) của điểm xu hướng $\hat{\pi}(x)$ để nhận diện các nhóm đối tượng hưởng lợi vượt trội.
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị hàm mật độ hậu nghiệm $P(\text{ATE} \mid \mathcal{D})$ với vùng tô bóng khoảng tin cậy 95% BCI và đường trung bình hậu nghiệm.
+     - Panel B: Đồ thị thanh dị biệt CATE theo các ngũ phân vị điểm xu hướng $\hat{\pi}(x)$ kèm thanh sai số hậu nghiệm.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/bayesian-causal-forest`
+  - **Payload:** `BayesianCausalForestRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `num_mcmc_draws`, `credibility_level`, `scope`).
+  - **Response:** `BayesianCausalForestOut` (`status`, `sample_size`, `mcmc_draws_count`, `effective_sample_size`, `subgroup_counts`, `ate_estimates`, `att_estimates`, `mcmc_diagnostics`, `propensity_quintiles`, `sample_cate_estimates`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `BAYESIAN_CAUSAL_FOREST_EVALUATED` vào chuỗi sổ cái SHA-256.

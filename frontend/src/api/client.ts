@@ -273,7 +273,9 @@ import {
   IVLATEQuantileRequest,
   IVLATEQuantileResult,
   ConformalCausalRequest,
-  ConformalCausalResult
+  ConformalCausalResult,
+  BayesianCausalForestRequest,
+  BayesianCausalForestResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2847,5 +2849,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ConformalCausalResult>(res);
+  },
+
+  async runBayesianCausalForest(
+    surveyId: string,
+    payload: BayesianCausalForestRequest
+  ): Promise<BayesianCausalForestResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/bayesian-causal-forest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<BayesianCausalForestResult>(res);
   }
 };

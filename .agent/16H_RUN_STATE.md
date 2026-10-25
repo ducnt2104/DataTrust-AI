@@ -2944,3 +2944,35 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 ## 48. Planned Next Iteration: Iteration 181
 - **Feature**: Bayesian Causal Forests & Targeted Nonparametric Selection Engine (Hahn, Murray, & Carvalho 2020 Bayesian Analysis; Hill 2011 JCGS).
 - **Scope**: Implements Bayesian Additive Regression Trees with targeted propensity regularization (BCF), decomposing response surface into prognostic mu(x) and treatment effect tau(x) components to resolve regularization-induced confounding.
+
+
+## 48. Iteration 181: Bayesian Causal Forests & Targeted Nonparametric Selection Engine (Hahn, Murray, & Carvalho 2020)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T16:34:00+07:00
+- **Scientific Foundation**:
+  - Resolves Regularization-Induced Confounding (RIC): Observational ML causal inference often conflates strong prognostic confounding with treatment heterogeneity due to shared regularization penalties.
+  - Targeted Decomposition: Formulates Y_i = mu(x_i, pi_hat(x_i)) + tau(x_i)*D_i + epsilon_i, explicitly passing estimated propensity score pi_hat(x) to the prognostic surface to absorb selection bias while heavily regularizing tau(x) towards homogeneity (Hahn et al. 2020 Bayesian Analysis; Hill 2011 JCGS).
+  - MCMC Posterior Simulation: Generates finite-sample posterior draws for ATE, ATT, and CATE under an Inverse-Gamma error variance prior, computing exact 95% Bayesian Credible Intervals (BCI) and posterior probabilities of positive effect P(ATE > 0 | D).
+  - Propensity Heterogeneity Profiling: Groups CATE estimates across 5 propensity quintiles (Q1 to Q5) to detect targeted intervention efficacy.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays the MCMC posterior distribution curve P(ATE | Data) with shaded 95% BCI; Panel B displays the CATE error-bar trajectory across propensity quintiles.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/bayesian_causal_forest_engine.py (420 lines).
+  - Schemas: BayesianCausalForestRequest, BayesianCausalForestOut, BCFSubgroupCounts, BCFATEEstimates, BCFATTEstimates, BCFMCMCDiagnostics, BCFPropensityQuintile, BCFSampleCATE in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/bayesian-causal-forest with BAYESIAN_CAUSAL_FOREST_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_bayesian_causal_forest_engine.py (3/3 passed in 0.40s).
+  - Route Tests: backend/tests/test_bayesian_causal_forest_routes.py (1/1 passed in 1.99s).
+- **Frontend Components**:
+  - TypeScript Types: BCFSubgroupCounts, BCFATEEstimates, BCFATTEstimates, BCFMCMCDiagnostics, BCFPropensityQuintile, BCFSampleCATE, BayesianCausalForestRequest, BayesianCausalForestResult in frontend/src/types/survey.ts.
+  - API Client Method: runBayesianCausalForest in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/BayesianCausalForestCard.tsx (480 lines) with Treatment, Outcome, and Covariates selectors, MCMC draws slider, credibility level selector (90%, 95%, 99%), 5 KPI cards (ATE posterior mean & SD, 95% BCI, P(ATE > 0 | Data), ATT posterior mean, Effective sample size ESS), dual-panel SVG visualizer, tabs for quintile heterogeneity, CATE sample table, MCMC diagnostics & RIC protection, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (44/44 cumulative passed across Iterations 171-181 in 23.40s).
+  - Frontend Production Build: 2,146 modules transformed, 0 errors in 1.52s.
+  - Contract Documentation: Section 162 appended to docs/API_CONTRACT.md.
+
+---
+
+## 49. Planned Next Iteration: Iteration 182
+- **Feature**: Semiparametric Spatial Difference-in-Differences & Spillover Causal Engine (Spatial-DiD; Delgado & Florax 2015; Butts 2021).
+- **Scope**: Evaluates direct treatment effects and spatial spillover effects across geographic distance matrices, calculating Spatial Lag of Treatment (SLX), Total Marginal Impacts, and Moran's I residual spatial correlation diagnostics.

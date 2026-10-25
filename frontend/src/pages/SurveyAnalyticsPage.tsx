@@ -158,6 +158,7 @@ import { CausalSensitivityBoundsCard } from '../components/CausalSensitivityBoun
 import { CausalMatrixCompletionCard } from '../components/CausalMatrixCompletionCard';
 import { IVLATEQuantileCard } from '../components/IVLATEQuantileCard';
 import { ConformalCausalCard } from '../components/ConformalCausalCard';
+import { BayesianCausalForestCard } from '../components/BayesianCausalForestCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1791,6 +1792,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Conformal Causal Inference & Distribution-Free Counterfactual Bands (Chernozhukov 2021; Lei & Candès 2021) */}
       <ConformalCausalCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Bayesian Causal Forests & Targeted Nonparametric Selection (Hahn, Murray, & Carvalho 2020) */}
+      <BayesianCausalForestCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,
