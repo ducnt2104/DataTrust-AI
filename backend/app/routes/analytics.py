@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.twfe_decomposition_engine import estimate_twfe_decomposition
 from app.engine.quantile_synthetic_control_engine import estimate_quantile_synthetic_control
 from app.engine.shift_share_iv_engine import estimate_shift_share_iv
 from app.engine.bcf_engine import estimate_bayesian_causal_forest
@@ -107,6 +108,8 @@ from app.schemas import (
     ShiftShareIVOut,
     QuantileSyntheticControlRequest,
     QuantileSyntheticControlOut,
+    TWFEDecompositionRequest,
+    TWFEDecompositionOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15262,6 +15265,130 @@ def run_quantile_synthetic_control_analysis(
                 "treatment_time": str(payload.treatment_time),
                 "median_qte": res.get("overall_summary", {}).get("median_qte_effect"),
                 "gini_impact": res.get("overall_summary", {}).get("gini_impact"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/twfe-decomposition", response_model=TWFEDecompositionOut)
+def run_twfe_decomposition_analysis(
+    survey_id: str,
+    payload: TWFEDecompositionRequest
+):
+    """
+    Two-Way Fixed Effects (TWFE) Decomposition & Negative Weights Diagnostics.
+    de Chaisemartin, C., & D'Haultfœuille, X. (2020 AER; 2022 Restud).
+    Decomposes linear TWFE regression weights omega_{i,t} on individual treatment effects,
+    computes minimal heterogeneity standard deviation sigma_fe required for sign reversal,
+    and calculates robust DID_M switcher-vs-stayer estimates with placebo pre-trend tests.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if (payload.outcome_question_id in answers and
+                payload.treatment_question_id in answers and
+                payload.unit_question_id in answers and
+                payload.time_question_id in answers):
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    d_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                u_val = str(answers[payload.unit_question_id]).strip()
+
+                raw_t = answers[payload.time_question_id]
+                try:
+                    t_val = float(raw_t)
+                except (ValueError, TypeError):
+                    t_val = str(raw_t).strip()
+
+                rec = {
+                    payload.outcome_question_id: y_val,
+                    payload.treatment_question_id: d_val,
+                    payload.unit_question_id: u_val,
+                    payload.time_question_id: t_val
+                }
+
+                # Controls
+                valid_covs = True
+                for cid in cov_ids:
+                    if cid in answers:
+                        try:
+                            rec[cid] = float(answers[cid])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                    else:
+                        valid_covs = False
+
+                if valid_covs:
+                    df_records.append(rec)
+
+        if len(df_records) < 12:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 12 bản ghi để ước lượng TWFE Decomposition (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_twfe_decomposition(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                unit_col=payload.unit_question_id,
+                time_col=payload.time_question_id,
+                covariate_cols=cov_ids if len(cov_ids) > 0 else None,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình phân rã TWFE: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="TWFE_DECOMPOSITION_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "beta_twfe": res.get("overall_summary", {}).get("beta_twfe"),
+                "did_m": res.get("overall_summary", {}).get("did_m_estimate"),
+                "sum_neg_weights": res.get("overall_summary", {}).get("sum_negative_weights"),
+                "sigma_fe": res.get("overall_summary", {}).get("minimal_heterogeneity_sd_sigma_fe"),
                 "status": res.get("status")
             }
         )

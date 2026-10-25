@@ -2108,7 +2108,34 @@ eq 0\}$
 
 ---
 
-## 19. Planned Next Iteration: Iteration 152
-- **Feature**: Staggered Synthetic Difference-in-Differences with Unit & Time Weight Shrinkage (SDID; Arkhangelsky et al. 2021 AER; Clarke et al. 2023).
-- **Scope**: Implements Synthetic DiD combining unit fixed effects, time fixed effects, L2-penalized unit weights $\hat{\omega}$, and time weights $\hat{\lambda}$ to achieve double-robust identification under staggered policy rollouts and irregular longitudinal survey panels.
+## 19. Iteration 152: Two-Way Fixed Effects (TWFE) Decomposition, Negative Weights Diagnostics & Switcher Estimators (DID_M; de Chaisemartin & D'Haultfœuille 2020 AER, 2022 Restud)
+- **Timestamp**: 2026-10-25T12:41:00+07:00
+- **Scientific Foundation**:
+  - Implements the foundational de Chaisemartin & D'Haultfœuille (2020 AER) decomposition for longitudinal panel survey evaluations: reveals how standard Two-Way Fixed Effects (TWFE) regressions $\hat{\beta}_{\text{fe}}$ can be severely corrupted by negative weights on individual treatment effects ($\omega_{i,t} < 0$).
+  - Negative Weights Mechanism: Demonstrates that whenever already-treated units act as controls for newly treated units in staggered adoption, their treatment effect is subtracted from the newly treated units, producing negative weights that can reverse the sign of $\hat{\beta}_{\text{fe}}$ relative to the true ATT.
+  - Minimal Heterogeneity SD ($\underline{\sigma}_{\text{fe}}$): Calculates exact closed-form threshold $\underline{\sigma}_{\text{fe}} = \frac{|\hat{\beta}_{\text{fe}}|}{\sum |\omega_{i,t}|}$ required for sign-reversal, establishing whether the TWFE estimate is fragile or robust.
+  - Robust Alternative $DID_M$: Implements the non-negative switcher-vs-stayer estimator $DID_{M, t} = \Delta \bar{Y}_{\text{switchers}, t} - \Delta \bar{Y}_{\text{stayers}, t}$, aggregating across all transition periods with block-bootstrapped standard errors.
+  - Placebo Pre-trend Testing: Implements pre-intervention parallel trend test ($DID_M^{\text{placebo}}$) across $t-2 \to t-1$ to empirically validate identifying assumptions.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/twfe_decomposition_engine.py` (420 lines).
+  - Pydantic Schemas: `TWFEDecompositionRequest` and `TWFEDecompositionOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/twfe-decomposition` with `TWFE_DECOMPOSITION_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_twfe_decomposition_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_twfe_decomposition_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `TWFESwitcherItem`, `TWFEWeightCell`, `TWFEDecompositionSummary`, `TWFEDecompositionResult`, `TWFEDecompositionRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runTWFEDecomposition` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/TWFEDecompositionCard.tsx` (480 lines) with outcome, treatment, unit, time, controls selectors, diagnostic alert banner, key KPI stat cards ($\beta_{\text{twfe}}$, $DID_M$, $W^-$, $\underline{\sigma}_{\text{fe}}$, Placebo test), dual-panel SVG visualizer (weights histogram & estimator comparison), period-by-period switchers table, top negative weights table, and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 2.65s**.
+  - Frontend Production Build: **2,118 modules transformed, 0 errors in 1.34s**.
+  - Contract Documentation: Section 133 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 20. Planned Next Iteration: Iteration 153
+- **Feature**: Factor Instrumental Variables & Principal Component 2SLS Engine (Bai & Ng 2010 Econometrica; Stock & Watson 2002; Kapetanios, Marcellino, & Papailias 2019 JBES).
+- **Scope**: Resolves the "Curse of Many Instruments" in high-dimensional survey batteries by extracting dense latent factors $\hat{F} = Z \hat{\Lambda}$ via SVD/PCA, selecting optimal factor dimension $r^*$ with Bai-Ng $IC_{p1}$ criteria, computing factor-orthogonalized 2SLS estimates, and providing Cragg-Donald & Kleibergen-Paap weak instrument diagnostics.
+
 

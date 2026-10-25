@@ -217,7 +217,9 @@ import {
   ShiftShareIVRequest,
   ShiftShareIVResult,
   QuantileSyntheticControlRequest,
-  QuantileSyntheticControlResult
+  QuantileSyntheticControlResult,
+  TWFEDecompositionRequest,
+  TWFEDecompositionResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2481,5 +2483,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<QuantileSyntheticControlResult>(res);
+  },
+  async runTWFEDecomposition(
+    surveyId: string,
+    payload: TWFEDecompositionRequest
+  ): Promise<TWFEDecompositionResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/twfe-decomposition`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<TWFEDecompositionResult>(res);
   }
 };

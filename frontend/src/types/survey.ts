@@ -8148,3 +8148,72 @@ export interface QuantileSyntheticControlRequest {
   scope?: 'all' | 'verified_clean';
 }
 
+
+
+// --- Two-Way Fixed Effects (TWFE) Decomposition & Negative Weights (de Chaisemartin 2020) Types ---
+export interface TWFESwitcherItem {
+  period: string;
+  time_index: number;
+  n_switchers: number;
+  n_stayers: number;
+  did_m_effect: number;
+  placebo_pretrend_effect?: number | null;
+}
+
+export interface TWFEWeightCell {
+  unit: string;
+  time_period: string;
+  weight: number;
+  weight_pct: number;
+}
+
+export interface TWFEDecompositionSummary {
+  sample_size: number;
+  n_units: number;
+  n_time_periods: number;
+  n_treated_cells: number;
+  n_control_cells: number;
+  beta_twfe: number;
+  se_twfe: number;
+  t_statistic_twfe: number;
+  p_value_twfe: number;
+  ci_twfe_95: [number, number];
+  sum_positive_weights: number;
+  sum_negative_weights: number;
+  n_negative_cells: number;
+  n_positive_cells: number;
+  pct_negative_cells: number;
+  minimal_heterogeneity_sd_sigma_fe: number;
+  twfe_validity_status: 'ROBUST_LOW_RISK' | 'MODERATE_BIAS_RISK' | 'CRITICAL_BIAS_RISK';
+  risk_interpretation: string;
+  did_m_estimate: number;
+  se_did_m: number;
+  t_statistic_did_m: number;
+  p_value_did_m: number;
+  ci_did_m_95: [number, number];
+  total_switchers_identified: number;
+  placebo_pretrend_estimate: number;
+  placebo_p_value: number;
+  parallel_trends_pass: boolean;
+}
+
+export interface TWFEDecompositionResult {
+  status: string;
+  message?: string;
+  overall_summary?: TWFEDecompositionSummary;
+  period_switchers?: TWFESwitcherItem[];
+  top_negative_weights?: TWFEWeightCell[];
+  top_positive_weights?: TWFEWeightCell[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface TWFEDecompositionRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  unit_question_id: string;
+  time_question_id: string;
+  covariate_question_ids?: string[];
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

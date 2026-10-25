@@ -5495,3 +5495,33 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Response:** `QuantileSyntheticControlOut` (`status`, `overall_summary`, `donor_weights`, `quantile_treatment_effects`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `QUANTILE_SYNTHETIC_CONTROL_EVALUATED` vào chuỗi sổ cái SHA-256.
 
+
+### 133. Two-Way Fixed Effects (TWFE) Decomposition, Negative Weights Diagnostics & Switcher Estimators (DID_M; de Chaisemartin & D'Haultfœuille 2020 AER, 2022 Restud)
+- **Mục tiêu:** Khắc phục triệt để nguy cơ sai lệch nghiêm trọng và "đảo ngược dấu" trong các mô hình hồi quy Two-Way Fixed Effects ($Y_{it} = \alpha_i + \gamma_t + \beta_{\text{fe}} D_{it} + \varepsilon_{it}$) phổ biến trong phân tích khảo sát dạng bảng / dọc khi chính sách áp dụng theo lộ trình so le (staggered adoption) và hiệu ứng can thiệp thay đổi theo thời gian. Động cơ thực hiện định lý phân rã de Chaisemartin & D'Haultfœuille (2020 AER), bóc tách trọng số giải tích $\omega_{i,t}$ cho từng ô đơn vị - thời kỳ được can thiệp, phát hiện các ô nhận trọng số âm ($\omega_{i,t} < 0$), tính toán độ lệch chuẩn không đồng nhất tối thiểu ($\underline{\sigma}_{\text{fe}}$) làm đảo ngược dấu hệ số hồi quy, và cung cấp ước lượng thuần nhất $DID_M$ (so sánh switchers vs stayers) kèm kiểm định giả dược tiền can thiệp (placebo pre-trend).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định lý Phân rã Trọng số TWFE (de Chaisemartin & D'Haultfœuille 2020 AER):**
+     - Đặt $\tilde{D}_{it}$ là phần dư từ phép hồi quy $D_{it}$ theo hiệu ứng cố định đơn vị $i$ và thời kỳ $t$ (hai chiều within-transformation).
+     - Ước lượng OLS $\hat{\beta}_{\text{fe}} = \sum_{(i,t): D_{it}=1} \omega_{i,t} \text{TE}_{i,t}$, trong đó:
+       $$\omega_{i,t} = \frac{\tilde{D}_{it}}{\sum_{(j,s): D_{js}=1} \tilde{D}_{js}}$$
+     - Ràng buộc: $\sum_{(i,t): D_{it}=1} \omega_{i,t} = 1.0$.
+     - Trọng số âm xuất hiện khi các đơn vị đã được can thiệp từ trước (already-treated units) đóng vai trò làm nhóm đối chứng cho các đơn vị mới được can thiệp (switchers). Nếu hiệu ứng can thiệp tăng dần theo thời gian, phần dư của nhóm đã can thiệp bị trừ đi, tạo ra trọng số $\omega_{i,t} < 0$.
+  2. **Chẩn đoán Rủi ro & Ngưỡng Không đồng nhất Đảo dấu ($\underline{\sigma}_{\text{fe}}$):**
+     - Tổng trọng số dương $W^+ = \sum_{\omega > 0} \omega_{i,t}$ và tổng trọng số âm $W^- = \sum_{\omega < 0} \omega_{i,t}$ ($W^+ + W^- = 1.0$).
+     - Ngưỡng biến thiên tối thiểu của hiệu ứng can thiệp qua các đơn vị cần thiết để $\hat{\beta}_{\text{fe}}$ có dấu ngược hoàn toàn với hiệu ứng can thiệp trung bình thực tế (ATT):
+       $$\underline{\sigma}_{\text{fe}} = \frac{|\hat{\beta}_{\text{fe}}|}{\sum_{(i,t): D_{it}=1} |\omega_{i,t}|}$$
+     - Phân loại 3 cấp độ an toàn: `ROBUST_LOW_RISK`, `MODERATE_BIAS_RISK`, `CRITICAL_BIAS_RISK`.
+  3. **Ước lượng Viên Thuần nhất $DID_M$ (Switcher-vs-Stayer):**
+     - Tại mỗi bước chuyển $t-1 \to t$, nhận diện:
+       - Đơn vị chuyển trạng thái (Switchers): $D_{i, t-1} = 0, D_{i, t} = 1$.
+       - Đơn vị duy trì không can thiệp (Stayers): $D_{i, t-1} = 0, D_{i, t} = 0$.
+     - Hiệu ứng chuyển trạng thái tức thời:
+       $$DID_{M, t} = \frac{1}{N_{1,0,t}} \sum_{i \in \text{Switchers}} (Y_{it} - Y_{i,t-1}) - \frac{1}{N_{0,0,t}} \sum_{i \in \text{Stayers}} (Y_{it} - Y_{i,t-1})$$
+     - Tổng hợp $DID_M = \sum_t \frac{N_{1,0,t}}{N_{\text{total\_switchers}}} DID_{M, t}$, miễn nhiễm hoàn toàn trước trọng số âm!
+  4. **Kiểm định Giả dược Xu hướng Song song (Placebo Pre-trend Test):**
+     - Kiểm tra sai phân trước can thiệp $(Y_{i, t-1} - Y_{i, t-2})$ giữa nhóm chuyển đổi và nhóm duy trì nhằm thẩm định giả định song song.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/twfe-decomposition`
+  - **Payload:** `TWFEDecompositionRequest` (`outcome_question_id`, `treatment_question_id`, `unit_question_id`, `time_question_id`, `covariate_question_ids`, `alpha_level`, `scope`).
+  - **Response:** `TWFEDecompositionOut` (`status`, `overall_summary`, `period_switchers`, `top_negative_weights`, `top_positive_weights`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `TWFE_DECOMPOSITION_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
