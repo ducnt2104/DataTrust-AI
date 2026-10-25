@@ -155,6 +155,7 @@ import { DiffInDiscontinuitiesCard } from '../components/DiffInDiscontinuitiesCa
 import { ClusterDMLCard } from '../components/ClusterDMLCard';
 import { DistributionalSyntheticControlCard } from '../components/DistributionalSyntheticControlCard';
 import { CausalSensitivityBoundsCard } from '../components/CausalSensitivityBoundsCard';
+import { CausalMatrixCompletionCard } from '../components/CausalMatrixCompletionCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1758,6 +1759,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Nonparametric Copula Causal Sensitivity Bounds (Cinelli & Hazlett 2020 JRSS-B) */}
       <CausalSensitivityBoundsCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Causal Matrix Completion & Nuclear Norm Regularization (Athey et al. 2021 JASA) */}
+      <CausalMatrixCompletionCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

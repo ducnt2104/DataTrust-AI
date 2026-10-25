@@ -2848,6 +2848,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 45. Planned Next Iteration: Iteration 178
-- **Feature**: Causal Matrix Completion & Nuclear Norm Regularized Matrix Factorization Engine (Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021 JASA; Bai 2009).
-- **Scope**: Estimates causal effects in panel survey settings with staggered treatment adoption and arbitrary unobserved unit and time confounders by treating counterfactual estimation as a matrix completion problem with low-rank nuclear norm penalties.
+## 45. Iteration 178: Causal Matrix Completion & Nuclear Norm Regularized Matrix Factorization Engine (Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021 JASA; Bai 2009 Econometrica)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T16:09:00+07:00
+- **Scientific Foundation**:
+  - Treats counterfactual estimation in panel surveys with staggered treatment adoption as a matrix completion problem with low-rank interactive fixed effects L = U V' (Athey et al. 2021 JASA; Bai 2009).
+  - Two-Way Fixed Effects Centering: De-means observations on control cells by unit and period effects, completely eliminating shrinkage distortion on level parameters.
+  - Singular Value Thresholding (SVT): Solves nuclear norm regularized minimization ||L||_* on control cells Omega, recovering optimal low-rank latent factor interactions.
+  - Dynamic Event-Study Treatment Trajectory: Traces average treatment effects tau(e) across relative post-adoption periods with 95% confidence bands.
+  - Unit Heterogeneity Decomposition: Extracts individual ATTs for every adopting unit, uncovering differential policy absorption.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays the N x T adoption and matrix completion heatmap; Panel B illustrates the dynamic event-study trajectory with 95% confidence intervals.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/causal_matrix_completion_engine.py (390 lines).
+  - Schemas: CausalMatrixCompletionRequest, CausalMatrixCompletionOut, CMCDimensions, CMCAdoptionCounts, CMCAlgorithmConvergence, CMCEstimates, CMCUnitHeterogeneity, CMCEventStudyPoint in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/causal-matrix-completion with CAUSAL_MATRIX_COMPLETION_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_causal_matrix_completion_engine.py (3/3 passed in 0.34s).
+  - Route Tests: backend/tests/test_causal_matrix_completion_routes.py (1/1 passed in 2.48s).
+- **Frontend Components**:
+  - TypeScript Types: CMCDimensions, CMCAdoptionCounts, CMCAlgorithmConvergence, CMCEstimates, CMCUnitHeterogeneity, CMCEventStudyPoint, CausalMatrixCompletionResult, CausalMatrixCompletionRequest in frontend/src/types/survey.ts.
+  - API Client Method: runCausalMatrixCompletion in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/CausalMatrixCompletionCard.tsx (510 lines) with unit, period, outcome, treatment selectors, lambda nuclear penalty, max iterations, 4 KPI cards (ATT, matrix dimensions & rank, RMSE & convergence, adoption cells count), dual-panel SVG visualizer, tabbed unit heterogeneity / event study / diagnostics, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (32/32 cumulative passed across Iterations 171-178 in 17.03s).
+  - Frontend Production Build: 2,143 modules transformed, 0 errors in 1.32s.
+  - Contract Documentation: Section 159 appended to docs/API_CONTRACT.md.
+
+---
+
+## 46. Planned Next Iteration: Iteration 179
+- **Feature**: Nonparametric Instrumental Variable & Local Average Treatment Effect (LATE) Quantile Decomposition Engine (Abadie, Angrist, & Imbens 2002 Econometrica; Frölich & Melly 2013 Quantitative Economics).
+- **Scope**: Estimates heterogeneous causal effects on compliers across the entire outcome distribution using unconditional instrumental variable quantile regressions, testing monotonicity and complier share bounds.

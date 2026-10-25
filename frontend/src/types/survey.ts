@@ -9633,3 +9633,69 @@ export interface CausalSensitivityBoundsRequest {
   scope?: 'all' | 'verified_clean';
 }
 
+// --- Causal Matrix Completion & Nuclear Norm Minimization (Athey et al. 2021) ---
+export interface CMCDimensions {
+  units_count: number;
+  periods_count: number;
+}
+
+export interface CMCAdoptionCounts {
+  control_cells: number;
+  treated_cells: number;
+}
+
+export interface CMCAlgorithmConvergence {
+  converged: boolean;
+  iterations: number;
+  latent_rank: number;
+  control_rmse: number;
+}
+
+export interface CMCEstimates {
+  att: number;
+  se: number;
+  ci_low: number;
+  ci_high: number;
+  p_value: number;
+  median_att: number;
+}
+
+export interface CMCUnitHeterogeneity {
+  unit: string;
+  treated_periods_count: number;
+  unit_att: number;
+}
+
+export interface CMCEventStudyPoint {
+  event_time: number;
+  att: number;
+  ci_low: number;
+  ci_high: number;
+  sample_count: number;
+}
+
+export interface CausalMatrixCompletionResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  dimensions?: CMCDimensions;
+  adoption_counts?: CMCAdoptionCounts;
+  algorithm_convergence?: CMCAlgorithmConvergence;
+  estimates?: CMCEstimates;
+  unit_heterogeneity?: CMCUnitHeterogeneity[];
+  event_study_trajectory?: CMCEventStudyPoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalMatrixCompletionRequest {
+  unit_question_id: string;
+  period_question_id: string;
+  outcome_question_id: string;
+  treatment_question_id: string;
+  lambda_nuc?: number;
+  max_iter?: number;
+  tol?: number;
+  scope?: 'all' | 'verified_clean';
+}
+

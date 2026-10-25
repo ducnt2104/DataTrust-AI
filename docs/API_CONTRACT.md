@@ -6275,3 +6275,32 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Response:** `CausalSensitivityBoundsOut` (`status`, `sample_size`, `degrees_of_freedom`, `baseline_estimates`, `robustness_values`, `covariate_benchmarks`, `worst_case_curve`, `copula_tail_bounds`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_SENSITIVITY_BOUNDS_EVALUATED` vào chuỗi sổ cái SHA-256.
 
+### 159. Causal Matrix Completion & Nuclear Norm Minimization with Staggered Adoption Engine (MC-NNM; Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021 JASA; Bai 2009 Econometrica)
+- **Mục tiêu:** Ước lượng hiệu ứng can thiệp trung bình trên nhóm được can thiệp (ATT) trong các khảo sát dữ liệu bảng hoặc dữ liệu tổ chức có thời gian (Panel Surveys) với lịch trình tiếp nhận chính sách so le (Staggered Treatment Adoption). Phương pháp khắc phục triệt để các sai lệch trọng số âm của mô hình Two-Way Fixed Effects (Goodman-Bacon 2021; de Chaisemartin & D'Haultfoeuille 2020) và vượt qua hạn chế khắt khe về chuỗi thời gian dài của SCM truyền thống bằng cách xử lý việc ước lượng kết quả phản thực nghiệm như một bài toán Hoàn thiện Ma trận Hạt nhân (Matrix Completion) dưới giả định cấu trúc nhân tố tiềm ẩn hạng thấp (Low-Rank Factor Models; Bai 2009).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Đặc Tả Ma Trận Kết Quả & Cơ Chế Khuyết Tiềm Ẩn:**
+     - Cho ma trận kết quả $N \times T$ là $\mathbf{Y}$. Các ô đối chứng ($W_{it} = 0$) thuộc tập quan sát $\Omega = \{(i, t) : W_{it} = 0\}$ thỏa mãn:
+       $$Y_{it}(0) = L_{it} + \epsilon_{it}$$
+       trong đó $\mathbf{L} = \mathbf{U} \mathbf{V}'$ là ma trận hạng thấp đại diện cho các yếu tố cố định tương tác cá thể và thời gian không quan sát được.
+     - Với các ô can thiệp ($W_{it} = 1$), kết quả tiềm năng đối chứng $Y_{it}(0)$ bị khuyết và được dự báo thông qua hoàn thiện ma trận hạt nhân.
+  2. **Tối Thiểu Hóa Chuẩn Hạt Nhân (Nuclear Norm Regularization):**
+     - Giải bài toán tối ưu hóa lồi trên tập ô đối chứng $\Omega$:
+       $$\min_{\mathbf{L} \in \mathbb{R}^{N \times T}} \frac{1}{|\Omega|} \sum_{(i, t) \in \Omega} (Y_{it} - (\alpha_i + \beta_t + L_{it}))^2 + \lambda_{\text{nuc}} \|\mathbf{L}\|_*$$
+       với chuẩn hạt nhân $\|\mathbf{L}\|_* = \sum_r \sigma_r(\mathbf{L})$ là đại diện lồi chặt nhất cho ràng buộc hạng $\text{rank}(\mathbf{L}) \le R$.
+  3. **Thuật Toán Ngưỡng Giá Trị Kỳ Dị Mềm (Singular Value Thresholding - SVT):**
+     - Tại mỗi bước lặp $k$:
+       $$\mathbf{Z}^{(k)} = \mathcal{P}_\Omega(\mathbf{Y} - \mathbf{FE}) + \mathcal{P}_\Omega^\perp(\mathbf{L}^{(k)})$$
+       $$\mathbf{L}^{(k+1)} = \mathcal{D}_{\lambda}(\mathbf{Z}^{(k)}) = \mathbf{U} \cdot \text{diag}(\max(0, \sigma_r - \lambda)) \cdot \mathbf{V}'$$
+  4. **Ước Lượng Hiệu Ứng Can Thiệp & Nghiên Cứu Biến Cố (Event-Study Trajectory):**
+     - Hiệu ứng can thiệp từng ô: $\hat{\tau}_{it} = Y_{it} - (\hat{\alpha}_i + \hat{\beta}_t + \hat{L}_{it})$ với $(i, t) \in \Omega^c$.
+     - $\widehat{\text{ATT}} = \frac{1}{|\Omega^c|} \sum_{(i, t) \in \Omega^c} \hat{\tau}_{it}$.
+     - Phân rã quỹ đạo động lực học theo số kỳ kể từ thời điểm bắt đầu tiếp nhận: $\tau(e)$ với $e \in \{0, 1, 2, \dots\}$.
+     - Đo lường dị biệt hóa can thiệp theo từng đơn vị: $\hat{\tau}_i$.
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Bản đồ nhiệt ma trận $N \times T$ thể hiện trạng thái các ô đối chứng, các ô can thiệp tiếp nhận so le và cường độ hiệu ứng $\hat{\tau}_{it}$.
+     - Panel B: Đồ thị quỹ đạo động học biến cố $\tau(e)$ với thanh dải tin cậy $95\%$ khẳng định tính bền vững theo thời gian.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/causal-matrix-completion`
+  - **Payload:** `CausalMatrixCompletionRequest` (`unit_question_id`, `period_question_id`, `outcome_question_id`, `treatment_question_id`, `lambda_nuc`, `max_iter`, `tol`, `scope`).
+  - **Response:** `CausalMatrixCompletionOut` (`status`, `sample_size`, `dimensions`, `adoption_counts`, `algorithm_convergence`, `estimates`, `unit_heterogeneity`, `event_study_trajectory`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_MATRIX_COMPLETION_EVALUATED` vào chuỗi sổ cái SHA-256.
+

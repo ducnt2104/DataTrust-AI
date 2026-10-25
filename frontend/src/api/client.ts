@@ -267,7 +267,9 @@ import {
   DistributionalSyntheticControlRequest,
   DistributionalSyntheticControlResult,
   CausalSensitivityBoundsRequest,
-  CausalSensitivityBoundsResult
+  CausalSensitivityBoundsResult,
+  CausalMatrixCompletionRequest,
+  CausalMatrixCompletionResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2806,5 +2808,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<CausalSensitivityBoundsResult>(res);
+  },
+  async runCausalMatrixCompletion(
+    surveyId: string,
+    payload: CausalMatrixCompletionRequest
+  ): Promise<CausalMatrixCompletionResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/causal-matrix-completion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<CausalMatrixCompletionResult>(res);
   }
 };

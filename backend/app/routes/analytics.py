@@ -1,3 +1,4 @@
+from app.engine.causal_matrix_completion_engine import run_causal_matrix_completion
 from app.engine.causal_sensitivity_bounds_engine import run_causal_sensitivity_bounds
 from app.engine.distributional_synthetic_control_engine import run_distributional_synthetic_control
 from app.engine.cluster_dml_engine import run_cluster_dml
@@ -182,6 +183,8 @@ from app.schemas import (
     DistributionalSyntheticControlOut,
     CausalSensitivityBoundsRequest,
     CausalSensitivityBoundsOut,
+    CausalMatrixCompletionRequest,
+    CausalMatrixCompletionOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17830,6 +17833,82 @@ def run_causal_sensitivity_bounds_endpoint(
                         "rv_q": res.get("robustness_values", {}).get("rv_q_to_zero"),
                         "rv_alpha": res.get("robustness_values", {}).get("rv_alpha_significance"),
                         "robustness_tier": res.get("robustness_values", {}).get("robustness_tier")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+@router.post("/causal-matrix-completion", response_model=CausalMatrixCompletionOut)
+def run_causal_matrix_completion_endpoint(
+    survey_id: str,
+    payload: CausalMatrixCompletionRequest
+):
+    """
+    Causal Matrix Completion & Nuclear Norm Minimization with Staggered Adoption (Athey et al. 2021 JASA).
+    Imputes counterfactual potential outcomes L_it(0) using singular value thresholding and low-rank matrix recovery.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                "unit": ans.get(payload.unit_question_id),
+                "period": ans.get(payload.period_question_id),
+                "outcome": ans.get(payload.outcome_question_id),
+                "treatment": ans.get(payload.treatment_question_id)
+            })
+
+        res = run_causal_matrix_completion(
+            records=records,
+            unit_col="unit",
+            period_col="period",
+            outcome_col="outcome",
+            treatment_col="treatment",
+            lambda_nuc=payload.lambda_nuc,
+            max_iter=payload.max_iter,
+            tol=payload.tol
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="CAUSAL_MATRIX_COMPLETION_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "att": res.get("estimates", {}).get("att"),
+                        "se": res.get("estimates", {}).get("se"),
+                        "latent_rank": res.get("algorithm_convergence", {}).get("latent_rank"),
+                        "units": res.get("dimensions", {}).get("units_count"),
+                        "periods": res.get("dimensions", {}).get("periods_count")
                     }
                 )
             except Exception:
