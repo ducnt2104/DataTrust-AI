@@ -9014,3 +9014,59 @@ export interface BoundaryKernelDeconvolutionRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Targeted Maximum Likelihood Estimation (TMLE; van der Laan & Rose 2011) Types ---
+export interface TMLEEstimatorComparison {
+  method: string;
+  estimate: number;
+  se: number;
+  ci_95: [number, number];
+  p_value: number;
+  is_semiparametric_efficient: boolean;
+}
+
+export interface TargetedMaximumLikelihoodResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  n_treated?: number;
+  n_control?: number;
+  outcome_variable?: string;
+  treatment_variable?: string;
+  covariates_controlled?: string[];
+  ate_tmle?: {
+    estimate: number;
+    se: number;
+    z_stat: number;
+    p_value: number;
+    ci_95: [number, number];
+    ey1_counterfactual: number;
+    ey0_counterfactual: number;
+    interpretation: string;
+  };
+  targeted_fluctuation?: {
+    epsilon_fluctuation: number;
+    eic_mean_residual: number;
+    eic_variance: number;
+    equation_solved: boolean;
+  };
+  propensity_diagnostics?: {
+    min_propensity: number;
+    max_propensity: number;
+    mean_treated_propensity: number;
+    mean_control_propensity: number;
+    positivity_violation_risk: string;
+  };
+  estimators_comparison?: TMLEEstimatorComparison[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface TargetedMaximumLikelihoodRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids?: string[];
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

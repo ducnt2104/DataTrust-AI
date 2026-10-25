@@ -145,6 +145,7 @@ import { ContinuousPolicyShiftCard } from '../components/ContinuousPolicyShiftCa
 import { GeneralizedSyntheticControlCard } from '../components/GeneralizedSyntheticControlCard';
 import { HierarchicalBayesConjointCard } from '../components/HierarchicalBayesConjointCard';
 import { BoundaryKernelDeconvolutionCard } from '../components/BoundaryKernelDeconvolutionCard';
+import { TargetedMaximumLikelihoodCard } from '../components/TargetedMaximumLikelihoodCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1648,6 +1649,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Nonparametric Boundary Kernel Deconvolution & Measurement Error Correction (Delaigle & Meister 2008 JASA; Fan 1991) */}
       <BoundaryKernelDeconvolutionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Targeted Maximum Likelihood Estimation with Efficient Influence Curve Inference (TMLE; van der Laan & Rose 2011; Schuler & Rose 2017) */}
+      <TargetedMaximumLikelihoodCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

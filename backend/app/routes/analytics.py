@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.targeted_maximum_likelihood_engine import run_targeted_maximum_likelihood_estimation
 from app.engine.boundary_kernel_deconvolution_engine import run_boundary_kernel_deconvolution
 from app.engine.hierarchical_bayes_conjoint_engine import run_hierarchical_bayes_conjoint
 from app.engine.generalized_synthetic_control_engine import run_generalized_synthetic_control
@@ -152,6 +153,8 @@ from app.schemas import (
     HierarchicalBayesConjointOut,
     BoundaryKernelDeconvolutionRequest,
     BoundaryKernelDeconvolutionOut,
+    TargetedMaximumLikelihoodRequest,
+    TargetedMaximumLikelihoodOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17004,6 +17007,96 @@ def run_boundary_kernel_deconvolution_endpoint(
                 "reliability_ratio": res.get("reliability_ratio"),
                 "error_structure": res.get("error_structure"),
                 "variance_reduction_percent": res.get("dispersion_metrics", {}).get("variance_reduction_percent"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/targeted-maximum-likelihood", response_model=TargetedMaximumLikelihoodOut)
+def run_targeted_maximum_likelihood_endpoint(
+    survey_id: str,
+    payload: TargetedMaximumLikelihoodRequest
+):
+    """
+    Targeted Maximum Likelihood Estimation with Efficient Influence Curve Inference Engine (TMLE).
+    van der Laan & Rose (2011); Schuler & Rose (2017).
+    Doubly robust semiparametric substitution estimator for the Average Treatment Effect (ATE)
+    using targeted fluctuation of initial outcome regressions via clever covariates H(A, W).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        cov_ids = payload.covariate_question_ids or []
+
+        for r_id, ans in data_by_resp.items():
+            if (
+                payload.outcome_question_id in ans and
+                payload.treatment_question_id in ans
+            ):
+                item = {
+                    payload.outcome_question_id: ans[payload.outcome_question_id],
+                    payload.treatment_question_id: ans[payload.treatment_question_id]
+                }
+                for c_id in cov_ids:
+                    if c_id in ans:
+                        item[c_id] = ans[c_id]
+                records.append(item)
+
+        if len(records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 25 bản ghi hợp lệ để thực hiện TMLE (hiện có: {len(records)})."
+            }
+
+        try:
+            res = run_targeted_maximum_likelihood_estimation(
+                records=records,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                covariate_cols=cov_ids if cov_ids else None,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng TMLE: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="TARGETED_MAXIMUM_LIKELIHOOD_EVALUATED",
+            details={
+                "n_obs": res.get("sample_size"),
+                "ate_tmle": res.get("ate_tmle", {}).get("estimate"),
+                "p_value": res.get("ate_tmle", {}).get("p_value"),
                 "status": res.get("status")
             }
         )

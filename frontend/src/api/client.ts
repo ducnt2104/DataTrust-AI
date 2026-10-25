@@ -247,7 +247,9 @@ import {
   HierarchicalBayesConjointRequest,
   HierarchicalBayesConjointResult,
   BoundaryKernelDeconvolutionRequest,
-  BoundaryKernelDeconvolutionResult
+  BoundaryKernelDeconvolutionResult,
+  TargetedMaximumLikelihoodRequest,
+  TargetedMaximumLikelihoodResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2676,5 +2678,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<BoundaryKernelDeconvolutionResult>(res);
+  },
+  async runTargetedMaximumLikelihood(
+    surveyId: string,
+    payload: TargetedMaximumLikelihoodRequest
+  ): Promise<TargetedMaximumLikelihoodResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/targeted-maximum-likelihood`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<TargetedMaximumLikelihoodResult>(res);
   }
 };

@@ -5925,3 +5925,36 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `BoundaryKernelDeconvolutionRequest` (`variable_question_id`, `reliability_ratio`, `error_type`, `lower_bound`, `grid_points`, `alpha_level`, `scope`).
   - **Response:** `BoundaryKernelDeconvolutionOut` (`status`, `sample_size`, `variable_evaluated`, `reliability_ratio`, `error_structure`, `bandwidth`, `attenuation_correction_factor`, `dispersion_metrics`, `moments_comparison`, `density_profile`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `BOUNDARY_KERNEL_DECONVOLUTION_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 148. Targeted Maximum Likelihood Estimation with Efficient Influence Curve Inference Engine (TMLE; van der Laan & Rose 2011; Schuler & Rose 2017)
+- **Mục tiêu:** Ước lượng tác động nhân quả trung bình (Average Treatment Effect - ATE) và phân vị tác động với tính chất kép tối ưu: (1) Tính vững kép (Double Robustness: không chệch nếu một trong hai mô hình kết quả hoặc mô hình xu hướng gán được chỉ định đúng); (2) Đạt cận dưới hiệu quả bán tham số (Semiparametric Efficiency Bound / Efficiency Rule) theo lý thuyết đường ảnh hưởng hiệu quả (Efficient Influence Curve - EIC); (3) Tối ưu hóa sai số nhắm mục tiêu (Targeted Fluctuation) qua biến đồng điều chỉnh thông minh (clever covariate (A, W)$) giúp giảm thiểu sai số đối với tham số mục tiêu $\psi = \mathbb{E}[Y(1) - Y(0)]$ thay vì chỉ giảm sai số toàn cục $\mathbb{E}[Y \mid A, W]$.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Bước 1: Ước Lượng Ban Đầu Mô Hình Kết Quả & Điểm Xu Hướng:**
+     - Mô hình kết quả ban đầu: $ar{Q}_0(A, W) = \mathbb{E}[Y \mid A, W]$.
+     - Điểm xu hướng gán (Propensity Score): (W) = P(A = 1 \mid W)$, được xén biên (trimmed) trong khoảng $[\epsilon, 1 - \epsilon]$ (mặc định $\epsilon = 0.01$).
+  2. **Bước 2: Xây Dựng Biến Đồng Điều Chỉnh Thông Minh (Clever Covariate):**
+     H(A, W) = rac{A}{g(W)} - rac{1 - A}{1 - g(W)}
+     - Với nhánh can thiệp (=1$): (1, W) = rac{1}{g(W)}$.
+     - Với nhánh đối chứng (=0$): (0, W) = - rac{1}{1 - g(W)}$.
+  3. **Bước 3: Nhắm Mục Tiêu Tối Đa Hóa Khả Dĩ (Targeting Submodel Fluctuation):**
+     - Ước lượng tham số dao động $\epsilon$ bằng cách hồi quy logistic phụ trợ với offset là logit của ước lượng ban đầu:
+       	ext{logit}(ar{Q}_\epsilon(A, W)) = 	ext{logit}(ar{Q}_0(A, W)) + \epsilon H(A, W)
+     - Cập nhật hàm dự báo kết quả can thiệp có mục tiêu:
+       ar{Q}_n^*(1, W) = 	ext{expit}\left(	ext{logit}(ar{Q}_0(1, W)) + \hat{\epsilon} H(1, W)ight)
+       ar{Q}_n^*(0, W) = 	ext{expit}\left(	ext{logit}(ar{Q}_0(0, W)) + \hat{\epsilon} H(0, W)ight)
+  4. **Bước 4: Ước Tính Tham Số Nhân Quả Mục Tiêu (Plug-in ATE):**
+     \hat{\psi}_{	ext{TMLE}} = rac{1}{n} \sum_{i=1}^n \left(ar{Q}_n^*(1, W_i) - ar{Q}_n^*(0, W_i)ight)
+  5. **Bước 5: Suy Luận Dựa Trên Đường Ảnh Hưởng Hiệu Quả (Efficient Influence Curve - EIC):**
+     D^*(O) = H(A, W) (Y - ar{Q}_n^*(A, W)) + ar{Q}_n^*(1, W) - ar{Q}_n^*(0, W) - \hat{\psi}_{	ext{TMLE}}
+     - Nhờ bước nhắm mục tiêu (Targeting Step), phương trình ước lượng giải được nghiệm chính xác: $rac{1}{n} \sum_{i=1}^n D^*(O_i) = 0$.
+     - Phương sai tiệm cận vững và sai số chuẩn đạt cận Cramer-Rao bán tham số:
+       	ext{Var}(\hat{\psi}_{	ext{TMLE}}) = rac{1}{n} 	ext{Var}(D^*(O)) \implies 	ext{SE} = rac{\hat{\sigma}_{D^*}}{\sqrt{n}}
+     - Khoảng tin cậy Wald 95%: $\hat{\psi} \pm 1.96 \cdot 	ext{SE}$.
+  6. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: So sánh giá trị ATE giữa TMLE có nhắm mục tiêu, Mô hình Kết quả Ban đầu thuần túy (Initial G-computation), và Nghịch đảo Điểm xu hướng gán (IPW).
+     - Panel B: Phân phối đường ảnh hưởng hiệu quả ^*(O)$ và mật độ xác suất với đường định vị sai số chuẩn.
+- **API Endpoint:** POST /api/surveys/{survey_id}/analytics/targeted-maximum-likelihood
+  - **Payload:** TargetedMaximumLikelihoodRequest (	reatment_question_id, outcome_question_id, covariate_question_ids, amily, propensity_trim, lpha_level, scope).
+  - **Response:** TargetedMaximumLikelihoodOut (status, sample_size, amily, 	argeted_ate, initial_ate, ipw_ate, clever_covariate_epsilon, efficient_influence_curve, diagnostics, svg_visualization, pa_narrative).
+- **Niêm phong kiểm toán:** Ghi nhận TARGETED_MAXIMUM_LIKELIHOOD_EVALUATED vào chuỗi sổ cái SHA-256.
