@@ -7433,3 +7433,53 @@ export interface DynamicPanelGMMRequest {
   max_instrument_lags?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Weak-Instrument Robust Inference (Anderson-Rubin 1949, Moreira 2003 CLR, Montiel Olea & Pflueger 2013) ---
+export interface WeakIVRobustDiagnostics {
+  sample_size: number;
+  num_instruments: number;
+  num_covariates: number;
+  first_stage_f: number;
+  first_stage_p: number;
+  effective_f: number;
+  effective_f_threshold_10pct: number;
+  identification_status: string;
+  identification_label: string;
+  ar_null_zero_f_stat: number;
+  ar_null_zero_p_value: number;
+  ar_critical_value: number;
+}
+
+export interface WeakIVRobustEstimates {
+  beta_2sls: number;
+  se_2sls: number;
+  p_2sls: number;
+  wald_ci_95: [number, number];
+  beta_ols: number;
+  se_ols: number;
+  ar_ci_type: string;
+  ar_ci_95: Array<[number, number]>;
+  clr_ci_95?: [number, number] | null;
+  kleibergen_k_ci_95?: [number, number] | null;
+}
+
+export interface WeakIVRobustResult {
+  status: string;
+  model_type?: string;
+  message?: string;
+  diagnostics?: WeakIVRobustDiagnostics;
+  estimates?: WeakIVRobustEstimates;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface WeakIVRobustRequest {
+  outcome_question_id: string;
+  endogenous_question_id: string;
+  instrument_question_ids: string[];
+  covariate_question_ids?: string[];
+  alpha_level?: number;
+  grid_points?: number;
+  scope?: 'all' | 'verified_clean';
+}

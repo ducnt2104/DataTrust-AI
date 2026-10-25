@@ -1,3 +1,4 @@
+from app.engine.weak_iv_robust_engine import WeakIVRobustEngine
 from app.engine.dynamic_panel_gmm_engine import DynamicPanelGMMEngine
 from app.engine.extreme_bounds_engine import ExtremeBoundsEngine
 from app.engine.bsem_engine import compute_bsem_analysis
@@ -70,6 +71,8 @@ from app.schemas import (
     RDDLocalRandomizationOut,
     DynamicPanelGMMRequest,
     DynamicPanelGMMOut,
+    WeakIVRobustRequest,
+    WeakIVRobustOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -13902,6 +13905,127 @@ def run_dynamic_panel_gmm_analysis(
                 "method": payload.method,
                 "two_step": payload.two_step,
                 "windmeijer": payload.windmeijer_correction,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/weak-iv-robust", response_model=WeakIVRobustOut)
+def run_weak_iv_robust_analysis(
+    survey_id: str,
+    payload: WeakIVRobustRequest
+):
+    """
+    Weak-Instrument Robust Inference (Anderson-Rubin 1949, Moreira 2003 CLR, Montiel Olea & Pflueger 2013).
+    Evaluates causal effects of endogenous regressors using exact finite-sample AR quadratic inversion,
+    Moreira's conditional likelihood ratio test, and effective F-statistic testing.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        resp_data: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_data:
+                resp_data[rid] = {}
+            resp_data[rid][row["question_id"]] = row["answer_value"]
+
+        z_ids = payload.instrument_question_ids or []
+        cov_ids = payload.covariate_question_ids or []
+
+        y_list = []
+        y_endog_list = []
+        z_matrix_rows = []
+        cov_matrix_rows = []
+
+        for resp_id, answers in resp_data.items():
+            if (payload.outcome_question_id not in answers or
+                payload.endogenous_question_id not in answers):
+                continue
+
+            has_all_z = True
+            z_vals = []
+            for zid in z_ids:
+                if zid not in answers:
+                    has_all_z = False
+                    break
+                try:
+                    z_vals.append(float(answers[zid]))
+                except (ValueError, TypeError):
+                    has_all_z = False
+                    break
+
+            if not has_all_z:
+                continue
+
+            has_all_covs = True
+            c_vals = []
+            for cid in cov_ids:
+                if cid not in answers:
+                    has_all_covs = False
+                    break
+                try:
+                    c_vals.append(float(answers[cid]))
+                except (ValueError, TypeError):
+                    has_all_covs = False
+                    break
+
+            if not has_all_covs:
+                continue
+
+            try:
+                yv = float(answers[payload.outcome_question_id])
+                y_ev = float(answers[payload.endogenous_question_id])
+                y_list.append(yv)
+                y_endog_list.append(y_ev)
+                z_matrix_rows.append(z_vals)
+                cov_matrix_rows.append(c_vals)
+            except (ValueError, TypeError):
+                continue
+
+        cov_mat = np.array(cov_matrix_rows, dtype=float) if len(cov_ids) > 0 and len(cov_matrix_rows) > 0 else None
+
+        res = WeakIVRobustEngine.estimate(
+            y=np.array(y_list, dtype=float),
+            endogenous_y=np.array(y_endog_list, dtype=float),
+            instruments_z=np.array(z_matrix_rows, dtype=float),
+            covariates_x=cov_mat,
+            alpha_level=payload.alpha_level,
+            grid_points=payload.grid_points,
+            outcome_label=q_map.get(payload.outcome_question_id, "Biến kết quả Y"),
+            endogenous_label=q_map.get(payload.endogenous_question_id, "Biến nội sinh Y_endog")
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="WEAK_IV_ROBUST_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "endogenous_qid": payload.endogenous_question_id,
+                "instrument_qids": z_ids,
+                "covariate_qids": cov_ids,
+                "effective_f": res.get("diagnostics", {}).get("effective_f") if res.get("diagnostics") else None,
                 "status": res.get("status")
             }
         )

@@ -193,7 +193,9 @@ import {
   RDDLocalRandomizationRequest,
   RDDLocalRandomizationResult,
   DynamicPanelGMMRequest,
-  DynamicPanelGMMResult
+  DynamicPanelGMMResult,
+  WeakIVRobustRequest,
+  WeakIVRobustResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2311,5 +2313,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<DynamicPanelGMMResult>(res);
+  },
+
+  // --- Weak-Instrument Robust Inference (Anderson-Rubin 1949, Moreira 2003 CLR, Montiel Olea & Pflueger 2013) ---
+  async runWeakIVRobust(
+    surveyId: string,
+    payload: WeakIVRobustRequest
+  ): Promise<WeakIVRobustResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/weak-iv-robust`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<WeakIVRobustResult>(res);
   }
 };

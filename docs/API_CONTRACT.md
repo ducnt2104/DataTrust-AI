@@ -5026,3 +5026,54 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép Nickell Bounds Forest Plot & Specification Test Scorecard.
   - `apa_narrative`: Đoạn thuyết minh học thuật chuẩn APA 7th Edition theo Blundell & Bond (1998) và Windmeijer (2005).
 - **Niêm phong kiểm toán:** Tự động ghi nhận `DYNAMIC_PANEL_GMM_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 121. Weak-Instrument Robust Inference (Anderson-Rubin 1949, Moreira 2003 CLR, Montiel Olea & Pflueger 2013)
+
+- **Mục đích & Cơ sở Khoa học:**
+  1. **Khủng hoảng Công cụ Yếu trong Nghiên cứu Khảo sát & Kinh tế lượng (Weak Instruments Crisis):**
+     - Trong các nghiên cứu khảo sát có biến can thiệp nội sinh (Endogenous Regressor $Y$), các biến công cụ ngoại sinh loại trừ $Z$ (ví dụ: khoảng cách địa lý, số xổ số, tháng sinh, chính sách trợ cấp ngẫu nhiên) thường có mối tương quan yếu với $Y$ ($\Pi \approx 0$).
+     - Khi công cụ yếu ($F < 10$ theo quy tắc kinh nghiệm Nelson & Startz 1990; Staiger & Stock 1997; Stock & Yogo 2005), suy diễn thống kê chuẩn dựa trên ước lượng Two-Stage Least Squares (2SLS) bị sụp đổ hoàn toàn:
+       - Ước lượng điểm 2SLS bị kéo lệch mạnh về phía ước lượng OLS.
+       - Thống kê kiểm định Wald $t$-statistic không còn hội tụ về phân phối chuẩn $\mathcal{N}(0, 1)$, khiến tỷ lệ bác bỏ sai lầm (rejection rate) vượt quá 50% ngay cả ở mức ý nghĩa danh định $\alpha = 0.05$.
+       - Khoảng tin cậy Wald quy ước $[b - 1.96 SE, b + 1.96 SE]$ có xác suất bao phủ thực tế cực thấp (chỉ 20% - 40%), dẫn đến các kết luận sai lầm về hiệu quả chính sách.
+  2. **Đảo nghiệm Phương trình Bậc hai Chính xác Mẫu Hữu hạn Anderson-Rubin (Anderson & Rubin 1949):**
+     - Dưới giả thuyết không $H_0: \beta = \beta_0$, phần dư cấu trúc $u(\beta_0) = \tilde{y} - \beta_0 \tilde{Y}$ hoàn toàn độc lập với các công cụ ngoại sinh $\tilde{Z}$.
+     - Thống kê kiểm định Anderson-Rubin:
+       $$AR(\beta_0) = \frac{u(\beta_0)' P_Z u(\beta_0) / k_z}{u(\beta_0)' M_Z u(\beta_0) / (N - k_x - k_z)} \sim F(k_z, N - k_x - k_z)$$
+     - Thống kê $AR(\beta_0)$ tuân theo phân phối $F$ **chính xác trong mẫu hữu hạn mà không phụ thuộc vào độ mạnh của biến công cụ $\Pi$**, ngay cả khi công cụ hoàn toàn không định danh ($\Pi = 0$).
+     - Tập tin cậy 95% Anderson-Rubin thu được bằng cách giải bất đẳng thức bậc hai $A \beta_0^2 + B \beta_0 + C \le 0$:
+       - Khi công cụ đủ mạnh ($A > 0, \Delta \ge 0$): Tạo ra khoảng tin cậy hữu hạn $[r_1, r_2]$.
+       - Khi công cụ yếu ($A < 0, \Delta \ge 0$): Tạo ra tập hợp tin cậy không bị chặn dạng hợp của hai nửa đường thẳng $(-\infty, r_1] \cup [r_2, \infty)$, phản ánh trung thực rằng dữ liệu không thể bác bỏ các giá trị hiệu ứng cực lớn.
+       - Khi hoàn toàn không định danh: Bao phủ toàn bộ trục số thực $(-\infty, \infty)$.
+  3. **Kiểm định Tỷ số Hợp lý Có điều kiện Moreira (Conditional Likelihood Ratio - Moreira 2003 Econometrica):**
+     - Moreira (2003) phân rã dữ liệu thành hai thống kê đủ: $S(\beta_0)$ (đo lường độ lệch khỏi giả thuyết không) và $T(\beta_0)$ (đo lường độ mạnh thực tế của biến công cụ).
+     - Thống kê CLR:
+       $$CLR(\beta_0) = \frac{1}{2} \left[ S'S - T'T + \sqrt{(S'S - T'T)^2 + 4(S'T)^2} \right]$$
+     - Andrews, Moreira, & Stock (2006 Econometrica) chứng minh toán học rằng kiểm định CLR là kiểm định mạnh nhất bất biến đồng đều (Uniformly Most Powerful Invariant - UMPI).
+     - Khi công cụ rất mạnh ($T'T \to \infty$), $CLR$ tiệm cận kiểm định Lagrange Multiplier $K \sim \chi^2(1)$. Khi công cụ rất yếu ($T'T \to 0$), $CLR$ hội tụ về kiểm định Anderson-Rubin $AR \sim \chi^2(k_z)$.
+  4. **Thống kê Hiệu quả Montiel Olea & Pflueger (2013 JBES Effective F-Statistic):**
+     - Khắc phục giới hạn của quy tắc Stock & Yogo (2005) vốn chỉ đúng khi sai số đồng phương sai (homoskedastic).
+     - Dưới sai số dị phương sai hoặc tự tương quan, $F_{\text{eff}} = \frac{\hat{\Pi}' (Z'Z) \hat{\Pi}}{\text{tr}(\text{meat}(Z'Z)^{-1})}$ so sánh với ngưỡng tới hạn khắt khe 23.11 (để độ chệch không vượt quá 10% ngưỡng chuẩn).
+  5. **Đồ thị SVG Kép Khoa học:**
+     - Panel A: Đồ thị hàm mục tiêu đảo nghiệm kiểm định (Test Inversion Curves) biểu diễn các đường cong $AR(\beta_0)$, $CLR(\beta_0)$, $K(\beta_0)$ qua lưới giá trị ứng viên $\beta_0$ cùng ngưỡng bác bỏ 95%.
+     - Panel B: Biểu đồ Forest Plot so sánh trực quan các khoảng tin cậy 95%: Moreira CLR CI, Anderson-Rubin AR CI, Standard 2SLS Wald CI (cảnh báo méo kích thước), và OLS Benchmark.
+  6. **Đoạn Thuyết minh Học thuật Chuẩn APA 7th Edition:**
+     - Tự động biên soạn theo chuẩn mực kinh tế lượng Anderson & Rubin (1949), Moreira (2003), Andrews et al. (2006) và Montiel Olea & Pflueger (2013).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/weak-iv-robust`
+- **Request Body (`WeakIVRobustRequest`):**
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả phụ thuộc $Y$.
+  - `endogenous_question_id`: UUID câu hỏi can thiệp nội sinh $Y_{\text{endog}}$.
+  - `instrument_question_ids`: Danh sách UUID các câu hỏi biến công cụ loại trừ $Z$ ($\ge 1$).
+  - `covariate_question_ids`: Danh sách UUID các biến hiệp biến kiểm soát ngoại sinh $X$ (Tùy chọn).
+  - `alpha_level`: Mức ý nghĩa thống kê (Mặc định 0.05).
+  - `grid_points`: Số điểm lưới tìm nghiệm Moreira CLR (Mặc định 120).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`WeakIVRobustOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"ERROR"`.
+  - `model_type`: `"WEAK_IV_ROBUST_MOREIRA_CLR_AR"`.
+  - `diagnostics`: Cỡ mẫu $N$, số lượng công cụ $k_z$, First-stage $F$, Montiel Olea-Pflueger Effective $F$, Phân loại độ mạnh công cụ (`STRONG_IDENTIFICATION`, `MODERATE_IDENTIFICATION`, `WEAK_IDENTIFICATION`, `SEVERELY_WEAK_OR_UNIDENTIFIED`), Thống kê kiểm định Anderson-Rubin cho giả thuyết không vô hiệu $H_0: \beta=0$.
+  - `estimates`: Điểm ước lượng 2SLS $\hat{\beta}_{\text{2SLS}}$ kèm sai số chuẩn và Wald CI 95%, Điểm ước lượng OLS, Loại tập tin cậy Anderson-Rubin (`BOUNDED_INTERVAL`, `DISJOINT_UNBOUNDED`, `ENTIRE_REAL_LINE`), Khoảng tin cậy chính xác Anderson-Rubin 95%, Khoảng tin cậy Moreira CLR 95%, Khoảng tin cậy Kleibergen K 95%.
+  - `svg_visualization`: Đồ thị SVG khoa học kép Test Inversion Curves & Robust Forest Plot.
+  - `apa_narrative`: Đoạn thuyết minh học thuật chuẩn APA 7th Edition.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `WEAK_IV_ROBUST_EVALUATED` vào chuỗi sổ cái SHA-256.

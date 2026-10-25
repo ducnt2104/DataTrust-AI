@@ -1776,3 +1776,27 @@
   - Full Backend Test Suite: **564 passed / 564 total (100% pass rate in 317.79s)**.
   - Frontend Production Build: **2,105 modules transformed, 0 errors in 4.21s**.
   - Contract Documentation: Section 120 appended to `docs/API_CONTRACT.md`.
+
+## 4. Iteration 140: Weak-Instrument Robust Inference Engine (Moreira 2003 CLR; Anderson-Rubin 1949; Montiel Olea & Pflueger 2013)
+- **Timestamp**: 2026-10-25T11:09:00+07:00
+- **Scientific Econometric Foundation**:
+  - Solves the Weak Instruments Crisis in linear IV models where conventional Two-Stage Least Squares (2SLS) Wald tests suffer from unbounded size distortion (null rejection rates > 50% at 5% nominal level) and severely distorted confidence intervals.
+  - Anderson-Rubin (1949) Exact Test Inversion: Inverts structural null $H_0: \beta = \beta_0$ through exact quadratic inequality $(u'P_Z u) - k_{\text{factor}}(u'M_Z u) \le 0$ to construct exact finite-sample valid confidence sets (handling bounded intervals, disjoint unbounded sets $(-\infty, r_1] \cup [r_2, \infty)$, or the entire real line when un-identified).
+  - Moreira (2003 Econometrica) Conditional Likelihood Ratio (CLR) Test: Uniformly Most Powerful Invariant (UMPI) test (Andrews, Moreira, & Stock 2006) conditioning on sufficient statistic $T'T$ to dynamically interpolate between $\chi^2(1)$ and $\chi^2(k_z)$.
+  - Kleibergen (2002) Lagrange Multiplier (K) Score Test: Invariance to instrument proliferation.
+  - Montiel Olea & Pflueger (2013 JBES) Effective F-Statistic: Robust pre-testing under heteroskedasticity/autocorrelation $F_{\text{eff}} = \frac{\hat{\Pi}'(Z'Z)\hat{\Pi}}{\text{tr}(\text{meat}(Z'Z)^{-1})}$ evaluated against 23.11 critical threshold.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/weak_iv_robust_engine.py` (608 lines).
+  - Pydantic Schemas: `WeakIVRobustRequest` and `WeakIVRobustOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/weak-iv-robust` with `WEAK_IV_ROBUST_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_weak_iv_robust_engine.py` (4/4 tests passed).
+  - Route Tests: `backend/tests/test_weak_iv_robust_routes.py` (1/1 end-to-end route test passed).
+- **Frontend Components**:
+  - TypeScript Types: `WeakIVRobustDiagnostics`, `WeakIVRobustEstimates`, `WeakIVRobustResult`, `WeakIVRobustRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runWeakIVRobust` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/WeakIVRobustCard.tsx` (360 lines) with interactive controls, identification status badge, confidence intervals comparison table, scientific dual-panel SVG visualizer, and APA 7th Edition narrative generator with one-click copy.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Test Suite: 10/10 passed across Iterations 139 & 140.
+  - Frontend Production Build: **2,106 modules transformed, 0 errors in 1.28s**.
+  - Contract Documentation: Section 121 appended to `docs/API_CONTRACT.md`.
