@@ -122,6 +122,7 @@ import { WeakIVRobustCard } from '../components/WeakIVRobustCard';
 import { SequentialMediationCard } from '../components/SequentialMediationCard';
 import { PostDoubleSelectionLassoCard } from '../components/PostDoubleSelectionLassoCard';
 import { LARFCard } from '../components/LARFCard';
+import { MTECard } from '../components/MTECard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1395,6 +1396,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Instrumental Variable Local Average Response Function (LARF; Abadie 2003 Econometrica) */}
       <LARFCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Marginal Treatment Effects & Local Instrumental Variables (MTE / LIV; Heckman & Vytlacil 2005) */}
+      <MTECard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

@@ -201,7 +201,9 @@ import {
   PostDoubleSelectionLassoRequest,
   PostDoubleSelectionLassoResult,
   LARFRequest,
-  LARFResult
+  LARFResult,
+  MTERequest,
+  MTEResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2370,5 +2372,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<LARFResult>(res);
+  },
+
+  async runMTE(
+    surveyId: string,
+    payload: MTERequest
+  ): Promise<MTEResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/mte`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<MTEResult>(res);
   }
 };

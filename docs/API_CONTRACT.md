@@ -5220,3 +5220,59 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG trực quan hóa kép Forest Plot & Phân bổ Kappa.
   - `apa_narrative`: Báo cáo học thuật chuẩn mực APA 7th Edition.
 - **Niêm phong kiểm toán:** Ghi nhận `LARF_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 125. Marginal Treatment Effects (MTE) & Local Instrumental Variables (LIV) Engine (Heckman & Vytlacil 1999, 2005 Econometrica)
+- **Mục tiêu:** Cung cấp động cơ kinh tế lượng cấu trúc Nobel giải quyết toàn diện bài toán bất đồng nhất hiệu ứng can thiệp (heterogeneous treatment effects) và tự lựa chọn (Roy selection). Nhận diện đường cong phản ứng can thiệp cận biên $\Delta^{\text{MTE}}(u_D)$ liên tục theo mức độ kháng cự không quan sát được $U_D \in (0, 1)$, từ đó tích phân thống nhất toàn bộ các tham số chính sách kinh tế lượng: ATE, ATT, ATU, LATE, và PRTE.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Mô hình Roy Tổng quát (Generalized Roy Model):**
+     - Kết quả tiềm năng: $Y(1) = \mu_1(X) + U_1$, $Y(0) = \mu_0(X) + U_0$.
+     - Phương trình lựa chọn ngưỡng: $D = \mathbf{1}\{ P(Z) \ge U_D \}$, trong đó $P(Z) = \Pr(D=1 \mid Z)$ là điểm xu hướng (propensity score), và $U_D \sim \text{Uniform}(0, 1)$ đại diện cho sức cản vô hình đối với việc tham gia điều trị (unobserved resistance to treatment).
+     - Kết quả quan sát: $Y = D Y(1) + (1 - D) Y(0)$.
+  2. **Định lý Nhận diện Biến công cụ Cục bộ (Local Instrumental Variables - LIV; Heckman & Vytlacil 1999):**
+     - Dưới điều kiện độc lập của công cụ $Z \perp (U_0, U_1, U_D) \mid X$:
+       $$E[Y \mid X = x, P(Z) = p] = E[Y(0) \mid X = x] + \int_0^p \Delta^{\text{MTE}}(x, u) \, du$$
+     - Theo Định lý cơ bản của Giải tích (Fundamental Theorem of Calculus):
+       $$\Delta^{\text{MTE}}(x, u) = \left. \frac{\partial E[Y \mid X = x, P(Z) = p]}{\partial p} \right|_{p = u}$$
+       Đạo hàm của kỳ vọng có điều kiện theo propensity score chính là Hiệu ứng Can thiệp Cận biên tại mức kháng cự $u_D = p$!
+  3. **Ước lượng Bán tham số Đa thức (Carneiro, Heckman, & Vytlacil 2011 AER; Brinch et al. 2017 JPE):**
+     - Ước lượng $P(Z, X)$ qua mô hình Probit, xác lập vùng hỗ trợ chung (common support $[p_{\min}, p_{\max}]$).
+     - Ước lượng mô hình kết quả linh hoạt: $E[Y \mid X, P] = X'\beta + \sum_{k=1}^K \gamma_k P^k$.
+     - Tính toán giải tích đường cong: $\Delta^{\text{MTE}}(\bar{X}, u) = \sum_{k=1}^K k \cdot \gamma_k u^{k-1}$.
+  4. **Tích phân Thống nhất các Tham số Chính sách (Unified Policy Parameters):**
+     - **ATE (Average Treatment Effect):** $\int_0^1 \text{MTE}(u) \, du$ (Trọng số đồng đều $w(u) = 1$).
+     - **ATT (Effect on the Treated):** $\int_0^1 \text{MTE}(u) \cdot w_{\text{ATT}}(u) \, du$, với $w_{\text{ATT}}(u) = \frac{\Pr(P > u)}{E[P]}$.
+     - **ATU (Effect on the Untreated):** $\int_0^1 \text{MTE}(u) \cdot w_{\text{ATU}}(u) \, du$, với $w_{\text{ATU}}(u) = \frac{\Pr(P \le u)}{1 - E[P]}$.
+     - **LATE (Local Average Treatment Effect):** $\frac{1}{p_{75} - p_{25}} \int_{p_{25}}^{p_{75}} \text{MTE}(u) \, du$.
+     - **PRTE (Policy-Relevant Treatment Effect):** Tác động của chính sách mở rộng trợ cấp/khuyến khích làm dịch chuyển phân phối $P \to P^*$:
+       $$\text{PRTE} = \int_0^1 \text{MTE}(u) \cdot \frac{F_P(u) - F_{P^*}(u)}{E[P^*] - E[P]} \, du$$
+  5. **Chẩn đoán Lựa chọn Roy (Roy Selection Sorting Diagnosis):**
+     - Đánh giá độ dốc đường cong MTE: Nếu dốc âm ($d\text{MTE}/du_D < 0$), cá nhân có kháng cự thấp (hăng hái tham gia) đạt hiệu quả cao nhất (Positive selection on gains / Roy sorting). Nếu dốc dương, xảy ra Negative selection.
+  6. **Đồ thị SVG Kép Khoa học:**
+     - Panel A: Đường cong MTE $\Delta^{\text{MTE}}(u_D)$ kèm dải tin cậy Bootstrap 95%, đường tham chiếu Null (0.0), ATE và ATT.
+     - Panel B: Đường cong hàm trọng số $w_{\text{ATT}}(u)$ vs $w_{\text{ATU}}(u)$ minh họa nguồn gốc sai lệch tự lựa chọn.
+  7. **Báo cáo Học thuật Chuẩn APA 7th Edition:** Tự động biên soạn theo Heckman & Vytlacil (2005).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/mte`
+- **Request Body (`MTERequest`):**
+  - `outcome_question_id`: UUID biến kết quả khảo sát $Y$.
+  - `treatment_question_id`: UUID biến can thiệp nhị phân nội sinh $D$.
+  - `instrument_question_ids`: Danh sách UUID các biến công cụ ngoại sinh $Z_1, Z_2, \dots$.
+  - `covariate_question_ids`: Danh sách UUID các biến kiểm soát tiền can thiệp $X$.
+  - `poly_degree`: Bậc đa thức bán tham số (Mặc định 3: Cubic).
+  - `alpha_level`: Mức ý nghĩa thống kê (Mặc định 0.05).
+  - `n_bootstraps`: Số lần tái chọn mẫu bootstrap (Mặc định 300).
+  - `policy_shift_pct`: Tỷ lệ phần trăm dịch chuyển chính sách cho PRTE (Mặc định 0.15: +15%).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`MTEOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"ERROR"`.
+  - `model_type`: `"MARGINAL_TREATMENT_EFFECTS_HECKMAN_VYTLACIL_2005"`.
+  - `sample_size`: Cỡ mẫu phân tích $N$.
+  - `bootstrap_replications`: Số lần lặp bootstrap $B$.
+  - `polynomial_degree`: Bậc đa thức đã khớp $K$.
+  - `common_support`: Ngưỡng hỗ trợ chung $[p_{\min}, p_{\max}]$.
+  - `selection_sorting_pattern`: Phân loại quy luật lựa chọn Roy (Positive / Negative / Homogeneous).
+  - `mte_slope`: Độ dốc đường cong MTE.
+  - `parameters`: Chi tiết ước lượng, SE bootstrap, z-statistic, p-value, 95% CI cho: `ate`, `att`, `atu`, `late`, `prte`.
+  - `mte_curve`: Danh sách 50 điểm tọa độ trên đường cong $(u_D, \text{MTE}, \text{SE}, \text{CI}_{\text{low}}, \text{CI}_{\text{high}}, w_{\text{ATT}}, w_{\text{ATU}})$.
+  - `svg_visualization`: Đồ thị SVG trực quan hóa kép đường cong MTE và trọng số chính sách.
+  - `apa_narrative`: Báo cáo học thuật chuẩn mực APA 7th Edition theo Heckman & Vytlacil (2005).
+- **Niêm phong kiểm toán:** Ghi nhận `MTE_EVALUATED` vào chuỗi sổ cái SHA-256.

@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.mte_engine import estimate_mte
 from app.engine.larf_engine import estimate_larf
 from app.engine.post_double_selection_lasso_engine import PostDoubleSelectionLassoEngine
 from app.engine.sequential_mediation_engine import SequentialMediationEngine
@@ -83,6 +84,8 @@ from app.schemas import (
     PostDoubleSelectionLassoOut,
     LARFRequest,
     LARFOut,
+    MTERequest,
+    MTEOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -14347,6 +14350,99 @@ def run_larf_analysis(
                 "model_type": payload.model_type,
                 "late_estimate": res.get("effects", {}).get("late", {}).get("estimate") if res.get("effects") else None,
                 "complier_probability": res.get("complier_probability"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/mte", response_model=MTEOut)
+def run_mte_analysis(
+    survey_id: str,
+    payload: MTERequest
+):
+    """
+    Marginal Treatment Effects (MTE) and Local Instrumental Variables (LIV).
+    Heckman & Vytlacil (1999, 2005 Econometrica).
+    Identifies the continuous treatment effect curve over unobserved resistance to treatment U_D
+    and integrates across MTE to derive unified causal parameters: ATE, ATT, ATU, LATE, PRTE.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+        inst_ids = payload.instrument_question_ids
+        all_req_qids = [payload.outcome_question_id, payload.treatment_question_id] + inst_ids + cov_ids
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if all(qid in answers for qid in all_req_qids):
+                record = {}
+                valid = True
+                for qid in all_req_qids:
+                    try:
+                        record[qid] = float(answers[qid])
+                    except (ValueError, TypeError):
+                        valid = False
+                        break
+                if valid:
+                    df_records.append(record)
+
+        if len(df_records) < 40:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng phản hồi có đầy đủ câu trả lời số hợp lệ (N={len(df_records)}) chưa đạt tối thiểu 40 mẫu."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        res = estimate_mte(
+            df=df,
+            outcome_col=payload.outcome_question_id,
+            treatment_col=payload.treatment_question_id,
+            instrument_cols=inst_ids,
+            covariate_cols=cov_ids,
+            poly_degree=payload.poly_degree,
+            alpha_level=payload.alpha_level,
+            n_bootstraps=payload.n_bootstraps,
+            policy_shift_pct=payload.policy_shift_pct
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="MTE_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "instrument_qids": inst_ids,
+                "ate_estimate": res.get("parameters", {}).get("ate", {}).get("estimate") if res.get("parameters") else None,
+                "att_estimate": res.get("parameters", {}).get("att", {}).get("estimate") if res.get("parameters") else None,
+                "selection_pattern": res.get("selection_sorting_pattern"),
                 "status": res.get("status")
             }
         )

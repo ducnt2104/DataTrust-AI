@@ -1882,3 +1882,32 @@ eq 0\}$
   - Backend Unit & Route Tests: **6/6 passed in 3.11s**.
   - Frontend Production Build: **2,109 modules transformed, 0 errors in 1.57s**.
   - Contract Documentation: Section 124 appended to `docs/API_CONTRACT.md`.
+
+## 8. Iteration 144: Marginal Treatment Effects (MTE) & Local Instrumental Variables (LIV; Heckman & Vytlacil 1999, 2005 Econometrica)
+- **Timestamp**: 2026-10-25T11:41:00+07:00
+- **Scientific Foundation**:
+  - Structural econometrics framework unifying all causal parameters under heterogeneous treatment returns and unobserved Roy selection.
+  - Identification of continuous MTE curve $\Delta^{\text{MTE}}(u_D) = \left. \frac{\partial E[Y \mid X, P=p]}{\partial p} \right|_{p = u_D}$ via Local Instrumental Variables (LIV).
+  - Derived unified policy parameters through integral weighting:
+    - ATE: $\int_0^1 \text{MTE}(u) \, du$ (Uniform weight $w(u) = 1$)
+    - ATT: $\int_0^1 \text{MTE}(u) \cdot w_{\text{ATT}}(u) \, du$ with $w_{\text{ATT}}(u) = \Pr(P > u) / E[P]$
+    - ATU: $\int_0^1 \text{MTE}(u) \cdot w_{\text{ATU}}(u) \, du$ with $w_{\text{ATU}}(u) = \Pr(P \le u) / (1 - E[P])$
+    - LATE: Interquartile complier effect on $[p_{25}, p_{75}]$
+    - PRTE: Policy-Relevant Treatment Effect under simulated expansion policy $\Delta P$
+  - Roy selection sorting diagnosis (Positive / Negative / Homogeneous) via MTE curve slope.
+  - Multi-instrument support, probit first-stage propensity scoring, semiparametric polynomial outcome models (Degree 2, 3, 4), and non-parametric bootstrap inference (300 resamples).
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/mte_engine.py` (450 lines).
+  - Pydantic Schemas: `MTERequest` and `MTEOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/mte` with `MTE_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_mte_engine.py` (4/4 passed).
+  - Route Tests: `backend/tests/test_mte_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `MTEParameterItem`, `MTECurvePoint`, `MTEParameters`, `MTEResult`, `MTERequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runMTE` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/MTECard.tsx` (440 lines) with multi-instrument selection, polynomial degree control, policy expansion percentage selector, metric cards (ATE, ATT, ATU, PRTE), Roy selection pattern banner, unified causal parameters table, dual-panel SVG visualizer (MTE Curve with 95% Confidence Band & Policy Integration Weights), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **5/5 passed in 2.73s**.
+  - Frontend Production Build: **2,110 modules transformed, 0 errors in 2.68s**.
+  - Contract Documentation: Section 125 appended to `docs/API_CONTRACT.md`.

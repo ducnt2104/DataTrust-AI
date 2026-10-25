@@ -7672,3 +7672,63 @@ export interface LARFRequest {
   trim_negative?: boolean;
   scope?: 'all' | 'verified_clean';
 }
+
+
+export interface MTEParameterItem {
+  estimate: number;
+  std_error: number;
+  z_stat: number;
+  p_value: number;
+  ci_lower: number;
+  ci_upper: number;
+  is_significant: boolean;
+}
+
+export interface MTECurvePoint {
+  u_d: number;
+  mte: number;
+  std_error: number;
+  ci_lower: number;
+  ci_upper: number;
+  w_att: number;
+  w_atu: number;
+}
+
+export interface MTEParameters {
+  ate: MTEParameterItem;
+  att: MTEParameterItem;
+  atu: MTEParameterItem;
+  late: MTEParameterItem;
+  prte: MTEParameterItem;
+}
+
+export interface MTEResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  sample_size?: number;
+  bootstrap_replications?: number;
+  polynomial_degree?: number;
+  common_support?: {
+    p_min: number;
+    p_max: number;
+  };
+  selection_sorting_pattern?: string;
+  mte_slope?: number;
+  parameters?: MTEParameters;
+  mte_curve?: MTECurvePoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface MTERequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  instrument_question_ids: string[];
+  covariate_question_ids?: string[];
+  poly_degree?: number;
+  alpha_level?: number;
+  n_bootstraps?: number;
+  policy_shift_pct?: number;
+  scope?: 'all' | 'verified_clean';
+}
