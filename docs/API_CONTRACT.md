@@ -5661,3 +5661,27 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `ConformalOptimalTransportRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `reg_eps`, `covariate_weight_kappa`, `conformal_alpha`, `scope`).
   - **Response:** `ConformalOptimalTransportOut` (`status`, `overall_summary`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CONFORMAL_OPTIMAL_TRANSPORT_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 139. Bayesian Nonparametric Dirichlet Process Mixture Density Deconvolution Engine (DPM-DD; Ferguson 1973; Escobar & West 1995 JASA; Delaigle, Hall, & Meister 2008 JASA)
+- **Mục tiêu:** Khắc phục triệt để sai số đo lường khảo sát (Survey Measurement Error) và hiện tượng thổi phồng phương sai nhân tạo $\text{Var}(Y) = \text{Var}(X^*) + \sigma_\varepsilon^2$ vốn làm bẹt hàm mật độ và làm sai lệch nghiêm trọng các phân vị cực trị trong các chỉ báo khảo sát định lượng (thu nhập, chi tiêu, điểm số rủi ro, mức độ hài lòng). Thay vì sử dụng các phương pháp deconvolution biến đổi Fourier cổ điển dễ bị dao động hạt nhân và sinh ra mật độ âm phi lý, động cơ thiết lập mô hình hỗn hợp Dirichlet Process phi tham số trên biến ẩn $X^* \sim \sum_{k=1}^K \pi_k \mathcal{N}(\mu_k, \tau_k^2)$ thông qua biểu diễn bẻ que (Stick-Breaking Representation - Sethuraman 1994). Mô hình bóc tách chính xác phương sai nhiễu $\sigma_\varepsilon^2$ (từ cặp câu hỏi lặp lại hoặc tỷ lệ giả định), khôi phục hàm mật độ thực nghiệm liên tục không âm $f_0(x^*)$, ước lượng hệ số độ tin cậy đo lường $R$, và tính toán mức độ giảm entropy vi phân Shannon.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Mô hình Đo lường Nhiễu Cộng Cổ điển (Classical Additive Measurement Error):**
+     - Quan sát đo lường: $Y_i = X_i^* + \varepsilon_i$, với sai số ngẫu nhiên $\varepsilon_i \sim \mathcal{N}(0, \sigma_\varepsilon^2)$ độc lập với $X_i^*$.
+     - Ước lượng $\sigma_\varepsilon^2$:
+       - Khi có câu hỏi lặp lại $Y_{\text{rep}}$: $\sigma_\varepsilon^2 = \frac{1}{2} \text{Var}(Y - Y_{\text{rep}})$.
+       - Khi không có câu hỏi lặp lại: Khởi tạo tỷ lệ phương sai nhiễu $\rho_\varepsilon = \sigma_\varepsilon^2 / \text{Var}(Y) \in [0.05, 0.60]$.
+     - Hệ số tin cậy đo lường: $R = \frac{\text{Var}(X^*)}{\text{Var}(Y)} = 1 - \frac{\sigma_\varepsilon^2}{\text{Var}(Y)}$.
+  2. **Tiên nghiệm Dirichlet Process Gaussian Mixture (Escobar & West 1995):**
+     - Đặt $X_i^* \mid (\mu_i, \tau_i^2) \sim \mathcal{N}(\mu_i, \tau_i^2)$ với $(\mu_i, \tau_i^2) \sim G$ và $G \sim \text{DP}(\alpha, G_0)$.
+     - Dạng tích chập quan sát: $Y_i \mid (\mu_i, \tau_i^2) \sim \mathcal{N}(\mu_i, \tau_i^2 + \sigma_\varepsilon^2)$.
+     - Thuật toán Blocked Gibbs / EM cập nhật trách nhiệm cụm (responsibilities) $r_{ik}$, trọng số tiên nghiệm $\pi_k$, kỳ vọng $\mu_k$, và phương sai thành phần tiềm ẩn $\tau_k^2 = \max(0.05 \text{Var}(X^*), \text{Var}_k(Y) - \sigma_\varepsilon^2)$.
+  3. **Hàm Mật độ Tách nhiễu $f_0(x^*)$ & Co gọn Phân vị:**
+     - Mật độ tiềm ẩn thực tế: $f_0(x) = \sum_{k=1}^K \pi_k \phi(x; \mu_k, \tau_k^2)$ bảo đảm $f_0(x) \ge 0$ và $\int f_0(x) dx = 1.0$.
+     - Phân vị giải chập $Q_{X^*}(p)$ co gọn các đuôi phân bố quan sát $Q_Y(p)$ về phía trung tâm, loại bỏ các giá trị ngoại lai do nhiễu đo lường tạo ra.
+  4. **Giảm Entropy Vi phân Shannon:**
+     - Mức độ gia tăng độ sắc nét thông tin: $\Delta H = H(Y) - H(X^*)$, đo lường bằng nats.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/dpm-deconvolution`
+  - **Payload:** `DPMDeconvolutionRequest` (`target_question_id`, `replicate_question_id`, `error_variance_ratio`, `max_components`, `dp_alpha`, `scope`).
+  - **Response:** `DPMDeconvolutionOut` (`status`, `overall_summary`, `components`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `DPM_DECONVOLUTION_EVALUATED` vào chuỗi sổ cái SHA-256.

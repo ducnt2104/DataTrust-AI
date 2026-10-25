@@ -229,7 +229,9 @@ import {
   LocalInstrumentalVariablesRequest,
   LocalInstrumentalVariablesResult,
   ConformalOptimalTransportRequest,
-  ConformalOptimalTransportResult
+  ConformalOptimalTransportResult,
+  DPMDeconvolutionRequest,
+  DPMDeconvolutionResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2559,5 +2561,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ConformalOptimalTransportResult>(res);
+  },
+  async runDPMDeconvolution(
+    surveyId: string,
+    payload: DPMDeconvolutionRequest
+  ): Promise<DPMDeconvolutionResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/dpm-deconvolution`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<DPMDeconvolutionResult>(res);
   }
 };

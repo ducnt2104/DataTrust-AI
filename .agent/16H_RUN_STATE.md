@@ -2288,3 +2288,35 @@ eq 0\}$
 ## 25. Planned Next Iteration: Iteration 158
 - **Feature**: Bayesian Nonparametric Dirchlet Process Mixture Density Deconvolution Engine (DPM-DD; Ferguson 1973; Escobar & West 1995; Delaigle, Hall, & Meister 2008 JASA).
 - **Scope**: Implements Dirichlet Process Gaussian mixture deconvolution for survey measurement error and latent trait distributions without arbitrary parametric distribution assumptions, recovering unobserved true distributions $f_0(x)$ from contaminated survey observations $Y = X + \varepsilon$.
+
+
+---
+
+## 25. Iteration 158: Bayesian Nonparametric Dirichlet Process Mixture Density Deconvolution Engine (DPM-DD; Ferguson 1973; Escobar & West 1995; Delaigle et al. 2008 JASA)
+- **Timestamp**: 2026-10-25T13:27:00+07:00
+- **Scientific Foundation**:
+  - Solves survey measurement error contamination $Y_i = X_i^* + \varepsilon_i$ ($\varepsilon_i \sim \mathcal{N}(0, \sigma_\varepsilon^2)$), which artificially inflates observed sample variance $\text{Var}(Y) = \text{Var}(X^*) + \sigma_\varepsilon^2$ and biases extreme distribution quantiles.
+  - Bayesian Nonparametric Prior: Places a Dirichlet Process Gaussian mixture prior on latent trait $X^* \sim \sum_{k=1}^K \pi_k \mathcal{N}(\mu_k, \tau_k^2)$ via Sethuraman stick-breaking, ensuring a strictly non-negative continuous density $f_0(x^*)$ without the negative density oscillations of classical Fourier kernel deconvolution.
+  - Measurement Error Variance $\sigma_\varepsilon^2$: Robustly estimated from replicate survey questions $Y - Y_{\text{rep}}$ or empirical noise ratios.
+  - Information & Quantile Compression: Recovers measurement reliability ratio $R = \text{Var}(X^*) / \text{Var}(Y)$, contracts inflated observed quantiles toward true central values, and quantifies information gain via Shannon differential entropy reduction $\Delta H = H(Y) - H(X^*)$ in nats.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/dpm_deconvolution_engine.py` (390 lines).
+  - Pydantic Schemas: `DPMDeconvolutionRequest` and `DPMDeconvolutionOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/dpm-deconvolution` with `DPM_DECONVOLUTION_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_dpm_deconvolution_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_dpm_deconvolution_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `DPMComponentItem`, `DPMDeconvolutionSummary`, `DPMDeconvolutionResult`, `DPMDeconvolutionRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runDPMDeconvolution` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/DPMDeconvolutionCard.tsx` (490 lines) with target question selector, replicate question selector, assumed noise variance ratio slider, mixture components count selector, KPI stat cards (Reliability $R$, Noise SD $\sigma_\varepsilon$, Latent SD vs Observed SD, Entropy Reduction), quantile error compression table (10%, 25%, 50%, 75%, 90%), mixture components profile cards, dual-panel SVG visualizer (Density comparison & stick-breaking component weights bar chart), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 2.30s** (32/32 cumulative passed in 14.78s).
+  - Frontend Production Build: **2,124 modules transformed, 0 errors in 1.31s**.
+  - Contract Documentation: Section 139 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 26. Planned Next Iteration: Iteration 159
+- **Feature**: Multi-Cutoff Regression Discontinuity & Boundary Treatment Effects Engine (Multi-Cutoff RD; Cattaneo, Frandsen, & Titiunik 2015 JASA; Keele & Titiunik 2015; Bertanha 2020 JASA).
+- **Scope**: Extends Regression Discontinuity Designs to multi-cutoff policy rules where eligibility thresholds vary by geographic region, age cohort, or income tiers, estimating cutoff-specific treatment effects $\tau(c)$, normalized pooled boundary effects, and testing for sorting/manipulation across multi-dimensional cutoff frontiers.

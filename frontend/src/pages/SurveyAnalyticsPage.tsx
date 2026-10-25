@@ -136,6 +136,7 @@ import { NestedLogitCard } from '../components/NestedLogitCard';
 import { AutoDMLRieszCard } from '../components/AutoDMLRieszCard';
 import { LocalInstrumentalVariablesCard } from '../components/LocalInstrumentalVariablesCard';
 import { ConformalOptimalTransportCard } from '../components/ConformalOptimalTransportCard';
+import { DPMDeconvolutionCard } from '../components/DPMDeconvolutionCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1556,6 +1557,17 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           question_type: q.question_type
         }))}
       />
+
+      {/* Bayesian Nonparametric Dirichlet Process Mixture Density Deconvolution (Ferguson 1973; Escobar & West 1995) */}
+      <DPMDeconvolutionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
 
 
 

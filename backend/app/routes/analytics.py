@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.dpm_deconvolution_engine import estimate_dpm_deconvolution
 from app.engine.conformal_optimal_transport_engine import estimate_conformal_optimal_transport
 from app.engine.local_instrumental_variables_engine import estimate_local_instrumental_variables
 from app.engine.auto_dml_riesz_engine import estimate_auto_dml_riesz
@@ -125,6 +126,8 @@ from app.schemas import (
     LocalInstrumentalVariablesOut,
     ConformalOptimalTransportRequest,
     ConformalOptimalTransportOut,
+    DPMDeconvolutionRequest,
+    DPMDeconvolutionOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15996,6 +15999,100 @@ def run_conformal_optimal_transport_analysis(
                 "ate_ot": res.get("overall_summary", {}).get("optimal_transport_ate"),
                 "att_ot": res.get("overall_summary", {}).get("optimal_transport_att"),
                 "conformal_half_width": res.get("overall_summary", {}).get("conformal_half_width_delta"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/dpm-deconvolution", response_model=DPMDeconvolutionOut)
+def run_dpm_deconvolution_analysis(
+    survey_id: str,
+    payload: DPMDeconvolutionRequest
+):
+    """
+    Bayesian Nonparametric Dirichlet Process Mixture Density Deconvolution Engine (DPM-DD).
+    Ferguson, T. S. (1973); Escobar, M. D., & West, M. (1995); Delaigle, A., et al. (2008).
+    Deconvolves contaminated survey observations Y = X* + epsilon (epsilon ~ N(0, sigma_eps^2)),
+    recovering true unobserved latent distributions X*, unbiased quantiles, reliability ratios,
+    and differential entropy without negative density oscillations.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.target_question_id in answers:
+                try:
+                    y_val = float(answers[payload.target_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                rec = {payload.target_question_id: y_val}
+                if payload.replicate_question_id and payload.replicate_question_id in answers:
+                    try:
+                        rec[payload.replicate_question_id] = float(answers[payload.replicate_question_id])
+                    except (ValueError, TypeError):
+                        pass
+
+                df_records.append(rec)
+
+        if len(df_records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 25 bản ghi hoàn chỉnh để thực hiện Deconvolution (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_dpm_deconvolution(
+                df=df,
+                target_col=payload.target_question_id,
+                replicate_col=payload.replicate_question_id,
+                error_variance_ratio=payload.error_variance_ratio,
+                max_components=payload.max_components,
+                dp_alpha=payload.dp_alpha
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng DPM Deconvolution: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="DPM_DECONVOLUTION_EVALUATED",
+            details={
+                "reliability_ratio": res.get("overall_summary", {}).get("reliability_ratio"),
+                "latent_var": res.get("overall_summary", {}).get("latent_true_variance"),
+                "noise_sd": res.get("overall_summary", {}).get("measurement_error_sd"),
+                "entropy_reduction": res.get("overall_summary", {}).get("entropy_reduction"),
                 "status": res.get("status")
             }
         )

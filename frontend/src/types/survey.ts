@@ -8505,3 +8505,53 @@ export interface ConformalOptimalTransportRequest {
   conformal_alpha?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Bayesian Nonparametric Dirichlet Process Mixture Deconvolution (Ferguson 1973; Escobar 1995) Types ---
+export interface DPMComponentItem {
+  component_id: number;
+  weight: number;
+  mean: number;
+  sd_latent: number;
+  sd_total_observed: number;
+}
+
+export interface DPMDeconvolutionSummary {
+  sample_size: number;
+  n_components_k: number;
+  observed_mean: number;
+  observed_variance: number;
+  observed_sd: number;
+  measurement_error_variance: number;
+  measurement_error_sd: number;
+  measurement_error_source: string;
+  latent_true_variance: number;
+  latent_true_sd: number;
+  reliability_ratio: number;
+  variance_reduction_pct: number;
+  entropy_observed: number;
+  entropy_deconvolved: number;
+  entropy_reduction: number;
+  quantiles_evaluated: number[];
+  quantiles_deconvolved: number[];
+  quantiles_observed: number[];
+  quantile_compression_delta: number[];
+}
+
+export interface DPMDeconvolutionResult {
+  status: string;
+  message?: string;
+  overall_summary?: DPMDeconvolutionSummary;
+  components?: DPMComponentItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface DPMDeconvolutionRequest {
+  target_question_id: string;
+  replicate_question_id?: string;
+  error_variance_ratio?: number;
+  max_components?: number;
+  dp_alpha?: number;
+  scope?: 'all' | 'verified_clean';
+}
