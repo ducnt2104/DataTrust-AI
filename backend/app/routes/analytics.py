@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.dynamic_spatial_panel_engine import run_dynamic_spatial_panel
 from app.engine.network_spillover_engine import run_network_spillover_analysis
 from app.engine.high_dimensional_mediation_engine import run_high_dimensional_mediation
 from app.engine.multi_cutoff_rd_engine import estimate_multi_cutoff_rd
@@ -137,6 +138,8 @@ from app.schemas import (
     HighDimensionalMediationOut,
     NetworkSpilloverRequest,
     NetworkSpilloverOut,
+    DynamicSpatialPanelRequest,
+    DynamicSpatialPanelOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -16466,6 +16469,136 @@ def run_network_spillover_analysis_endpoint(
                 "ote": res.get("total_overall_effect", {}).get("estimate"),
                 "is_sutva_violated": res.get("sutva_test", {}).get("is_violated"),
                 "spillover_share": res.get("spillover_share_pct"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/dynamic-spatial-panel", response_model=DynamicSpatialPanelOut)
+def run_dynamic_spatial_panel_endpoint(
+    survey_id: str,
+    payload: DynamicSpatialPanelRequest
+):
+    """
+    Dynamic Spatial Panel Econometrics & Spatio-Temporal Diffusion Engine.
+    Elhorst, J. P. (2014); Lee, L. F., & Yu, J. (2010 Econometrica); LeSage, J., & Pace, R. K. (2009).
+    Estimates dynamic spatial autoregression with simultaneous time lag, spatial lag, and spatio-temporal
+    coupling (Y_it = gamma Y_{i,t-1} + rho W Y_it + eta W Y_{i,t-1} + X_it beta + mu_i + e_it).
+    Decomposes spatial multipliers into Short-Run and Long-Run Direct, Indirect (Spillover), and Total effects.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.region_question_id in answers and payload.time_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                r_val = str(answers[payload.region_question_id]).strip()
+                t_val = str(answers[payload.time_question_id]).strip()
+                if not r_val or not t_val:
+                    continue
+
+                rec = {
+                    payload.outcome_question_id: y_val,
+                    payload.region_question_id: r_val,
+                    payload.time_question_id: t_val
+                }
+
+                if payload.lat_question_id and payload.lat_question_id in answers:
+                    try:
+                        rec[payload.lat_question_id] = float(answers[payload.lat_question_id])
+                    except (ValueError, TypeError):
+                        pass
+
+                if payload.lon_question_id and payload.lon_question_id in answers:
+                    try:
+                        rec[payload.lon_question_id] = float(answers[payload.lon_question_id])
+                    except (ValueError, TypeError):
+                        pass
+
+                valid_covs = True
+                for c_id in cov_ids:
+                    if c_id in answers:
+                        try:
+                            rec[c_id] = float(answers[c_id])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                    else:
+                        valid_covs = False
+
+                if valid_covs:
+                    df_records.append(rec)
+
+        if len(df_records) < 18:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 18 bản ghi hợp lệ trên tối thiểu 3 khu vực và 3 mốc thời gian để ước lượng Dynamic Spatial Panel (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = run_dynamic_spatial_panel(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                region_col=payload.region_question_id,
+                time_col=payload.time_question_id,
+                covariate_cols=cov_ids if cov_ids else None,
+                lat_col=payload.lat_question_id,
+                lon_col=payload.lon_question_id,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Dynamic Spatial Panel: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="DYNAMIC_SPATIAL_PANEL_EVALUATED",
+            details={
+                "n_regions": res.get("n_regions"),
+                "n_periods": res.get("n_time_periods"),
+                "gamma": res.get("spatio_temporal_parameters", {}).get("time_persistence_gamma", {}).get("estimate"),
+                "rho": res.get("spatio_temporal_parameters", {}).get("contemporaneous_spatial_rho", {}).get("estimate"),
+                "eta": res.get("spatio_temporal_parameters", {}).get("spatio_temporal_diffusion_eta", {}).get("estimate"),
+                "is_stable": res.get("system_stability", {}).get("is_stable"),
+                "sr_spillover_pct": res.get("short_run_impacts", {}).get("spillover_share_pct"),
+                "lr_spillover_pct": res.get("long_run_impacts", {}).get("spillover_share_pct"),
                 "status": res.get("status")
             }
         )

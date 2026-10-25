@@ -5766,3 +5766,36 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `NetworkSpilloverRequest` (`outcome_question_id`, `treatment_question_id`, `cluster_question_id`, `covariate_question_ids`, `spillover_threshold`, `alpha_level`, `scope`).
   - **Response:** `NetworkSpilloverOut` (`status`, `sample_size`, `n_clusters`, `exposure_sample_sizes`, `potential_outcome_means`, `average_direct_effect`, `average_spillover_effect`, `total_overall_effect`, `spillover_share_pct`, `sutva_test`, `dosage_regression`, `svg_visualization`).
 - **Niêm phong kiểm toán:** Ghi nhận `NETWORK_SPILLOVER_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 143. Dynamic Spatial Panel Econometrics & Spatio-Temporal Diffusion Engine (Dynamic Spatial Panel; Anselin 1988; Elhorst 2014; Lee & Yu 2010 Econometrica; LeSage & Pace 2009)
+- **Mục tiêu:** Mô hình hóa đồng thời động thái trễ thời gian (Temporal Inertia), tương tác không gian đồng thời (Contemporaneous Spatial Spillover), và lan truyền không - thời gian (Spatio-Temporal Coupling) trong các khảo sát lặp theo chuỗi thời gian trên các đơn vị địa lý / khu vực / chuỗi chi nhánh ($i = 1, \dots, N; t = 1, \dots, T$). Thay vì giả định các vùng khảo sát độc lập, mô hình thiết lập ma trận trọng số không gian chuẩn hóa theo hàng $W$ (Row-Standardized Spatial Weight Matrix), loại trừ hiệu ứng cố định khu vực $\mu_i$ bằng kỹ thuật biến đổi khử trung bình bảng (FE De-meaning), ước lượng hệ số tự hồi quy vững 2SLS/GMM giải quyết nội sinh của $W Y_{it}$, kiểm tra điều kiện ổn định không gian theo Elhorst (2014), và phân rã ma trận số nhân LeSage-Pace thành tác động Trực tiếp (Direct), Gián tiếp (Spillover), và Tổng cộng (Total) trong cả ngắn hạn lẫn dài hạn.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Phương Trình Tự Hồi Quy Không Gian Động (Dynamic Spatial Panel Model):**
+     $$Y_{it} = \gamma Y_{i,t-1} + \rho \sum_{j=1}^N w_{ij} Y_{jt} + \eta \sum_{j=1}^N w_{ij} Y_{j,t-1} + X_{it} \beta + \mu_i + \varepsilon_{it}$$
+     - $\gamma$: Hệ số quán tính thời gian (Time Persistence).
+     - $\rho$: Hệ số tự tương quan không gian đồng thời (Spatial Autoregression).
+     - $\eta$: Hệ số khuếch tán không - thời gian (Spatio-Temporal Lag).
+     - $\beta$: Vector tác động trực tiếp của các biến kiểm soát $X$.
+  2. **Ma Trận Trọng Số Không Gian & Khử Cố Định Khu Vực (Fixed Effects De-meaning):**
+     - Trọng số khoảng cách nghịch đảo: $W_{ij}^* = 1 / d_{ij}^p$ ($i \ne j$), chuẩn hóa $w_{ij} = W_{ij}^* / \sum_k W_{ik}^*$.
+     - Khử hiệu ứng cố định cá thể $\mu_i$: Trừ giá trị trung bình theo thời gian của từng khu vực $\tilde{Y}_{it} = Y_{it} - \bar{Y}_i$, $\widetilde{WY}_{it} = WY_{it} - \overline{WY}_i$.
+     - Khắc phục nội sinh của $\widetilde{WY}_{it}$ bằng công cụ biến trễ bậc cao $W^2 X_{it}$ và $W Y_{i,t-1}$ (Lee & Yu 2010).
+  3. **Điều Kiện Ổn Định Động Học & Thời Gian Bán Phân Rã (Half-Life; Elhorst 2014):**
+     - Ma trận đồng hành: $M = (I - \rho W)^{-1} (\gamma I + \eta W)$.
+     - Điều kiện ổn định: Bán kính phổ $\max |\lambda(M)| < 1.0$.
+     - Thời gian bán phân rã quán tính: $t_{1/2} = \frac{\ln(0.5)}{\ln(|\gamma|)}$ (số đợt khảo sát để một cú sốc ban đầu giảm đi một nửa cường độ).
+  4. **Phân Rã Số Nhân Tác Động LeSage-Pace (2009):**
+     - Số nhân ngắn hạn (Short-Run Multiplier): $S_{\text{SR}} = (I - \rho W)^{-1} \beta$.
+       - Tác động trực tiếp ngắn hạn: $\text{Direct}_{\text{SR}} = \frac{1}{N} \text{tr}(S_{\text{SR}})$.
+       - Lan tỏa ngắn hạn: $\text{Indirect}_{\text{SR}} = \frac{1}{N} [\mathbf{1}^T S_{\text{SR}} \mathbf{1} - \text{tr}(S_{\text{SR}})]$.
+     - Số nhân dài hạn (Long-Run Multiplier): $S_{\text{LR}} = [(1 - \gamma) I - (\rho + \eta) W]^{-1} \beta$.
+       - Tác động trực tiếp dài hạn: $\text{Direct}_{\text{LR}} = \frac{1}{N} \text{tr}(S_{\text{LR}})$.
+       - Lan tỏa dài hạn: $\text{Indirect}_{\text{LR}} = \frac{1}{N} [\mathbf{1}^T S_{\text{LR}} \mathbf{1} - \text{tr}(S_{\text{LR}})]$.
+  5. **Bản Đồ Vector Lan Tỏa Động SVG:**
+     - Panel A: Cấu trúc liên kết mạng lưới không gian giữa các vùng khảo sát kèm trọng số liên kết $w_{ij}$.
+     - Panel B: Biểu đồ đối chiếu trực quan tác động Trực tiếp vs Lan tỏa vs Tổng cộng (Ngắn hạn vs Dài hạn).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/dynamic-spatial-panel`
+  - **Payload:** `DynamicSpatialPanelRequest` (`outcome_question_id`, `region_question_id`, `time_question_id`, `covariate_question_ids`, `lat_question_id`, `lon_question_id`, `alpha_level`, `scope`).
+  - **Response:** `DynamicSpatialPanelOut` (`status`, `sample_size`, `effective_panel_observations`, `n_regions`, `n_time_periods`, `spatio_temporal_parameters`, `system_stability`, `short_run_impacts`, `long_run_impacts`, `covariate_estimates`, `svg_visualization`).
+- **Niêm phong kiểm toán:** Ghi nhận `DYNAMIC_SPATIAL_PANEL_EVALUATED` vào chuỗi sổ cái SHA-256.

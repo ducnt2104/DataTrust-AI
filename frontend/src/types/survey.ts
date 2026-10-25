@@ -8747,3 +8747,62 @@ export interface NetworkSpilloverRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Dynamic Spatial Panel Econometrics & Spatio-Temporal Diffusion Types ---
+export interface SpatioTemporalParameter {
+  estimate: number;
+  se: number;
+  p_value: number;
+}
+
+export interface SpatialMultiplierImpact {
+  direct: number;
+  indirect: number;
+  total: number;
+  spillover_share_pct: number;
+}
+
+export interface DynamicSpatialPanelResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  effective_panel_observations?: number;
+  n_regions?: number;
+  n_time_periods?: number;
+  outcome_variable?: string;
+  region_variable?: string;
+  time_variable?: string;
+  spatio_temporal_parameters?: {
+    time_persistence_gamma: SpatioTemporalParameter;
+    contemporaneous_spatial_rho: SpatioTemporalParameter;
+    spatio_temporal_diffusion_eta: SpatioTemporalParameter;
+  };
+  system_stability?: {
+    is_stable: boolean;
+    max_eigen_modulus: number;
+    persistence_half_life_periods: number;
+    interpretation: string;
+  };
+  short_run_impacts?: SpatialMultiplierImpact;
+  long_run_impacts?: SpatialMultiplierImpact;
+  covariate_estimates?: Array<{
+    covariate: string;
+    coefficient: number;
+    se: number;
+    p_value: number;
+  }>;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface DynamicSpatialPanelRequest {
+  outcome_question_id: string;
+  region_question_id: string;
+  time_question_id: string;
+  covariate_question_ids?: string[];
+  lat_question_id?: string;
+  lon_question_id?: string;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

@@ -2403,6 +2403,34 @@ eq 0\}$
 
 ---
 
-## 29. Planned Next Iteration: Iteration 162
-- **Feature**: Dynamic Spatial Panel Econometrics & Spatio-Temporal Diffusion Engine (Dynamic Spatial Panel; Anselin 1988; Elhorst 2014; Lee & Yu 2010 Econometrica).
-- **Scope**: Implements dynamic spatial panel autoregression with simultaneous time lag, spatial lag, and spatio-temporal interaction ($Y_{it} = \gamma Y_{i,t-1} + \rho W Y_{it} + \eta W Y_{i,t-1} + X_{it} \beta + \mu_i + \varepsilon_{it}$), computing spatial multiplier matrices, short-run vs long-run direct, indirect, and total spatial impacts, and spatial diffusion half-life.
+## 29. Iteration 162: Dynamic Spatial Panel Econometrics & Spatio-Temporal Diffusion Engine (Dynamic Spatial Panel; Anselin 1988; Elhorst 2014; Lee & Yu 2010 Econometrica; LeSage & Pace 2009)
+- **Timestamp**: 2026-10-25T13:58:00+07:00
+- **Scientific Foundation**:
+  - Unifies temporal autoregression ($\gamma$), contemporaneous spatial lag ($\rho$), and spatio-temporal diffusion ($\eta$) within a dynamic spatial panel model: $Y_{it} = \gamma Y_{i,t-1} + \rho W Y_{it} + \eta W Y_{i,t-1} + X_{it} \beta + \mu_i + \varepsilon_{it}$.
+  - Spatial Weight Matrix $W$: Inverse-distance metric with row standardization, ensuring endogenous spatial interaction is normalized across jurisdictions.
+  - Fixed Effects De-meaning: Purges time-invariant regional fixed effects $\mu_i$ via spatio-temporal de-meaning.
+  - Lee & Yu (2010) 2SLS/GMM: Instruments endogenous spatial lag $\widetilde{WY}_{it}$ using higher-order spatial lags $W^2 X_{it}$ and historical lags.
+  - Elhorst (2014) Stability Condition: Enforces stationarity on the companion matrix $M = (I - \rho W)^{-1} (\gamma I + \eta W)$, computing temporal persistence half-life ($t_{1/2}$).
+  - LeSage & Pace (2009) Spatial Multipliers: Decomposes covariate impacts into Short-Run and Long-Run Direct, Indirect (Spillover), and Total effects.
+  - Interactive SVG Visualizer: Features spatio-temporal network topology map with spatial link intensities and comparative impact bars.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/dynamic_spatial_panel_engine.py` (420 lines).
+  - Pydantic Schemas: `DynamicSpatialPanelRequest` and `DynamicSpatialPanelOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/dynamic-spatial-panel` with `DYNAMIC_SPATIAL_PANEL_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_dynamic_spatial_panel_engine.py` (2/2 passed in 0.26s).
+  - Route Tests: `backend/tests/test_dynamic_spatial_panel_routes.py` (1/1 passed in 0.98s).
+- **Frontend Components**:
+  - TypeScript Types: `SpatioTemporalParameter`, `SpatialMultiplierImpact`, `DynamicSpatialPanelResult`, `DynamicSpatialPanelRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runDynamicSpatialPanel` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/DynamicSpatialPanelCard.tsx` (515 lines) with outcome, region, wave, lat/lon selectors, covariates checklist, KPI cards ($\gamma, \rho, \eta$, Long-Run Spillover %, Stability), interactive dual-panel SVG map and multiplier comparison, LeSage-Pace multipliers breakdown table, and persistence half-life notes.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed** (49/49 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,128 modules transformed, 0 errors in 1.10s**.
+  - Contract Documentation: Section 143 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 30. Planned Next Iteration: Iteration 163
+- **Feature**: Continuous Policy Shift & Doubly Robust Nonparametric Dosage Response Engine (Continuous DML / Policy Shifts; Kennedy, Ma, McHugh, & Small 2017 JASA; Chernozhukov et al. 2022 Econometrica).
+- **Scope**: Implements continuous treatment causal inference for survey policy shifts (e.g. shifts in continuous pricing, subsidies, training hours, or budget allocations $A \to A + \delta$), estimating the full nonlinear policy curve $\mu(a) = \mathbb{E}[Y(a)]$ with doubly robust pseudo-outcomes and Generalized Propensity Score (GPS) de-biasing, computing marginal policy derivative curves $\mu'(a)$, and optimal policy target search.
