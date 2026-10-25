@@ -275,7 +275,9 @@ import {
   ConformalCausalRequest,
   ConformalCausalResult,
   BayesianCausalForestRequest,
-  BayesianCausalForestResult
+  BayesianCausalForestResult,
+  SpatialDIDRequest,
+  SpatialDIDResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2861,5 +2863,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<BayesianCausalForestResult>(res);
+  },
+
+  async runSpatialDiffInDiff(
+    surveyId: string,
+    payload: SpatialDIDRequest
+  ): Promise<SpatialDIDResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/spatial-did`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<SpatialDIDResult>(res);
   }
 };

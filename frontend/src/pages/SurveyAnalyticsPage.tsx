@@ -159,6 +159,7 @@ import { CausalMatrixCompletionCard } from '../components/CausalMatrixCompletion
 import { IVLATEQuantileCard } from '../components/IVLATEQuantileCard';
 import { ConformalCausalCard } from '../components/ConformalCausalCard';
 import { BayesianCausalForestCard } from '../components/BayesianCausalForestCard';
+import { SpatialDIDCard } from '../components/SpatialDIDCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1802,6 +1803,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Bayesian Causal Forests & Targeted Nonparametric Selection (Hahn, Murray, & Carvalho 2020) */}
       <BayesianCausalForestCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Semiparametric Spatial Difference-in-Differences & Spillover Causal Engine (Delgado & Florax 2015; Butts 2021) */}
+      <SpatialDIDCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

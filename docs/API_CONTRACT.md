@@ -6396,3 +6396,31 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `BayesianCausalForestRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `num_mcmc_draws`, `credibility_level`, `scope`).
   - **Response:** `BayesianCausalForestOut` (`status`, `sample_size`, `mcmc_draws_count`, `effective_sample_size`, `subgroup_counts`, `ate_estimates`, `att_estimates`, `mcmc_diagnostics`, `propensity_quintiles`, `sample_cate_estimates`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `BAYESIAN_CAUSAL_FOREST_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 163. Semiparametric Spatial Difference-in-Differences & Spillover Causal Engine (Delgado & Florax 2015; Butts 2021)
+- **Mục tiêu:** Ước lượng hiệu ứng can thiệp trực tiếp (Direct ATT), hiệu ứng lan tỏa không gian (Indirect / Spillover ATT) và tổng hiệu ứng (Total ATT) trong bối cảnh dữ liệu bảng địa không gian (spatial panel / geo-tagged survey data) khi giả định SUTVA (Stable Unit Treatment Value Assumption) bị vi phạm do hiệu ứng lân cận (neighborhood spillovers).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Ma Trận Trọng Số Không Gian Chuẩn Hóa Theo Hàng (Row-Standardized Spatial Weight Matrix $W$):**
+     - Hỗ trợ hai cơ chế ma trận trọng số không gian dựa trên tọa độ địa lý (latitude, longitude):
+       - *Nghịch đảo khoảng cách (Inverse Distance Weighting):* $w_{ij} = d(i, j)^{-p}$ với $p \ge 1$ (Euclidean / Great-Circle Haversine approximation).
+       - *$k$-Láng giềng gần nhất (k-Nearest Neighbors):* $w_{ij} = 1/k$ nếu $j \in \mathcal{N}_k(i)$, $0$ nếu ngược lại.
+       - Chuẩn hóa theo hàng: $\sum_j w_{ij} = 1$ với $w_{ii} = 0$.
+  2. **Phương Trình Hồi Quy Spatial-DiD Phân Tách Hiệu Ứng Lan Tỏa:**
+     - Ước lượng mô hình Spatial Lag of Treatment (SLX-DiD):
+       $$\Delta Y_i = \alpha + \tau_{\text{direct}} \cdot D_i + \tau_{\text{spillover}} \cdot (W D)_i + X_i \gamma + \epsilon_i$$
+       trong đó $(W D)_i = \sum_{j} w_{ij} D_j$ là tỷ lệ hoặc cường độ can thiệp của các đơn vị lân cận bao quanh cá thể $i$.
+     - $\tau_{\text{direct}}$ đo lường hiệu ứng nội tại trực tiếp khi bản thân cá thể nhận can thiệp.
+     - $\tau_{\text{spillover}}$ đo lường tác động ngoại ứng truyền tải từ các đối tượng lân cận có can thiệp sang cá thể $i$.
+     - $\tau_{\text{total}} = \tau_{\text{direct}} + \tau_{\text{spillover}}$.
+  3. **Kiểm Định Tự Tương Quan Không Gian Phần Dư Moran's I (Moran's I Residual Test):**
+     - Đánh giá tính độc lập không gian của phần dư sau hồi quy:
+       $$I = \frac{N}{\sum_i \sum_j w_{ij}} \frac{\sum_i \sum_j w_{ij} (e_i - \bar{e})(e_j - \bar{e})}{\sum_i (e_i - \bar{e})^2}$$
+     - Tính $z$-score và $p$-value kiểm định giả thuyết vô hiệu $H_0: I = E[I] = -1/(N-1)$ (không có tự tương quan không gian còn sót lại).
+  4. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Biểu đồ thanh 3 thành phần hiệu ứng (Direct ATT, Spillover ATT, Total ATT) kèm thanh sai số 95% CI.
+     - Panel B: Moran Scatter Plot biểu diễn phần dư chuẩn hóa $e_i$ so với độ trễ không gian phần dư $(We)_i$, chia 4 góc phần tư không gian (High-High, High-Low, Low-High, Low-Low).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/spatial-did`
+  - **Payload:** `SpatialDIDRequest` (`treatment_question_id`, `outcome_question_id`, `lat_field`, `lon_field`, `time_question_id`, `covariate_question_ids`, `weight_matrix_type`, `knn_k`, `distance_power`, `scope`).
+  - **Response:** `SpatialDIDOut` (`status`, `sample_size`, `spatial_weight_type`, `direct_att`, `spillover_att`, `total_att`, `moran_test`, `model_fit`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `SPATIAL_DID_EVALUATED` vào chuỗi sổ cái SHA-256.

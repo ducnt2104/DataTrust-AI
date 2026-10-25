@@ -9875,3 +9875,53 @@ export interface BayesianCausalForestResult {
   svg_visualization?: string;
   apa_narrative?: string;
 }
+
+
+export interface SpatialDIDEffect {
+  estimate: number;
+  std_error: number;
+  t_statistic: number;
+  p_value: number;
+  ci_lower: number;
+  ci_upper: number;
+}
+
+export interface SpatialDIDMoranDiagnostic {
+  moran_i: number;
+  z_score: number;
+  p_value: number;
+  residual_autocorrelation_cleared: boolean;
+}
+
+export interface SpatialDIDModelFit {
+  r_squared: number;
+  sample_size: number;
+  degrees_of_freedom: number;
+}
+
+export interface SpatialDIDRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  lat_field?: string;
+  lon_field?: string;
+  time_question_id?: string;
+  covariate_question_ids?: string[];
+  weight_type?: 'inverse_distance' | 'knn';
+  knn_k?: number;
+  power?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface SpatialDIDResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  weights_type?: string;
+  direct_effect?: SpatialDIDEffect;
+  spillover_effect?: SpatialDIDEffect;
+  total_impact?: SpatialDIDEffect;
+  morans_i_diagnostic?: SpatialDIDMoranDiagnostic;
+  model_fit?: SpatialDIDModelFit;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}

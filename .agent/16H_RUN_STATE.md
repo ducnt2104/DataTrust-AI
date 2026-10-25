@@ -2976,3 +2976,35 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 ## 49. Planned Next Iteration: Iteration 182
 - **Feature**: Semiparametric Spatial Difference-in-Differences & Spillover Causal Engine (Spatial-DiD; Delgado & Florax 2015; Butts 2021).
 - **Scope**: Evaluates direct treatment effects and spatial spillover effects across geographic distance matrices, calculating Spatial Lag of Treatment (SLX), Total Marginal Impacts, and Moran's I residual spatial correlation diagnostics.
+
+
+## 49. Iteration 182: Semiparametric Spatial Difference-in-Differences & Spillover Causal Engine (Delgado & Florax 2015; Butts 2021)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T16:45:00+07:00
+- **Scientific Foundation**:
+  - Resolves SUTVA Violations in Geographic Survey Data: Classical Difference-in-Differences requires that one unit's treatment status does not affect another unit's outcomes. In regional policy interventions, environmental shocks, and decentralized surveys, geographic spillover is pervasive.
+  - Spatial Lag of Treatment (SLX-DiD): Formulates Delta Y_i = alpha + tau_direct * D_i + tau_spillover * (W D)_i + X_i * gamma + epsilon_i, where W is a row-standardized spatial weight matrix (Inverse Distance Weighting or k-Nearest Neighbors) computed from unit coordinates (latitude, longitude).
+  - Multi-Component Impact Decomposition: Decomposes overall causal impact into Direct ATT (own treatment effect), Spillover / Indirect ATT (external neighborhood treatment effect), and Total ATT (combined effect = direct + spillover).
+  - Spatial Autocorrelation Diagnostics: Computes residual Moran's I statistic with standardized z-score and asymptotic p-value to rigorously test for residual spatial clustering or unmodeled spatial lag.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays bar chart of Direct ATT, Spillover ATT, and Total ATT with 95% confidence intervals; Panel B displays Moran's scatter plot of normalized residuals vs spatial lag of residuals across four geographic quadrants (High-High, High-Low, Low-High, Low-Low).
+- **Backend Components**:
+  - Core Engine: backend/app/engine/spatial_did_engine.py (390 lines).
+  - Schemas: SpatialDIDRequest, SpatialDIDEffect, SpatialDIDMoranDiagnostic, SpatialDIDModelFit, SpatialDIDOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/spatial-did with SPATIAL_DID_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_spatial_did_engine.py (3/3 passed in 0.50s).
+  - Route Tests: backend/tests/test_spatial_did_routes.py (1/1 passed in 1.65s).
+- **Frontend Components**:
+  - TypeScript Types: SpatialDIDEffect, SpatialDIDMoranDiagnostic, SpatialDIDModelFit, SpatialDIDRequest, SpatialDIDResult in frontend/src/types/survey.ts.
+  - API Client Method: runSpatialDID in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/SpatialDIDCard.tsx (510 lines) with Treatment, Outcome, Latitude, Longitude, Time/Post-Period, and Covariates selectors, spatial weight matrix mode (Inverse Distance, k-NN), distance power / k parameters, 5 KPI cards (Direct ATT, Spillover ATT, Total ATT, Moran's I diagnostic, R-squared & F-statistic), dual-panel SVG visualizer, Moran quadrants explanation, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (41/41 cumulative passed across Iterations 171-182 in 36.81s).
+  - Frontend Production Build: 2,147 modules transformed, 0 errors in 2.19s.
+  - Contract Documentation: Section 163 appended to docs/API_CONTRACT.md.
+
+---
+
+## 50. Planned Next Iteration: Iteration 183
+- **Feature**: Generalized Synthetic Control with Interactive Fixed Effects & Cross-Validation Matrix Factorization Engine (GSC; Xu 2017 Political Analysis; Gobillon & Magnac 2016).
+- **Scope**: Combines interactive fixed effects factor model with synthetic controls under staggered policy adoption, estimating time-varying latent factors and unit factor loadings via nuclear norm cross-validation to impute counterfactual trajectories Y_it(0).

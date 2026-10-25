@@ -1,3 +1,4 @@
+from app.engine.spatial_did_engine import run_spatial_diff_in_diff
 from app.engine.bayesian_causal_forest_engine import run_bayesian_causal_forest
 from app.engine.conformal_causal_engine import run_conformal_causal_inference
 from app.engine.iv_late_quantile_engine import run_iv_late_quantile_decomposition
@@ -194,6 +195,8 @@ from app.schemas import (
     ConformalCausalOut,
     BayesianCausalForestRequest,
     BayesianCausalForestOut,
+    SpatialDIDRequest,
+    SpatialDIDOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -18149,6 +18152,104 @@ def run_bayesian_causal_forest_endpoint(
                         "att_posterior_mean": res.get("att_estimates", {}).get("posterior_mean"),
                         "mcmc_draws": res.get("mcmc_draws_count"),
                         "effective_sample_size": res.get("effective_sample_size"),
+                        "sample_size": res.get("sample_size")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/spatial-did", response_model=SpatialDIDOut)
+def run_spatial_did_endpoint(
+    survey_id: str,
+    payload: SpatialDIDRequest
+):
+    """
+    Semiparametric Spatial Difference-in-Differences & Spillover Causal Engine
+    (Delgado & Florax 2015; Butts 2021).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "no_data",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            lat_v = 0.0
+            lon_v = 0.0
+            if ans.get(payload.lat_field) is not None:
+                try:
+                    lat_v = float(ans.get(payload.lat_field))
+                except Exception:
+                    pass
+            if ans.get(payload.lon_field) is not None:
+                try:
+                    lon_v = float(ans.get(payload.lon_field))
+                except Exception:
+                    pass
+
+            rec = {
+                "treatment": ans.get(payload.treatment_question_id),
+                "outcome": ans.get(payload.outcome_question_id),
+                "latitude": lat_v,
+                "longitude": lon_v
+            }
+            if payload.time_question_id:
+                rec["time_period"] = ans.get(payload.time_question_id)
+            if payload.covariate_question_ids:
+                for cid in payload.covariate_question_ids:
+                    rec[cid] = ans.get(cid)
+            records.append(rec)
+
+        res = run_spatial_diff_in_diff(
+            records=records,
+            treatment_col="treatment",
+            outcome_col="outcome",
+            lat_col="latitude",
+            lon_col="longitude",
+            time_col="time_period" if payload.time_question_id else None,
+            covariate_cols=payload.covariate_question_ids,
+            weight_type=payload.weight_type,
+            knn_k=payload.knn_k,
+            power=payload.power
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="SPATIAL_DID_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "direct_att": res.get("direct_effect", {}).get("estimate"),
+                        "spillover_att": res.get("spillover_effect", {}).get("estimate"),
+                        "total_impact": res.get("total_impact", {}).get("estimate"),
+                        "moran_i": res.get("morans_i_diagnostic", {}).get("moran_i"),
                         "sample_size": res.get("sample_size")
                     }
                 )
