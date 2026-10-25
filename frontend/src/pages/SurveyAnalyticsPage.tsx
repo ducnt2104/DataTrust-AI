@@ -132,6 +132,7 @@ import { ShiftShareIVCard } from '../components/ShiftShareIVCard';
 import { QuantileSyntheticControlCard } from '../components/QuantileSyntheticControlCard';
 import { TWFEDecompositionCard } from '../components/TWFEDecompositionCard';
 import { FactorIVCard } from '../components/FactorIVCard';
+import { NestedLogitCard } from '../components/NestedLogitCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1505,6 +1506,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Factor Instrumental Variables & Principal Component 2SLS (Bai & Ng 2010 Econometrica) */}
       <FactorIVCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Nested Logit Structural Choice & Substitution Elasticities (McFadden 1978 Nobel Prize) */}
+      <NestedLogitCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

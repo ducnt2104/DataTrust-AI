@@ -8287,3 +8287,71 @@ export interface FactorIVRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Nested Logit Structural Choice (McFadden 1978) Types ---
+export interface NestDiagnosticItem {
+  nest_name: string;
+  alternatives: string[];
+  n_alternatives: number;
+  dissimilarity_lambda: number;
+  se_lambda: number;
+  intra_nest_correlation_rho: number;
+  iia_violation: boolean;
+  status: string;
+}
+
+export interface ChoiceCoefficientItem {
+  parameter: string;
+  coefficient: number;
+  se: number;
+  t_statistic: number;
+  p_value: number;
+  ci_95: [number, number];
+}
+
+export interface ElasticityComparisonItem {
+  base_alternative: string;
+  within_nest_substitute: string;
+  within_nest_name: string;
+  within_nest_divergence_multiplier: number;
+  cross_nest_substitute: string;
+  cross_nest_name: string;
+  interpretation: string;
+}
+
+export interface NestedLogitSummary {
+  n_choice_situations: number;
+  n_alternatives: number;
+  n_nests: number;
+  log_likelihood_nested_logit: number;
+  log_likelihood_mnl_baseline: number;
+  log_likelihood_null: number;
+  mcfadden_pseudo_r2: number;
+  lr_test_iia_statistic: number;
+  lr_test_iia_p_value: number;
+  iia_assumption_rejected: boolean;
+  iia_status_verdict: string;
+}
+
+export interface NestedLogitResult {
+  status: string;
+  message?: string;
+  overall_summary?: NestedLogitSummary;
+  nests?: NestDiagnosticItem[];
+  coefficients?: ChoiceCoefficientItem[];
+  elasticity_comparison?: ElasticityComparisonItem;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface NestedLogitRequest {
+  choice_question_id: string;
+  alternative_question_id: string;
+  nest_question_id: string;
+  choice_id_question_id: string;
+  attribute_question_ids: string[];
+  cost_question_id?: string;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

@@ -5551,4 +5551,29 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
 - **Niêm phong kiểm toán:** Ghi nhận `FACTOR_IV_EVALUATED` vào chuỗi sổ cái SHA-256.
 
 
+### 135. Nested Logit Structural Choice & Substitution Elasticity Engine (McFadden 1978 Nobel Prize; Train 2009; Berry 1994)
+- **Mục tiêu:** Khắc phục triệt để giả định phi thực tế "Độc lập của các Phương án Không liên quan" (Independence of Irrelevant Alternatives - IIA) vốn là điểm yếu cố hữu của mô hình Đa thức Logit (Multinomial Logit - MNL) thông thường trong các cuộc khảo sát thị hiếu người tiêu dùng, lựa chọn phương thức giao thông, hành vi khách hàng và bảng hỏi lựa chọn rời rạc (Discrete Choice Experiments). Mô hình phân hoạch các phương án lựa chọn thành các tổ (nests) có tương quan lỗi nội bộ, giải phóng hệ số bất biến tỷ số xác suất (Nghịch lý Red Bus / Blue Bus), ước lượng tham số phân kỳ $\lambda_m \in (0, 1]$, tính toán ma trận co giãn thay thế chéo và kiểm định sự vi phạm IIA thông qua kiểm định Tỷ số Hợp lý (Likelihood Ratio Test).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hàm Phân phối Giá trị Cực trị Tổng quát (GEV Utility Structure):**
+     - Hữu dụng $U_{nj} = V_{nj} + \varepsilon_{nj}$ với sai số ngẫu nhiên $(\varepsilon_{n1}, \dots, \varepsilon_{nJ})$ tuân theo phân phối GEV với tham số phân kỳ tổ $\lambda_m \in (0, 1]$:
+       $$F(\varepsilon) = \exp\left( - \sum_{m=1}^M \left( \sum_{j \in B_m} \exp(-\varepsilon_{nj} / \lambda_m) \right)^{\lambda_m} \right)$$
+     - Tương quan nội tổ: $\text{Corr}(\varepsilon_{nj}, \varepsilon_{nk}) = 1 - \lambda_m^2$ với $j, k \in B_m$. Khi $\lambda_m = 1$, mô hình suy biến về MNL chuẩn.
+  2. **Phân rã Xác suất Lựa chọn:**
+     - Xác suất lựa chọn phương án $j$ trong tổ $m$: $P_{nj} = P_{nj \mid B_m} \cdot P_{n B_m}$.
+     - Xác suất có điều kiện: $P_{nj \mid B_m} = \frac{\exp(V_{nj} / \lambda_m)}{\sum_{k \in B_m} \exp(V_{nk} / \lambda_m)}$.
+     - Giá trị Bao hàm (Inclusive Value / Log-Sum): $I_{nm} = \ln \left( \sum_{k \in B_m} \exp(V_{nk} / \lambda_m) \right)$.
+     - Xác suất biên chọn tổ: $P_{n B_m} = \frac{\exp(\lambda_m I_{nm})}{\sum_{l=1}^M \exp(\lambda_l I_{nl})}$.
+  3. **Độ Co giãn Thay thế & Phá vỡ IIA:**
+     - Độ co giãn chéo giữa hai phương án cùng tổ ($j, k \in B_m$) lớn hơn đáng kể so với hai phương án khác tổ ($j \in B_m, k \in B_l, m \ne l$) theo hệ số nhân $(1 / \lambda_m)$, phản ánh thực tế người tiêu dùng sẽ chuyển dịch chủ yếu sang các phương án cùng nhóm thay vì chia đều sang các phương án khác tổ.
+  4. **Kiểm định Thống kê & Chẩn đoán Mô hình:**
+     - Kiểm định Tỷ số Hợp lý (LR Test) đối chuẩn với MNL: $LR = 2 (\ln L_{\text{Nested}} - \ln L_{\text{MNL}}) \sim \chi^2(M)$.
+     - Hệ số McFadden Pseudo-$R^2 = 1 - \frac{\ln L}{\ln L_0}$.
+     - Kiểm định tính nhất quán kinh tế học vi mô: $\lambda_m \in (0, 1]$ bảo đảm tính tối đa hóa hữu dụng toàn cục.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/nested-logit`
+  - **Payload:** `NestedLogitRequest` (`choice_question_id`, `alternative_question_id`, `nest_question_id`, `choice_id_question_id`, `attribute_question_ids`, `cost_question_id`, `alpha_level`, `scope`).
+  - **Response:** `NestedLogitOut` (`status`, `overall_summary`, `nests`, `coefficients`, `elasticity_comparison`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `NESTED_LOGIT_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+
 

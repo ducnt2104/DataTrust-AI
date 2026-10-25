@@ -221,7 +221,9 @@ import {
   TWFEDecompositionRequest,
   TWFEDecompositionResult,
   FactorIVRequest,
-  FactorIVResult
+  FactorIVResult,
+  NestedLogitRequest,
+  NestedLogitResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2507,5 +2509,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<FactorIVResult>(res);
+  },
+  async runNestedLogit(
+    surveyId: string,
+    payload: NestedLogitRequest
+  ): Promise<NestedLogitResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/nested-logit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<NestedLogitResult>(res);
   }
 };

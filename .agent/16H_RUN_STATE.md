@@ -2159,9 +2159,36 @@ eq 0\}$
 
 ---
 
-## 21. Planned Next Iteration: Iteration 154
-- **Feature**: Nested Logit Structural Choice & Substitution Elasticity Engine (McFadden 1978 Nobel Prize; Train 2009; Berry 1994).
-- **Scope**: Relaxes the restrictive Independence of Irrelevant Alternatives (IIA) assumption in discrete choice surveys by partitioning choices into correlated nests, estimating inclusive value parameters $\lambda_m \in (0, 1]$, computing exact cross-elasticities, and estimating consumer welfare changes under counterfactual choice set modifications.
+## 21. Iteration 154: Nested Logit Structural Choice & Substitution Elasticity Engine (McFadden 1978 Nobel Prize; Train 2009; Berry 1994)
+- **Timestamp**: 2026-10-25T12:53:00+07:00
+- **Scientific Foundation**:
+  - Relaxes the restrictive Independence of Irrelevant Alternatives (IIA) assumption in standard Multinomial Logit (MNL), resolving the classic Red Bus / Blue Bus Paradox (McFadden 1974).
+  - Generalized Extreme Value (GEV) Tree Structure: Partitions alternative choices into mutually exclusive nests ($B_1, \dots, B_M$) with correlated error terms $\text{Corr}(\varepsilon_{nj}, \varepsilon_{nk}) = 1 - \lambda_m^2$.
+  - Fast Vectorized Estimation: Pre-parses decision situations into pure NumPy matrices, estimating structural utility coefficients $\beta$ and dissimilarity parameters $\lambda_m \in (0, 1]$ with high numerical stability.
+  - Likelihood Ratio Test for IIA: Formally tests $H_0: \lambda_1 = \dots = \lambda_M = 1.0$ against MNL ($\chi^2(M)$), establishing whether IIA is violated in empirical survey data.
+  - Substitution Elasticity Divergence: Quantifies how within-nest substitution exceeds cross-nest substitution by a factor of $(1 / \lambda_m)$, reflecting realistic market cannibalization and modal shifts.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/nested_logit_engine.py` (470 lines).
+  - Pydantic Schemas: `NestedLogitRequest` and `NestedLogitOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/nested-logit` with `NESTED_LOGIT_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_nested_logit_engine.py` (2/2 passed in 1.73s).
+  - Route Tests: `backend/tests/test_nested_logit_routes.py` (1/1 passed in 2.57s).
+- **Frontend Components**:
+  - TypeScript Types: `NestDiagnosticItem`, `ChoiceCoefficientItem`, `ElasticityComparisonItem`, `NestedLogitSummary`, `NestedLogitResult`, `NestedLogitRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runNestedLogit` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/NestedLogitCard.tsx` (500 lines) with choice indicator, alternative, nest, situation ID selectors, attributes checklist, cost attribute selector, KPI stat cards (Log-Likelihood, Pseudo-$R^2$, LR IIA test, Nests count, Situations count), dual-panel SVG visualizer (Tree hierarchy with $\lambda_m$ nodes & MNL vs Nested Logit bar comparison), substitution divergence insight alert, nest diagnostics table, coefficients table, and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed in 4.30s**.
+  - Frontend Production Build: **2,120 modules transformed, 0 errors in 1.61s**.
+  - Contract Documentation: Section 135 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 22. Planned Next Iteration: Iteration 155
+- **Feature**: Automatic Debiased Machine Learning via Riesz Representer Learning (Auto-DML; Chernozhukov, Newey, & Singh 2022 Econometrica; Hirshberg & Wager 2021).
+- **Scope**: Replaces manual derivation of influence functions for complex survey policy functionals by automatically learning the Riesz representer $\alpha_0(X)$ via empirical Riesz loss minimization, enabling $\sqrt{N}$-consistent, Neyman-orthogonal causal estimation for continuous treatment shifts and multidimensional policy evaluations.
+
 
 
 

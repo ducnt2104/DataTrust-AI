@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.nested_logit_engine import estimate_nested_logit
 from app.engine.factor_iv_engine import estimate_factor_iv
 from app.engine.twfe_decomposition_engine import estimate_twfe_decomposition
 from app.engine.quantile_synthetic_control_engine import estimate_quantile_synthetic_control
@@ -113,6 +114,8 @@ from app.schemas import (
     TWFEDecompositionOut,
     FactorIVRequest,
     FactorIVOut,
+    NestedLogitRequest,
+    NestedLogitOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15514,6 +15517,136 @@ def run_factor_iv_analysis(
                 "n_factors_r": res.get("overall_summary", {}).get("n_factors_r"),
                 "beta_fiv": res.get("overall_summary", {}).get("beta_factor_iv"),
                 "first_stage_f": res.get("overall_summary", {}).get("first_stage_f_statistic"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/nested-logit", response_model=NestedLogitOut)
+def run_nested_logit_analysis(
+    survey_id: str,
+    payload: NestedLogitRequest
+):
+    """
+    Nested Logit Structural Discrete Choice & Substitution Elasticity Engine.
+    McFadden, D. (1978); Train, K. E. (2009); Berry, S. T. (1994).
+    Relaxes the restrictive Independence of Irrelevant Alternatives (IIA) assumption
+    by grouping alternatives into correlated nests, estimating dissimilarity parameters lambda_m in (0, 1],
+    computing within-nest vs cross-nest substitution elasticities, and testing IIA via Likelihood Ratio tests.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        attr_ids = payload.attribute_question_ids
+        cost_id = payload.cost_question_id
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if (payload.choice_question_id in answers and
+                payload.alternative_question_id in answers and
+                payload.nest_question_id in answers and
+                payload.choice_id_question_id in answers):
+                try:
+                    c_val = float(answers[payload.choice_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                alt_val = str(answers[payload.alternative_question_id]).strip()
+                nest_val = str(answers[payload.nest_question_id]).strip()
+                cid_val = str(answers[payload.choice_id_question_id]).strip()
+
+                rec = {
+                    payload.choice_question_id: c_val,
+                    payload.alternative_question_id: alt_val,
+                    payload.nest_question_id: nest_val,
+                    payload.choice_id_question_id: cid_val
+                }
+
+                # Attributes
+                valid_attrs = True
+                for aid in attr_ids:
+                    if aid in answers:
+                        try:
+                            rec[aid] = float(answers[aid])
+                        except (ValueError, TypeError):
+                            valid_attrs = False
+                    else:
+                        valid_attrs = False
+
+                if cost_id:
+                    if cost_id in answers:
+                        try:
+                            rec[cost_id] = float(answers[cost_id])
+                        except (ValueError, TypeError):
+                            valid_attrs = False
+                    else:
+                        valid_attrs = False
+
+                if valid_attrs:
+                    df_records.append(rec)
+
+        if len(df_records) < 15:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 15 bản ghi lựa chọn để ước lượng Nested Logit (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_nested_logit(
+                df=df,
+                choice_col=payload.choice_question_id,
+                alternative_col=payload.alternative_question_id,
+                nest_col=payload.nest_question_id,
+                id_col=payload.choice_id_question_id,
+                attribute_cols=attr_ids,
+                cost_col=cost_id,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Nested Logit: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="NESTED_LOGIT_EVALUATED",
+            details={
+                "n_situations": res.get("overall_summary", {}).get("n_choice_situations"),
+                "n_alternatives": res.get("overall_summary", {}).get("n_alternatives"),
+                "n_nests": res.get("overall_summary", {}).get("n_nests"),
+                "ll_nested": res.get("overall_summary", {}).get("log_likelihood_nested_logit"),
+                "lr_stat": res.get("overall_summary", {}).get("lr_test_iia_statistic"),
+                "iia_rejected": res.get("overall_summary", {}).get("iia_assumption_rejected"),
                 "status": res.get("status")
             }
         )
