@@ -5941,10 +5941,13 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
      - Ước lượng tham số dao động $\epsilon$ bằng cách hồi quy logistic phụ trợ với offset là logit của ước lượng ban đầu:
        	ext{logit}(ar{Q}_\epsilon(A, W)) = 	ext{logit}(ar{Q}_0(A, W)) + \epsilon H(A, W)
      - Cập nhật hàm dự báo kết quả can thiệp có mục tiêu:
-       ar{Q}_n^*(1, W) = 	ext{expit}\left(	ext{logit}(ar{Q}_0(1, W)) + \hat{\epsilon} H(1, W)ight)
-       ar{Q}_n^*(0, W) = 	ext{expit}\left(	ext{logit}(ar{Q}_0(0, W)) + \hat{\epsilon} H(0, W)ight)
+       ar{Q}_n^*(1, W) = 	ext{expit}\left(	ext{logit}(ar{Q}_0(1, W)) + \hat{\epsilon} H(1, W)
+ight)
+       ar{Q}_n^*(0, W) = 	ext{expit}\left(	ext{logit}(ar{Q}_0(0, W)) + \hat{\epsilon} H(0, W)
+ight)
   4. **Bước 4: Ước Tính Tham Số Nhân Quả Mục Tiêu (Plug-in ATE):**
-     \hat{\psi}_{	ext{TMLE}} = rac{1}{n} \sum_{i=1}^n \left(ar{Q}_n^*(1, W_i) - ar{Q}_n^*(0, W_i)ight)
+     \hat{\psi}_{	ext{TMLE}} = rac{1}{n} \sum_{i=1}^n \left(ar{Q}_n^*(1, W_i) - ar{Q}_n^*(0, W_i)
+ight)
   5. **Bước 5: Suy Luận Dựa Trên Đường Ảnh Hưởng Hiệu Quả (Efficient Influence Curve - EIC):**
      D^*(O) = H(A, W) (Y - ar{Q}_n^*(A, W)) + ar{Q}_n^*(1, W) - ar{Q}_n^*(0, W) - \hat{\psi}_{	ext{TMLE}}
      - Nhờ bước nhắm mục tiêu (Targeting Step), phương trình ước lượng giải được nghiệm chính xác: $rac{1}{n} \sum_{i=1}^n D^*(O_i) = 0$.
@@ -6000,7 +6003,8 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
      $$\mu_a(	au) = \mathbb{E}[\min(T(a), 	au)] = \int_0^	au S_a(t) dt$$
      trong đó tau là chân trời theo dõi giới hạn (Follow-up Horizon), S_a(t) = P(T(a) > t) là hàm sống sót tiềm năng dưới can thiệp a in {0, 1}.
   2. **Hiệu Số RMST Nhân Quả (Causal RMST Difference):**
-     $$\Delta \mu(	au) = \mu_1(	au) - \mu_0(	au) = \int_0^	au \left(S_1(t) - S_0(t)ight) dt$$
+     $$\Delta \mu(	au) = \mu_1(	au) - \mu_0(	au) = \int_0^	au \left(S_1(t) - S_0(t)
+ight) dt$$
      - Diễn giải trực tiếp bằng đơn vị thời gian tự nhiên (ví dụ: "+3.5 tháng duy trì dịch vụ" hoặc "+5.2 tuần thời gian làm việc").
      - Hoàn toàn độc lập với giả định nguy cơ tỷ lệ (PH assumption); giá trị có ý nghĩa nhân quả ngay cả khi hàm nguy cơ biến động phi tuyến tính.
   3. **Tỷ Số RMST & Tỷ Lệ Giảm Thiệt Hại Thời Gian (RMTL Reduction):**
@@ -6213,3 +6217,34 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `ClusterDMLRequest` (`cluster_question_id`, `treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `n_splits`, `ml_algorithm`, `alpha_level`, `scope`).
   - **Response:** `ClusterDMLOut` (`status`, `sample_size`, `num_clusters`, `estimates`, `cluster_diagnostics`, `algorithm_performance`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CLUSTER_DML_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 157. Distributional Synthetic Controls & Counterfactual Density Decomposition Engine (DSC; Chernozhukov, Kasahara, & Schrimpf 2021 Econometrics Journal; Gunsilius 2023 Econometrica)
+- **Mục tiêu:** Mở rộng phương pháp Kiểm soát Đối chứng Tổng hợp cổ điển (SCM; Abadie et al. 2003, 2010) từ việc chỉ khớp trung bình vô hướng sang khớp và tái tạo toàn bộ hàm phân phối xác suất và hàm mật độ phản thực nghiệm (Counterfactual Quantile & Density Distributions). Phân tích toàn diện tác động chính sách lên bất bình đẳng (hệ số Gini, khoảng tứ phân vị IQR), kiểm định tính trội ngẫu nhiên bậc một/bậc hai (FSD/SSD), và đo lường khoảng cách dịch chuyển phân phối tối ưu theo không gian Wasserstein-2.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Wasserstein-2 Barycenter trên Không gian Phân vị:**
+     - Thay vì ghép trung bình $ar{Y}_{1t} pprox \sum w_j ar{Y}_{jt}$, DSC biểu diễn hàm phân vị đối chứng tổng hợp dưới dạng tổ hợp lồi của các hàm phân vị đơn vị donor $j \in \{1, \dots, J\}$:
+       $$Q_{\text{synthetic}}(\tau) = \sum_{j=1}^J w_j Q_j(\tau), \quad \tau \in (0, 1)$$
+     - Theo lý thuyết vận tải tối ưu (Optimal Transport; Gunsilius 2023), trên không gian một chiều $\mathbb{R}$, tổ hợp lồi các hàm phân vị chính là tâm Wasserstein (Wasserstein-2 Barycenter) tối thiểu hóa khoảng cách:
+       $$\mathcal{W}_2^2(F_1, F_{\text{synthetic}}) = \int_0^1 (Q_1(\tau) - Q_{\text{synthetic}}(\tau))^2 d\tau$$
+  2. **Bài Toán Tối Ưu Hóa Trọng Số Phân Vị Simplex:**
+     - Trong các kỳ tiền can thiệp $t \in \mathcal{T}_{\text{pre}}$, giải bài toán quy hoạch lồi:
+       $$\min_{w \in \Delta^J} \sum_{t \in \mathcal{T}_{\text{pre}}} \int_0^1 \left( Q_{1t}(\tau) - \sum_{j=1}^J w_j Q_{jt}(\tau) \right)^2 d\tau + \lambda_{\text{pen}} \|w\|_2^2$$
+       với $\Delta^J = \{w \in \mathbb{R}_+^J : \sum w_j = 1\}$.
+  3. **Hiệu Ứng Can Thiệp Phân Vị & Tái Tạo Mật Độ Phản Thực Nghiệm:**
+     - Trong kỳ hậu can thiệp $t \in \mathcal{T}_{\text{post}}$:
+       $$\text{QTE}(\tau) = Q_{1t}(\tau) - Q_{\text{synthetic}, t}(\tau)$$
+     - Tái tạo hàm mật độ phản thực nghiệm $f_{\text{synthetic}}(y)$ thông qua ước lượng mật độ nhân Gaussian (KDE) trên các điểm phân vị tổng hợp.
+  4. **Chẩn Đoán Bất Bình Đẳng & Tính Trội Ngẫu Nhiên (Stochastic Dominance):**
+     - Đo lường sự thay đổi hệ số Gini: $\Delta\text{Gini} = \text{Gini}(F_1) - \text{Gini}(F_{\text{synthetic}})$.
+     - Đo lường biến thiên độ giãn IQR: $\Delta\text{IQR} = \text{IQR}(F_1) - \text{IQR}(F_{\text{synthetic}})$.
+     - Kiểm định Trội ngẫu nhiên bậc một (First-Order Stochastic Dominance - FSD): $Q_{1t}(\tau) \ge Q_{\text{synthetic}, t}(\tau) \ \forall \tau \in (0, 1)$, bảo đảm chính sách cải thiện phúc lợi cho mọi tầng lớp xã hội mà không gây tổn hại cho bất kỳ phân vị nào.
+  5. **Kiểm Định Hoán Vị In-Space Placebos:**
+     - Lần lượt gán giả định từng đơn vị donor làm đối tượng can thiệp giả định để thiết lập phân phối mẫu đối chuẩn của khoảng cách $\mathcal{W}_2$, suy ra giá trị $p$-value hoán vị chính xác.
+  6. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị hàm phân vị $Q(\tau)$ so sánh trực quan Đường thực nghiệm Quan sát vs Đường Đối chứng Tổng hợp kèm dải tô màu chênh lệch QTE.
+     - Panel B: Đồ thị đường cong mật độ phản thực nghiệm $f(y)$ làm nổi bật sự dịch chuyển hình thái phân phối (độ nhọn, độ lệch, và số đỉnh).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/distributional-synthetic-control`
+  - **Payload:** `DistributionalSyntheticControlRequest` (`unit_question_id`, `period_question_id`, `outcome_question_id`, `treated_unit_val`, `post_period_vals`, `num_quantiles`, `l2_penalty`, `num_placebos`, `scope`).
+  - **Response:** `DistributionalSyntheticControlOut` (`status`, `sample_size`, `treated_unit`, `num_donors`, `pre_periods`, `post_periods`, `wasserstein_distance`, `permutation_p_value`, `mean_treatment_effect`, `median_treatment_effect`, `inequality_diagnostics`, `donor_weights`, `quantile_curve`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `DISTRIBUTIONAL_SYNTHETIC_CONTROL_EVALUATED` vào chuỗi sổ cái SHA-256.
+

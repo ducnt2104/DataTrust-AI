@@ -153,6 +153,7 @@ import { SyntheticDiffInDiffCard } from '../components/SyntheticDiffInDiffCard';
 import { RIFOaxacaDecompositionCard } from '../components/RIFOaxacaDecompositionCard';
 import { DiffInDiscontinuitiesCard } from '../components/DiffInDiscontinuitiesCard';
 import { ClusterDMLCard } from '../components/ClusterDMLCard';
+import { DistributionalSyntheticControlCard } from '../components/DistributionalSyntheticControlCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1736,6 +1737,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Multiway Cluster-Robust Double Machine Learning (Cluster-DML; Chiang et al. 2022 JBES) */}
       <ClusterDMLCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Distributional Synthetic Controls & Counterfactual Density Decomposition (Chernozhukov et al. 2021) */}
+      <DistributionalSyntheticControlCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

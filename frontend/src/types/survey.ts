@@ -9518,3 +9518,59 @@ export interface ClusterDMLRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+// --- Distributional Synthetic Controls & Counterfactual Density Decomposition (Chernozhukov et al. 2021) ---
+export interface DSCDonorWeightItem {
+  donor_unit: string;
+  synthetic_weight: number;
+}
+
+export interface DSCQuantilePoint {
+  tau: number;
+  observed_q: number;
+  synthetic_q: number;
+  quantile_treatment_effect: number;
+}
+
+export interface DSCInequalityDiagnostics {
+  observed_gini: number;
+  synthetic_gini: number;
+  delta_gini: number;
+  observed_iqr: number;
+  synthetic_iqr: number;
+  delta_iqr: number;
+  first_order_stochastic_dominance: boolean;
+  second_order_stochastic_dominance: boolean;
+}
+
+export interface DistributionalSyntheticControlResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  treated_unit?: string;
+  num_donors?: number;
+  pre_periods?: string[];
+  post_periods?: string[];
+  wasserstein_distance?: number;
+  permutation_p_value?: number;
+  mean_treatment_effect?: number;
+  median_treatment_effect?: number;
+  inequality_diagnostics?: DSCInequalityDiagnostics;
+  donor_weights?: DSCDonorWeightItem[];
+  quantile_curve?: DSCQuantilePoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface DistributionalSyntheticControlRequest {
+  unit_question_id: string;
+  period_question_id: string;
+  outcome_question_id: string;
+  treated_unit_val: string;
+  post_period_vals: string[];
+  num_quantiles?: number;
+  l2_penalty?: number;
+  num_placebos?: number;
+  scope?: 'all' | 'verified_clean';
+}
+

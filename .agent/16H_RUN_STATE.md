@@ -2791,6 +2791,35 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 43. Planned Next Iteration: Iteration 176
-- **Feature**: Distributional Synthetic Controls & Counterfactual Density Decomposition Engine (Chernozhukov, Kasahara, & Schrimpf 2021 Econometrics Journal; Gunsilius 2023).
-- **Scope**: Extends classical Synthetic Control Methods (Abadie et al. 2010) from scalar mean outcomes to full counterfactual outcome distributions and densities via Wasserstein barycenters and quantile aggregation. Isolates inequality shifts, tail impacts, and stochastic dominance under synthetic intervention.
+## 43. Iteration 176: Distributional Synthetic Controls & Counterfactual Density Decomposition Engine (Chernozhukov, Kasahara, & Schrimpf 2021 Econometrics Journal; Gunsilius 2023 Econometrica)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T15:52:00+07:00
+- **Scientific Foundation**:
+  - Extends classical Synthetic Control Methods (SCM; Abadie et al. 2003, 2010) from matching scalar mean outcomes to reproducing full counterfactual probability distributions and densities via optimal transport theory (Gunsilius 2023 Econometrica).
+  - Optimal 1D Wasserstein-2 Barycenter: Constructs synthetic counterfactual quantile functions Q_syn(tau) = sum w_j Q_j(tau) minimizing quadratic transport cost on the unit simplex.
+  - Distributional Policy Impacts: Evaluates Quantile Treatment Effect curves QTE(tau) across 19 evaluation quantiles (p05 to p95) and reconstructs counterfactual densities f_syn(y) via Gaussian KDE.
+  - Inequality Decomposition: Quantifies changes in the Gini inequality coefficient (Delta Gini) and interquartile range (Delta IQR), distinguishing between distributional compression and polarization.
+  - Welfare & Stochastic Dominance: Performs formal First-Order (FSD) and Second-Order (SSD) stochastic dominance tests to establish whether policy intervention unambiguously improves welfare across all percentiles.
+  - In-Space Placebo Permutation Inference: Computes exact permutation p-values for the empirical Wasserstein-2 distance W2 across donor pool units.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays the quantile curves of Observed Treated vs Synthetic Counterfactual with shaded QTE ribbon; Panel B illustrates the counterfactual density decomposition f_1(y) vs f_syn(y).
+- **Backend Components**:
+  - Core Engine: backend/app/engine/distributional_synthetic_control_engine.py (380 lines).
+  - Schemas: DistributionalSyntheticControlRequest, DistributionalSyntheticControlOut, DSCDonorWeightItem, DSCQuantilePoint, DSCInequalityDiagnostics in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/distributional-synthetic-control with DISTRIBUTIONAL_SYNTHETIC_CONTROL_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_distributional_synthetic_control_engine.py (3/3 passed in 0.28s).
+  - Route Tests: backend/tests/test_distributional_synthetic_control_routes.py (1/1 passed in 2.99s).
+- **Frontend Components**:
+  - TypeScript Types: DSCDonorWeightItem, DSCQuantilePoint, DSCInequalityDiagnostics, DistributionalSyntheticControlResult, DistributionalSyntheticControlRequest in frontend/src/types/survey.ts.
+  - API Client Method: runDistributionalSyntheticControl in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/DistributionalSyntheticControlCard.tsx (510 lines) with unit, treated unit value, period, post periods, outcome, num_quantiles, L2 penalty, placebos, 4 KPI cards (Mean QTE / Median QTE, Wasserstein-2 W2 and p-value, Delta Gini and Delta IQR, Stochastic Dominance FSD/SSD), dual-panel SVG visualizer, tabbed donor weights / quantile table / inequality diagnostics, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (24/24 cumulative passed across Iterations 171-176 in 12.81s).
+  - Frontend Production Build: 2,141 modules transformed, 0 errors in 1.36s.
+  - Contract Documentation: Section 157 appended to docs/API_CONTRACT.md.
+
+---
+
+## 44. Planned Next Iteration: Iteration 177
+- **Feature**: Nonparametric Copula Causal Sensitivity Bounds & Unmeasured Confounding Tolerance Engine (Hu 2008 Journal of Econometrics; Schennach 2020; Cinelli & Hazlett 2020 JRSS-B).
+- **Scope**: Quantifies how robust causal survey estimates (ATE, ATT) are against unmeasured latent confounding using copula dependence modeling and benchmark bounding. Derives exact Robustness Value (RV) and partial R^2 contour curves for policy defense.

@@ -1,3 +1,4 @@
+from app.engine.distributional_synthetic_control_engine import run_distributional_synthetic_control
 from app.engine.cluster_dml_engine import run_cluster_dml
 from app.engine.diff_in_disc_engine import run_diff_in_discontinuities
 from app.engine.rif_oaxaca_decomposition_engine import run_rif_oaxaca_decomposition
@@ -176,6 +177,8 @@ from app.schemas import (
     DiffInDiscontinuitiesOut,
     ClusterDMLRequest,
     ClusterDMLOut,
+    DistributionalSyntheticControlRequest,
+    DistributionalSyntheticControlOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17684,3 +17687,79 @@ def run_cluster_dml_endpoint(
                 pass
 
         return res
+
+@router.post("/distributional-synthetic-control", response_model=DistributionalSyntheticControlOut)
+def run_distributional_synthetic_control_endpoint(
+    survey_id: str,
+    payload: DistributionalSyntheticControlRequest
+):
+    """
+    Distributional Synthetic Control & Counterfactual Density Decomposition (Chernozhukov et al. 2021, Gunsilius 2023).
+    Constructs Wasserstein-optimal synthetic counterfactual quantiles and decomposes distributional impacts (QTE, Gini, FSD).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                "unit": ans.get(payload.unit_question_id),
+                "period": ans.get(payload.period_question_id),
+                "outcome": ans.get(payload.outcome_question_id)
+            })
+
+        res = run_distributional_synthetic_control(
+            records=records,
+            unit_col="unit",
+            period_col="period",
+            outcome_col="outcome",
+            treated_unit_val=payload.treated_unit_val,
+            post_period_vals=payload.post_period_vals,
+            num_quantiles=payload.num_quantiles,
+            l2_penalty=payload.l2_penalty,
+            num_placebos=payload.num_placebos
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="DISTRIBUTIONAL_SYNTHETIC_CONTROL_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "treated_unit": res.get("treated_unit"),
+                        "wasserstein_distance": res.get("wasserstein_distance"),
+                        "mean_treatment_effect": res.get("mean_treatment_effect"),
+                        "permutation_p_value": res.get("permutation_p_value")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+

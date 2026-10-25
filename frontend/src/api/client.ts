@@ -263,7 +263,9 @@ import {
   DiffInDiscontinuitiesRequest,
   DiffInDiscontinuitiesResult,
   ClusterDMLRequest,
-  ClusterDMLResult
+  ClusterDMLResult,
+  DistributionalSyntheticControlRequest,
+  DistributionalSyntheticControlResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2780,5 +2782,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ClusterDMLResult>(res);
+  },
+  async runDistributionalSyntheticControl(
+    surveyId: string,
+    payload: DistributionalSyntheticControlRequest
+  ): Promise<DistributionalSyntheticControlResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/distributional-synthetic-control`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<DistributionalSyntheticControlResult>(res);
   }
 };
