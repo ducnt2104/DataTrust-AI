@@ -243,7 +243,9 @@ import {
   ContinuousPolicyShiftRequest,
   ContinuousPolicyShiftResult,
   GeneralizedSyntheticControlRequest,
-  GeneralizedSyntheticControlResult
+  GeneralizedSyntheticControlResult,
+  HierarchicalBayesConjointRequest,
+  HierarchicalBayesConjointResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2650,5 +2652,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<GeneralizedSyntheticControlResult>(res);
+  },
+  async runHierarchicalBayesConjoint(
+    surveyId: string,
+    payload: HierarchicalBayesConjointRequest
+  ): Promise<HierarchicalBayesConjointResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/hierarchical-bayes-conjoint`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<HierarchicalBayesConjointResult>(res);
   }
 };

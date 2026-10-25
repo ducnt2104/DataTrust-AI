@@ -5863,3 +5863,37 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `GeneralizedSyntheticControlRequest` (`outcome_question_id`, `unit_question_id`, `time_question_id`, `treatment_question_id`, `covariate_question_ids`, `n_factors`, `alpha_level`, `scope`).
   - **Response:** `GeneralizedSyntheticControlOut` (`status`, `sample_size`, `n_treated_units`, `n_control_units`, `n_time_periods`, `n_latent_factors`, `variance_explained_ratio`, `overall_att`, `pre_treatment_diagnostics`, `event_study_trajectory`, `treated_unit_summaries`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `GENERALIZED_SYNTHETIC_CONTROL_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 146. Choice-Based Conjoint Hierarchical Bayes with Market Simulator & WTP Engine (CBC-HB; Rossi, Allenby, & McCulloch 2005; Train 2009 Discrete Choice Methods)
+- **Mục tiêu:** Cung cấp mô hình phân tích phối hợp dựa trên lựa chọn (Choice-Based Conjoint - CBC) với ước lượng Bayes Thứ bậc (Hierarchical Bayes - HB; Rossi, Allenby, & McCulloch 2005; Train 2009), giải quyết triệt để hạn chế của mô hình logit đa thức gộp (Aggregate MNL) vốn vi phạm giả định độc lập giữa các phương án không liên quan (IIA - Independence from Irrelevant Alternatives) và bỏ qua sự không đồng nhất trong sở thích của người tiêu dùng (Consumer Heterogeneity). Động cơ này áp dụng thuật toán co rút Bayes thực nghiệm (Empirical Bayes MAP Shrinkage), mượn sức mạnh từ phân phối toàn thể $\beta_i \sim \mathcal{N}(\mu, \Sigma)$ để ước lượng vector hữu dụng từng phần cấp cá thể (Individual Part-Worth Utilities $\beta_i$), tính toán tỷ trọng tầm quan trọng tương đối của từng thuộc tính sản phẩm (Relative Importance - RI %), phái sinh phân phối mức sẵn sàng chi trả (Willingness-to-Pay - WTP) cho từng đặc tính kỹ thuật/dịch vụ, và vận hành bộ mô phỏng thị trường tương tác (Market Choice Simulator) dự phóng thị phần cạnh tranh theo quy tắc Logit Share of Preference và First Choice.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Cấu Trúc Phân Lớp Bayes Thứ Bậc (Hierarchical Bayes Model Structure):**
+     - **Tầng Trên (Population Prior Distribution):**
+       $$\beta_i \sim \mathcal{N}(\mu, \Sigma)$$
+       trong đó $\mu$ là vector sở thích trung bình toàn quần thể, $\Sigma$ là ma trận hiệp phương sai thể hiện mối tương quan giữa các thuộc tính (như độ nhạy cảm về giá so với sở thích chất lượng).
+     - **Tầng Dưới (Individual Choice Probability):**
+       Với nhiệm vụ lựa chọn $t$, phương án $j \in \{1, \dots, J\}$ và vector thuộc tính $x_{itj}$:
+       $$P(y_{it} = j \mid \beta_i) = \frac{\exp(x_{itj}' \beta_i)}{\sum_{k=1}^J \exp(x_{itk}' \beta_i)}$$
+  2. **Ước Lượng Co Rút Hậu Nghiệm Tối Đa (Empirical Bayes MAP Shrinkage):**
+     $$\hat{\beta}_i = \arg\max_{\beta} \sum_{t} \log P(y_{it} \mid \beta) - \frac{1}{2} (\beta - \hat{\mu})' \hat{\Sigma}^{-1} (\beta - \hat{\mu})$$
+     ngăn chặn hiện tượng phân kỳ utility khi số lượng nhiệm vụ lựa chọn của mỗi người trả lời nhỏ.
+  3. **Tầm Quan Trọng Tương Đối Của Thuộc Tính (Attribute Relative Importance - RI %):**
+     - Khoảng biến thiên hữu dụng của thuộc tính $m$: $\text{Range}_m = \max_l \beta_{m,l} - \min_l \beta_{m,l}$.
+     - Tỷ trọng tầm quan trọng tương đối:
+       $$\text{Importance}_m = \frac{\text{Range}_m}{\sum_k \text{Range}_k} \times 100\%$$
+  4. **Phân Phối Mức Sẵn Sàng Chi Trả (Willingness-to-Pay - WTP):**
+     - Với mức thuộc tính $l$ phi giá cả đối chiếu với mức tham chiếu:
+       $$\text{WTP}_{i, l} = - \frac{\beta_{i, l} - \beta_{i, \text{ref}}}{\beta_{i, \text{price}}}$$
+     - Báo cáo Mean WTP, Median WTP, và khoảng tin cậy 95% qua phân vị phân phối.
+  5. **Bộ Mô Phỏng Thị Trường Cạnh Tranh (Market Choice Simulator):**
+     - Dự báo thị phần của sản phẩm $m$ trong kịch bản cạnh tranh đa sản phẩm:
+       - **Quy tắc Tỷ lệ Sở thích (Share of Preference / Logit):** $S_m = \frac{1}{N} \sum_{i=1}^N \frac{\exp(x_m' \beta_i)}{\sum_k \exp(x_k' \beta_i)}$.
+       - **Quy tắc Lựa chọn Hàng đầu (First Choice):** $S_m = \frac{1}{N} \sum_{i=1}^N \mathbb{I}(x_m' \beta_i = \max_k x_k' \beta_i)$.
+  6. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Biểu đồ thanh ngang so sánh Tầm quan trọng tương đối (RI %) của các thuộc tính sản phẩm.
+     - Panel B: Biểu đồ cột thị phần mô phỏng (Simulated Market Share %) giữa các cấu hình sản phẩm đối đầu.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/hierarchical-bayes-conjoint`
+  - **Payload:** `HierarchicalBayesConjointRequest` (`choice_question_id`, `respondent_question_id`, `attribute_question_ids`, `price_question_id`, `simulation_profiles`, `alpha_level`, `scope`).
+  - **Response:** `HierarchicalBayesConjointOut` (`status`, `sample_size`, `n_respondents`, `attribute_importance`, `part_worth_utilities`, `wtp_estimates`, `market_simulation`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CONJOINT_HIERARCHICAL_BAYES_EVALUATED` vào chuỗi sổ cái SHA-256.

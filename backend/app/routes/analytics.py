@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.hierarchical_bayes_conjoint_engine import run_hierarchical_bayes_conjoint
 from app.engine.generalized_synthetic_control_engine import run_generalized_synthetic_control
 from app.engine.continuous_policy_shift_engine import run_continuous_policy_shift
 from app.engine.dynamic_spatial_panel_engine import run_dynamic_spatial_panel
@@ -146,6 +147,8 @@ from app.schemas import (
     ContinuousPolicyShiftOut,
     GeneralizedSyntheticControlRequest,
     GeneralizedSyntheticControlOut,
+    HierarchicalBayesConjointRequest,
+    HierarchicalBayesConjointOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -16813,6 +16816,115 @@ def run_generalized_synthetic_control_endpoint(
                 "n_control_units": res.get("n_control_units"),
                 "overall_att": res.get("overall_att", {}).get("estimate"),
                 "p_value": res.get("overall_att", {}).get("p_value"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/hierarchical-bayes-conjoint", response_model=HierarchicalBayesConjointOut)
+def run_hierarchical_bayes_conjoint_endpoint(
+    survey_id: str,
+    payload: HierarchicalBayesConjointRequest
+):
+    """
+    Choice-Based Conjoint Hierarchical Bayes with Market Simulator & WTP Engine (CBC-HB).
+    Rossi, Allenby, & McCulloch (2005); Train (2009).
+    Estimates individual respondent part-worth utilities beta_i ~ N(mu, Sigma) via
+    empirical Bayes MAP shrinkage, computes Attribute Relative Importance (RI %),
+    derives Willingness-to-Pay (WTP) distribution, and simulates counterfactual market share allocations.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        attr_ids = payload.attribute_question_ids or []
+        price_id = payload.price_question_id
+
+        for r_id, ans in data_by_resp.items():
+            if (
+                payload.choice_question_id in ans and
+                payload.respondent_question_id in ans
+            ):
+                item = {
+                    "task_resp_id": r_id,
+                    payload.choice_question_id: ans[payload.choice_question_id],
+                    payload.respondent_question_id: ans[payload.respondent_question_id]
+                }
+                has_all_attrs = True
+                for a_id in attr_ids:
+                    if a_id in ans:
+                        item[a_id] = ans[a_id]
+                    else:
+                        has_all_attrs = False
+                        break
+
+                if not has_all_attrs:
+                    continue
+
+                if price_id:
+                    if price_id in ans:
+                        item[price_id] = ans[price_id]
+                    else:
+                        continue
+
+                records.append(item)
+
+        if len(records) < 20:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 20 bản ghi lựa chọn hợp lệ để ước lượng Conjoint Hierarchical Bayes (hiện có: {len(records)})."
+            }
+
+        try:
+            res = run_hierarchical_bayes_conjoint(
+                records=records,
+                choice_col=payload.choice_question_id,
+                respondent_col=payload.respondent_question_id,
+                attribute_cols=attr_ids,
+                price_col=price_id,
+                simulation_profiles=payload.simulation_profiles,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Conjoint Hierarchical Bayes: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="CONJOINT_HIERARCHICAL_BAYES_EVALUATED",
+            details={
+                "n_obs": res.get("sample_size"),
+                "n_respondents": res.get("n_respondents"),
+                "top_attribute": list(res.get("attribute_importance", {}).keys())[0] if res.get("attribute_importance") else None,
                 "status": res.get("status")
             }
         )

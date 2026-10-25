@@ -2486,6 +2486,34 @@ eq 0\}$
 
 ---
 
-## 32. Planned Next Iteration: Iteration 165
-- **Feature**: Choice-Based Conjoint Hierarchical Bayes with Market Simulator & WTP Engine (CBC-HB; Rossi, Allenby, & McCulloch 2005; Train 2009 Discrete Choice Methods).
-- **Scope**: Implements full Choice-Based Conjoint (CBC) estimation using Gibbs Sampling / MCMC Hierarchical Bayes or Variational Bayes to estimate individual-level respondent part-worth utilities ($\beta_i \sim \mathcal{N}(\mu, \Sigma)$), Willingness-to-Pay (WTP) distribution for product attributes/levels, and an interactive Choice Simulator computing counterfactual market share allocations under first-choice, randomized first-choice, and logit share-of-preference rules.
+## 32. Iteration 165: Choice-Based Conjoint Hierarchical Bayes with Market Simulator & WTP Engine (CBC-HB; Rossi, Allenby, & McCulloch 2005; Train 2009 Discrete Choice Methods)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T14:24:00+07:00
+- **Scientific Foundation**:
+  - Eliminates Independence from Irrelevant Alternatives (IIA) restrictions of aggregate logit by modeling individual respondent consumer heterogeneity via Hierarchical Bayes: $\beta_i \sim \mathcal{N}(\mu, \Sigma)$ (Rossi, Allenby, & McCulloch 2005; Train 2009).
+  - Empirical Bayes MAP Shrinkage: Shrinks noisy individual choice responses toward the population preference prior, avoiding boundary parameter divergences for sparse respondent choice profiles.
+  - Attribute Relative Importance (RI %): Quantifies each product attribute's contribution to purchase decisions across surveyed consumers.
+  - Willingness-to-Pay (WTP) Derivation: Computes $-\beta_{i,k} / \beta_{i,\text{price}}$ to obtain the monetary premium distribution for every feature level.
+  - Interactive Market Simulator: Projects counterfactual market share allocations under Logit Share of Preference and First Choice allocation rules.
+  - Responsive Dual-Panel SVG: Horizontal comparative attribute importance bar chart and simulated market share preference breakdown.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/hierarchical_bayes_conjoint_engine.py` (420 lines).
+  - Pydantic Schemas: `HierarchicalBayesConjointRequest` and `HierarchicalBayesConjointOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/hierarchical-bayes-conjoint` with `CONJOINT_HIERARCHICAL_BAYES_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_hierarchical_bayes_conjoint_engine.py` (2/2 passed in 0.35s).
+  - Route Tests: `backend/tests/test_hierarchical_bayes_conjoint_routes.py` (1/1 passed in 1.59s).
+- **Frontend Components**:
+  - TypeScript Types: `ConjointPartWorthUtility`, `ConjointAttributeImportance`, `ConjointWTPItem`, `ConjointMarketSimulationItem`, `HierarchicalBayesConjointResult`, `HierarchicalBayesConjointRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runHierarchicalBayesConjoint` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/HierarchicalBayesConjointCard.tsx` (530 lines) with choice, respondent, attributes, price selectors, 4 KPI cards, dual-panel SVG visualizer, part-worth utilities table, WTP distribution table, market simulator table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed** (58/58 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,131 modules transformed, 0 errors in 1.42s**.
+  - Contract Documentation: Section 146 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 33. Planned Next Iteration: Iteration 166
+- **Feature**: Nonparametric Boundary Kernel Deconvolution & Measurement Error Correction Engine (Delaigle & Meister 2008 JASA; Fan 1991 Ann. Statist.; Carroll et al. 2006).
+- **Scope**: Corrects attenuation bias and severe distortion in survey analytics caused by additive or multiplicative classical measurement errors in reported continuous metrics (e.g. self-reported income, working hours, subjective satisfaction scores $W_i = X_i + U_i$) using Fourier deconvolution kernel estimators and boundary correction filters.

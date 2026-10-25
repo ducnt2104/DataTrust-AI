@@ -8911,3 +8911,57 @@ export interface GeneralizedSyntheticControlRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Choice-Based Conjoint Hierarchical Bayes & Market Simulator (Rossi et al. 2005) Types ---
+export interface ConjointPartWorthUtility {
+  attribute: string;
+  level: string;
+  is_reference: boolean;
+  mean_part_worth: number;
+  se: number;
+}
+
+export interface ConjointAttributeImportance {
+  mean_importance: number;
+  median_importance: number;
+  std_dev: number;
+}
+
+export interface ConjointWTPItem {
+  attribute: string;
+  level: string;
+  mean_wtp: number;
+  median_wtp: number;
+  ci_95: [number, number];
+}
+
+export interface ConjointMarketSimulationItem {
+  product_name: string;
+  share_of_preference: number;
+  first_choice_share: number;
+  mean_utility: number;
+}
+
+export interface HierarchicalBayesConjointResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  n_respondents?: number;
+  attribute_importance?: Record<string, ConjointAttributeImportance>;
+  part_worth_utilities?: ConjointPartWorthUtility[];
+  wtp_estimates?: Record<string, ConjointWTPItem>;
+  market_simulation?: ConjointMarketSimulationItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface HierarchicalBayesConjointRequest {
+  choice_question_id: string;
+  respondent_question_id: string;
+  attribute_question_ids: string[];
+  price_question_id?: string;
+  simulation_profiles?: Array<Record<string, any>>;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}
