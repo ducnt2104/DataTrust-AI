@@ -239,7 +239,9 @@ import {
   NetworkSpilloverRequest,
   NetworkSpilloverResult,
   DynamicSpatialPanelRequest,
-  DynamicSpatialPanelResult
+  DynamicSpatialPanelResult,
+  ContinuousPolicyShiftRequest,
+  ContinuousPolicyShiftResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2624,5 +2626,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<DynamicSpatialPanelResult>(res);
+  },
+  async runContinuousPolicyShift(
+    surveyId: string,
+    payload: ContinuousPolicyShiftRequest
+  ): Promise<ContinuousPolicyShiftResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/continuous-policy-shift`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ContinuousPolicyShiftResult>(res);
   }
 };

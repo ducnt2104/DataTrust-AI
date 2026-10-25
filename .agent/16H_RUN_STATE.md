@@ -2431,6 +2431,33 @@ eq 0\}$
 
 ---
 
-## 30. Planned Next Iteration: Iteration 163
-- **Feature**: Continuous Policy Shift & Doubly Robust Nonparametric Dosage Response Engine (Continuous DML / Policy Shifts; Kennedy, Ma, McHugh, & Small 2017 JASA; Chernozhukov et al. 2022 Econometrica).
-- **Scope**: Implements continuous treatment causal inference for survey policy shifts (e.g. shifts in continuous pricing, subsidies, training hours, or budget allocations $A \to A + \delta$), estimating the full nonlinear policy curve $\mu(a) = \mathbb{E}[Y(a)]$ with doubly robust pseudo-outcomes and Generalized Propensity Score (GPS) de-biasing, computing marginal policy derivative curves $\mu'(a)$, and optimal policy target search.
+## 30. Iteration 163: Continuous Policy Shift & Doubly Robust Nonparametric Dosage Response Engine (Continuous DML / Policy Shifts; Kennedy et al. 2017 JASA; Chernozhukov et al. 2022 Econometrica)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T14:08:00+07:00
+- **Scientific Foundation**:
+  - Implements continuous treatment causal inference for policy shift interventions ($A \to A + \delta$) without requiring artificial binarization of continuous treatments (Kennedy, Ma, McHugh, & Small 2017 JASA; Chernozhukov et al. 2022 Econometrica).
+  - Doubly Robust Pseudo-Outcome Transformation: $\xi_i(a) = \hat{\mu}(a, X_i) + \frac{Y_i - \hat{\mu}(A_i, X_i)}{\hat{f}(A_i | X_i)} K_h(A_i - a)$, ensuring root-n convergence rate for policy shift effect $\Delta(\delta) = \mathbb{E}[Y(A + \delta) - Y(A)]$.
+  - Generalized Propensity Score (GPS): Conditional normal density modeling for continuous treatment assignment with Gaussian kernel smoothing and Silverman rule-of-thumb bandwidth $h = 1.06 \hat{\sigma}_A n^{-1/5}$.
+  - Marginal Policy Derivative Curve: Computes $\mu'(a)$ across evaluated dosage grid to identify optimal dosage targets $\arg\max_a \mu(a)$ and regions of diminishing returns.
+  - Interactive Visualizer: Dose-response curve with 95% confidence ribbon, policy counterfactual shift impact, and dosage grid breakdown.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/continuous_policy_shift_engine.py` (380 lines).
+  - Pydantic Schemas: `ContinuousPolicyShiftRequest` and `ContinuousPolicyShiftOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/continuous-policy-shift` with `CONTINUOUS_POLICY_SHIFT_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_continuous_policy_shift_engine.py` (2/2 passed in 0.38s).
+  - Route Tests: `backend/tests/test_continuous_policy_shift_routes.py` (1/1 passed in 1.12s).
+- **Frontend Components**:
+  - TypeScript Types: `DRCDosagePoint`, `ContinuousPolicyShiftResult`, `ContinuousPolicyShiftRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runContinuousPolicyShift` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/ContinuousPolicyShiftCard.tsx` (520 lines) with outcome/continuous treatment selectors, policy shift $\delta$ slider, custom bandwidth, covariates checklist, 4 KPI cards ($\Delta(\delta)$, Mean, Optimal Dosage, Bandwidth), interactive SVG dose-response curve with 95% CI ribbon, policy shift effect breakdown, dosage table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed** (52/52 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,129 modules transformed, 0 errors in 1.57s**.
+  - Contract Documentation: Section 144 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 31. Planned Next Iteration: Iteration 164
+- **Feature**: Generalized Synthetic Control & Latent Interactive Factor Engine (Gsynth / Matrix Factor Models; Xu 2017 Political Analysis; Gobillon & Magnac 2016; Athey et al. 2021).
+- **Scope**: Extends classical Synthetic Control (Abadie et al.) to panel survey designs with multiple treated units, staggered adoption dates, and time-varying unobserved confounders modeled via latent interactive fixed effects ($u_i' f_t$). Computes Average Treatment Effect on the Treated (ATT), counterfactual trajectory curves with parametric/jackknife confidence bands, and factor rank tests.

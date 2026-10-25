@@ -8806,3 +8806,51 @@ export interface DynamicSpatialPanelRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Continuous Policy Shift & Doubly Robust Dosage Response Types ---
+export interface DRCDosagePoint {
+  dosage_level: number;
+  outcome_estimate: number;
+  se: number;
+  ci_95: [number, number];
+  marginal_derivative: number;
+}
+
+export interface ContinuousPolicyShiftResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  outcome_variable?: string;
+  treatment_variable?: string;
+  covariates_controlled?: string[];
+  bandwidth?: number;
+  treatment_support?: {
+    min_evaluated: number;
+    max_evaluated: number;
+    current_mean: number;
+    optimal_dosage: number;
+  };
+  policy_shift?: {
+    delta_shift: number;
+    average_policy_effect: number;
+    se: number;
+    p_value: number;
+    ci_95: [number, number];
+    interpretation: string;
+  };
+  dose_response_curve?: DRCDosagePoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ContinuousPolicyShiftRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids?: string[];
+  grid_points?: number;
+  shift_delta?: number;
+  bandwidth?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

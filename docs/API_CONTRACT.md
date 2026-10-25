@@ -5799,3 +5799,32 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `DynamicSpatialPanelRequest` (`outcome_question_id`, `region_question_id`, `time_question_id`, `covariate_question_ids`, `lat_question_id`, `lon_question_id`, `alpha_level`, `scope`).
   - **Response:** `DynamicSpatialPanelOut` (`status`, `sample_size`, `effective_panel_observations`, `n_regions`, `n_time_periods`, `spatio_temporal_parameters`, `system_stability`, `short_run_impacts`, `long_run_impacts`, `covariate_estimates`, `svg_visualization`).
 - **Niêm phong kiểm toán:** Ghi nhận `DYNAMIC_SPATIAL_PANEL_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 144. Continuous Policy Shift & Doubly Robust Nonparametric Dosage Response Engine (Continuous DML / Policy Shifts; Kennedy et al. 2017 JASA; Chernozhukov et al. 2022 Econometrica)
+- **Mục tiêu:** Đánh giá hàm đáp ứng liều lượng liên tục (Dose-Response Curve - DRC) và tác động của các can thiệp chính sách dịch chuyển liên tục (Continuous Policy Shifts: $d(a) = a + \delta$) mà không ép buộc nhị phân hóa biến can thiệp nhân tạo. Trong khảo sát thực tế, các biến can thiệp thường mang tính liên tục (như mức đầu tư ngân sách, số giờ đào tạo, thời lượng sử dụng sản phẩm, mức chi tiêu khuyến mãi). Động cơ này áp dụng lý thuyết Semi-parametric Efficiency của Kennedy, Ma, McHugh, & Small (2017 JASA) và Double/Debiased Machine Learning (Chernozhukov et al. 2022), tạo ra các pseudo-outcome biến đổi bù trừ đôi (Doubly Robust Pseudo-Outcomes) $\xi(Y, A, X)$, đảm bảo tính hội tụ nhanh $\sqrt{n}$ đối với can thiệp chính sách ngay cả khi mô hình mật độ xu hướng điều kiện $f(A|X)$ hoặc bề mặt hồi quy kết quả $\mu(A, X)$ bị ước lượng phi tham số.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hàm Đáp Ứng Liều Lượng Tiềm Năng (Potential Outcome Dose-Response Curve):**
+     $$\theta(a) = \mathbb{E}[Y(a)]$$
+     với $a \in \mathcal{A} \subset \mathbb{R}$ là liều lượng can thiệp liên tục.
+  2. **Biến Đổi Bù Trừ Đôi Phi Tham Số (Doubly Robust Pseudo-Outcome Transformation; Kennedy et al. 2017):**
+     $$\xi_i(a) = \hat{\mu}(a, X_i) + \frac{Y_i - \hat{\mu}(A_i, X_i)}{\hat{f}(A_i | X_i)} K_h(A_i - a)$$
+     - $\hat{\mu}(a, X) = \mathbb{E}[Y | A=a, X]$: Mô hình kết quả điều kiện (Outcome surface).
+     - $\hat{f}(a | X)$: Hàm mật độ xác suất điều kiện (Generalized Propensity Score / GPS density).
+     - $K_h(u) = \frac{1}{h} K(u/h)$: Nhân Gaussian với băng thông tối ưu $h = 1.06 \hat{\sigma}_A n^{-1/5}$ (Silverman's Rule of Thumb).
+  3. **Can Thiệp Dịch Chuyển Chính Sách Gia Tăng (Stochastic/Deterministic Policy Shift Effect):**
+     - Đánh giá câu hỏi hoạch định chính sách thực tế: "Nếu tăng liều lượng can thiệp của mỗi đối tượng thêm $\delta$ đơn vị ($A_i \mapsto A_i + \delta$), kết quả kỳ vọng thay đổi bao nhiêu?":
+       $$\Delta(\delta) = \mathbb{E}[Y(A + \delta) - Y(A)] = \int \theta(a + \delta) f_A(a) da - \mathbb{E}[Y]$$
+     - Ước lượng điểm trung bình $\hat{\Delta}(\delta)$, sai số chuẩn tiệm cận (Asymptotic SE) và khoảng tin cậy 95% Wald:
+       $$\hat{\Delta}(\delta) \pm 1.96 \cdot \text{SE}(\hat{\Delta})$$
+  4. **Đạo Hàm Biên Đáp Ứng Liều Lượng (Marginal Treatment Derivative):**
+     - Đạo hàm cục bộ $\mu'(a) = \frac{d}{da} \theta(a)$ xác định tỷ suất sinh lời cận biên tại từng mức liều lượng (Marginal Return).
+     - Xác định liều lượng tối ưu $a^* = \arg\max_{a} \theta(a)$ mang lại hiệu quả kỳ vọng cao nhất.
+  5. **Bản Đồ Vector & Biểu Đồ SVG Tích Hợp:**
+     - Trục hoành: Mức liều lượng can thiệp $a \in [\min(A), \max(A)]$.
+     - Trục tung: Dự báo kết quả $\mathbb{E}[Y(a)]$ cùng dải bóng tin cậy 95% (Confidence Ribbon).
+     - Đường đánh dấu mức trung bình thực tế hiện tại (Current Mean) và đỉnh liều lượng tối ưu (Optimal Peak).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/continuous-policy-shift`
+  - **Payload:** `ContinuousPolicyShiftRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `grid_points`, `shift_delta`, `bandwidth`, `alpha_level`, `scope`).
+  - **Response:** `ContinuousPolicyShiftOut` (`status`, `sample_size`, `outcome_variable`, `treatment_variable`, `covariates_controlled`, `bandwidth`, `treatment_support`, `policy_shift`, `dose_response_curve`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CONTINUOUS_POLICY_SHIFT_EVALUATED` vào chuỗi sổ cái SHA-256.
