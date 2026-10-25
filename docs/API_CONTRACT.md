@@ -5991,3 +5991,35 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `CopulaEndogeneityRequest` (`outcome_question_id`, `endogenous_question_id`, `covariate_question_ids`, `copula_family`, `bootstrap_replications`, `alpha_level`, `scope`).
   - **Response:** `CopulaEndogeneityOut` (`status`, `sample_size`, `copula_family`, `non_normality_diagnostics`, `naive_ols`, `copula_augmented`, `endogeneity_test`, `bias_correction`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `COPULA_ENDOGENEITY_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 150. Causal Survival Analysis & Counterfactual Restricted Mean Survival Time Engine (RMST-DML; Royston & Parmar 2013; Díaz et al. 2019; Knaus 2022)
+- **Mục tiêu:** Đánh giá tác động can thiệp nhân quả trên dữ liệu thời gian sống sót / thời gian đến khi sự kiện xảy ra (Time-to-Event Outcomes) có hiện tượng kiểm duyệt phải (Right Censoring) trong các cuộc khảo sát theo dõi dài hạn (Panel Surveys), dữ liệu duy trì người dùng (User Retention / Churn), hoặc thời gian gắn bó của nhân sự (Employee Tenure). Khắc phục triệt để điểm yếu cố hữu của mô hình tỷ số nguy cơ Cox (Cox Proportional Hazards), vốn phụ thuộc nặng nề vào giả định nguy cơ tỷ lệ (PH Assumption) và thường gây ra sai số trầm trọng khi đường cong sống sót cắt nhau (Crossing Survival Curves). Động cơ này vận dụng thước đo Thời gian Sống sót Trung bình Giới hạn (Restricted Mean Survival Time - RMST; Royston & Parmar 2013; Díaz et al. 2019; Uno et al. 2014) kết hợp phương pháp trọng số nghịch đảo xác suất kiểm duyệt (IPCW) và hiệu chỉnh biến gây nhiễu vững kép.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định Nghĩa Thời Gian Sống Sót Trung Bình Giới Hạn (Restricted Mean Survival Time - RMST):**
+     $$\mu_a(	au) = \mathbb{E}[\min(T(a), 	au)] = \int_0^	au S_a(t) dt$$
+     trong đó tau là chân trời theo dõi giới hạn (Follow-up Horizon), S_a(t) = P(T(a) > t) là hàm sống sót tiềm năng dưới can thiệp a in {0, 1}.
+  2. **Hiệu Số RMST Nhân Quả (Causal RMST Difference):**
+     $$\Delta \mu(	au) = \mu_1(	au) - \mu_0(	au) = \int_0^	au \left(S_1(t) - S_0(t)ight) dt$$
+     - Diễn giải trực tiếp bằng đơn vị thời gian tự nhiên (ví dụ: "+3.5 tháng duy trì dịch vụ" hoặc "+5.2 tuần thời gian làm việc").
+     - Hoàn toàn độc lập với giả định nguy cơ tỷ lệ (PH assumption); giá trị có ý nghĩa nhân quả ngay cả khi hàm nguy cơ biến động phi tuyến tính.
+  3. **Tỷ Số RMST & Tỷ Lệ Giảm Thiệt Hại Thời Gian (RMTL Reduction):**
+     - Thời gian thiệt hại trung bình giới hạn (Restricted Mean Time Lost): RMTL_a(tau) = tau - mu_a(tau).
+     - Tỷ số kéo dài tuổi thọ: theta(tau) = mu_1(tau) / mu_0(tau).
+     - Tỷ lệ phần trăm giảm thiểu biến cố thiệt hại:
+       $$	ext{RMTL Reduction \%} = rac{	ext{RMTL}_0(	au) - 	ext{RMTL}_1(	au)}{	ext{RMTL}_0(	au)} 	imes 100\%$$
+  4. **Hiệu Chỉnh Biến Gây Nhiễu Bằng Trọng Số Nghịch Đảo (IPCW & Propensity Score Weighting):**
+     - Ước lượng phân phối thời gian kiểm duyệt G(t) = P(C > t) bằng thuật toán Kaplan-Meier trên biến cố kiểm duyệt đảo ngược.
+     - Xây dựng biến kết quả giả định (Pseudo-Observation):
+       $$Y_i^*(	au) = rac{\min(T_i, 	au) \cdot \Delta_i(	au)}{G(\min(T_i, 	au))}$$
+     - Tính trọng số xu hướng gán can thiệp (Propensity Score) e(X_i) = P(A_i = 1 | X_i), cân bằng phân phối biến gây nhiễu cơ sở X.
+  5. **Suy Luận Thống Kê & Khoảng Tin Cậy Wald 95%:**
+     - Ước tính phương sai tiệm cận qua hàm ảnh hưởng (Influence Curve) kết hợp kiểm định lặp lại Bootstrap phân tầng (Stratified Bootstrap SE).
+     - Thống kê kiểm định z = Delta mu / SE, giá trị p-value và khoảng tin cậy 95% [Delta mu +- 1.96 * SE].
+  6. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị hàm sống sót đối chứng S_0(t) (đường cam nét đứt) và can thiệp S_1(t) (đường xanh dương nét liền) với diện tích phủ bóng thể hiện chính xác giá trị tích phân RMST gain int_0^tau [S_1(t) - S_0(t)] dt.
+     - Panel B: Thanh đo so sánh trực quan RMST giữa nhánh can thiệp và nhánh đối chứng kèm bảng tóm tắt chênh lệch nhân quả Delta mu(tau) và khoảng tin cậy 95%.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/causal-survival-rmst`
+  - **Payload:** `CausalSurvivalRMSTRequest` (`time_question_id`, `event_question_id`, `treatment_question_id`, `covariate_question_ids`, `tau_horizon`, `alpha_level`, `scope`).
+  - **Response:** `CausalSurvivalRMSTOut` (`status`, `sample_size`, `n_treated`, `n_control`, `tau_horizon`, `rmst_treated`, `rmst_control`, `causal_rmst_difference`, `rmst_ratio`, `rmtl_metrics`, `milestone_survival_tau`, `curve_points`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_SURVIVAL_RMST_EVALUATED` vào chuỗi sổ cái SHA-256.

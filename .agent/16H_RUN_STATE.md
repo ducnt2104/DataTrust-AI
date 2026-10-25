@@ -2597,6 +2597,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 36. Planned Next Iteration: Iteration 169
-- **Feature**: Causal Survival Analysis & Counterfactual Restricted Mean Survival Time Engine (RMST-DML; Royston & Parmar 2013; Díaz et al. 2019; Knaus 2022).
-- **Scope**: Evaluates treatment effects on time-to-event outcomes with right censoring in longitudinal and panel survey cohorts (e.g. churn duration, platform retention, event latency) using Doubly Robust / DML Restricted Mean Survival Time (RMST) differences Delta tau = int_0^{t^*} [S_1(t) - S_0(t)] dt, bypassing proportional hazards assumptions and providing clinically/economically interpretable life-expectancy gains.
+## 36. Iteration 169: Causal Survival Analysis & Counterfactual Restricted Mean Survival Time Engine (RMST-DML; Royston & Parmar 2013; Díaz et al. 2019; Knaus 2022)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T14:54:00+07:00
+- **Scientific Foundation**:
+  - Eliminates proportional hazards (PH) dependency of standard Cox models by evaluating counterfactual Restricted Mean Survival Time (RMST) differences Delta tau = int_0^tau [S_1(t) - S_0(t)] dt (Royston & Parmar 2013 BMC Med Res Methodol; Díaz et al. 2019 Biometrika; Uno et al. 2014 JCO).
+  - Handles right-censored time-to-event outcomes in longitudinal survey cohorts (churn, retention duration, event latency) using Inverse Probability of Censoring Weighting (IPCW) via Kaplan-Meier estimation of the censoring distribution G(t) = P(C > t).
+  - Doubly Robust / IPW Confounder Adjustment: Constructs pseudo-observations Y_i^*(tau) = min(T_i, tau) * Delta_i(tau) / G(T_i ^ tau) and balances baseline covariates X via propensity score logistic ensembling.
+  - Asymptotic & Stratified Bootstrap Inference: Derives asymptotic influence curve standard errors combined with stratified resample bootstrap standard errors, computing valid 95% Wald confidence intervals and z-statistics.
+  - Multi-Metric Survival Clinical / Economic Portfolio: Reports RMST difference (in natural time units), RMST ratio (survival extension), Restricted Mean Time Lost (RMTL) percentage reduction, and milestone survival risk differences at horizon tau.
+  - Responsive Dual-Panel SVG: Panel A plots counterfactual survival curves S_1(t) vs S_0(t) with shaded area representing the RMST gain; Panel B contrasts treated vs control RMST bar metrics.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/causal_survival_rmst_engine.py` (410 lines).
+  - Pydantic Schemas: `CausalSurvivalRMSTRequest` and `CausalSurvivalRMSTOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/causal-survival-rmst` with `CAUSAL_SURVIVAL_RMST_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_causal_survival_rmst_engine.py` (3/3 passed in 0.46s).
+  - Route Tests: `backend/tests/test_causal_survival_rmst_routes.py` (1/1 passed in 1.40s).
+- **Frontend Components**:
+  - TypeScript Types: `CausalRMSTDifference`, `CausalRMTLMetrics`, `MilestoneSurvivalTau`, `SurvivalCurvePoint`, `CausalSurvivalRMSTResult`, `CausalSurvivalRMSTRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runCausalSurvivalRMST` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/CausalSurvivalRMSTCard.tsx` (540 lines) with time, event, treatment selectors, covariates checklist, horizon tau input, 4 KPI cards, dual-panel SVG visualizer, milestone survival trajectory table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed** (72/72 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,135 modules transformed, 0 errors in 1.35s**.
+  - Contract Documentation: Section 150 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 37. Planned Next Iteration: Iteration 170
+- **Feature**: Nonparametric Causal Mediation Analysis with Unobserved Confounder Sensitivity Bounds (Imai, Keele, & Yamamoto 2010; VanderWeele 2015; Tchetgen Tchetgen 2013).
+- **Scope**: Decomposes total treatment effect into Natural Direct Effect (NDE) and Natural Indirect Effect (NIE) across intermediate survey mediators via quasi-Bayesian Monte Carlo simulation, computing the critical correlation threshold (rho-0 bound) where mediator-outcome unobserved confounding would nullify findings.

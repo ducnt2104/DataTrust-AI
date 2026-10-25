@@ -147,6 +147,7 @@ import { HierarchicalBayesConjointCard } from '../components/HierarchicalBayesCo
 import { BoundaryKernelDeconvolutionCard } from '../components/BoundaryKernelDeconvolutionCard';
 import { TargetedMaximumLikelihoodCard } from '../components/TargetedMaximumLikelihoodCard';
 import { CopulaEndogeneityCard } from '../components/CopulaEndogeneityCard';
+import { CausalSurvivalRMSTCard } from '../components/CausalSurvivalRMSTCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1670,6 +1671,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Copula-Based Endogeneity Correction Engine (Park & Gupta 2012 Marketing Science; Tran & Tsionas 2015) */}
       <CopulaEndogeneityCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Causal Survival Analysis & RMST Engine (Royston & Parmar 2013; Díaz et al. 2019; Knaus 2022) */}
+      <CausalSurvivalRMSTCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

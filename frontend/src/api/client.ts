@@ -251,7 +251,9 @@ import {
   TargetedMaximumLikelihoodRequest,
   TargetedMaximumLikelihoodResult,
   CopulaEndogeneityRequest,
-  CopulaEndogeneityResult
+  CopulaEndogeneityResult,
+  CausalSurvivalRMSTRequest,
+  CausalSurvivalRMSTResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2702,5 +2704,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<CopulaEndogeneityResult>(res);
+  },
+  async runCausalSurvivalRMST(
+    surveyId: string,
+    payload: CausalSurvivalRMSTRequest
+  ): Promise<CausalSurvivalRMSTResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/causal-survival-rmst`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<CausalSurvivalRMSTResult>(res);
   }
 };

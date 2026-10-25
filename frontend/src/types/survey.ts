@@ -9135,3 +9135,62 @@ export interface CopulaEndogeneityRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Causal Survival Analysis & RMST Engine (Royston & Parmar 2013) Types ---
+export interface CausalRMSTDifference {
+  estimate: number;
+  se_asymptotic: number;
+  se_bootstrap: number;
+  z_stat: number;
+  p_value: number;
+  ci_95: [number, number];
+  is_significant: boolean;
+}
+
+export interface CausalRMTLMetrics {
+  rmtl_treated: number;
+  rmtl_control: number;
+  rmtl_reduction_pct: number;
+}
+
+export interface MilestoneSurvivalTau {
+  survival_treated: number;
+  survival_control: number;
+  risk_difference: number;
+}
+
+export interface SurvivalCurvePoint {
+  time: number;
+  survival_treated: number;
+  survival_control: number;
+  survival_difference: number;
+}
+
+export interface CausalSurvivalRMSTResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  n_treated?: number;
+  n_control?: number;
+  tau_horizon?: number;
+  rmst_treated?: number;
+  rmst_control?: number;
+  causal_rmst_difference?: CausalRMSTDifference;
+  rmst_ratio?: number;
+  rmtl_metrics?: CausalRMTLMetrics;
+  milestone_survival_tau?: MilestoneSurvivalTau;
+  curve_points?: SurvivalCurvePoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalSurvivalRMSTRequest {
+  time_question_id: string;
+  event_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids?: string[];
+  tau_horizon?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}
