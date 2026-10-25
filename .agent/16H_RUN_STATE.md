@@ -3125,6 +3125,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 54. Planned Next Iteration: Iteration 187
-- **Feature**: Longitudinal Cross-Lagged Panel Structural Mediation & Dynamic Autoregressive Causal Chains Engine (CLPM / RI-CLPM; Hamaker, Kuiper, & Grasman 2015 Psychological Methods; Cole & Maxwell 2003; Preacher 2015).
-- **Scope**: Implements random-intercept cross-lagged panel models (RI-CLPM) separating stable between-person trait variance from within-person dynamic cross-lagged causal mediation over multi-wave panel survey data, estimating direct, indirect, and reciprocal feedback causal trajectories with robust SEM goodness-of-fit and dual-panel path diagrams.
+## 54. Iteration 187: Random-Intercept Cross-Lagged Panel Model (RI-CLPM) & Structural Mediation Engine (Hamaker, Kuiper, & Grasman 2015; Cole & Maxwell 2003)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T17:48:00+07:00
+- **Scientific Foundation**:
+  - Critique of Classic CLPM: Standard cross-lagged models conflate stable between-person trait differences with within-person dynamic causal transmission, generating spurious cross-lagged relationships and suffering from Nickell (1981) small-T dynamic panel bias.
+  - Full-Information SEM Maximum Likelihood Covariance Architecture: Decomposes multi-wave repeated measures into time-invariant Random Intercepts (I_X, I_Y) and within-person dynamic fluctuations (w_X, w_Y) via Wishart ML loss F_ML = log|Sigma| + tr(S Sigma^-1) - log|S| - 2T.
+  - Reciprocal Causality & Directional Wald Test: Estimates autoregressive stability (alpha) and cross-lagged causal transmission (beta_xy, beta_yx), testing directional dominance H0: beta_xy = beta_yx via Wald z-statistic.
+  - Longitudinal Mediation Chains (Cole & Maxwell 2003): Supports 3-wave sequential mediation X1 -> M2 -> Y3 with Monte Carlo asymmetric confidence intervals (Preacher & Selig 2012) and mediation ratio calculation.
+  - Comprehensive SEM Goodness-of-Fit: Computes Chi-square model test, CFI, TLI, RMSEA, SRMR, and formal Likelihood Ratio Test vs Classic CLPM (Delta Chi^2).
+  - Responsive Dual-Panel SVG Visualizer: Panel A renders the full Structural Path Diagram with latent traits, wave nodes, autoregressive and cross-lagged arrows with coefficients and significance; Panel B simulates a +1 SD dynamic shock transmission curve over 6 future horizons.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/riclpm_engine.py (520 lines).
+  - Schemas: RICLPMRequest, RICLPMOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/riclpm with RICLPM_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_riclpm_engine.py (3/3 passed in 1.45s).
+  - Route Tests: backend/tests/test_riclpm_routes.py (1/1 passed in 2.32s).
+- **Frontend Components**:
+  - TypeScript Types: RICLPMAutoregParam, RICLPMCrossLagParam, RICLPMWaveTransition, RICLPMBetweenTraits, RICLPMWithinDynamics, RICLPMMediationSummary, RICLPMGoodnessOfFit, RICLPMRequest, RICLPMResult in frontend/src/types/survey.ts.
+  - API Client Method: runRICLPM in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/RICLPMCard.tsx (560 lines) with wave selector (3, 4, 5 waves), Variable X and Y mapping across all waves, optional Mediator M mapping, 5 KPI cards (Cross-Lag X->Y, Feedback Y->X, Causal Direction, Trait correlation r, SEM CFI/RMSEA), dual-panel SVG visualizer, tabs for Within-Person Dynamics, Between-Person Traits, Longitudinal Mediation, SEM Fit Indices, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (64/64 cumulative passed across Iterations 171-187 in 31.26s).
+  - Frontend Production Build: 2,152 modules transformed, 0 errors in 1.46s.
+  - Contract Documentation: Section 168 appended to docs/API_CONTRACT.md.
+
+---
+
+## 55. Planned Next Iteration: Iteration 188
+- **Feature**: Nonparametric Sensitivity Bounds on Causal Mediation under Intermediate Confounder & Post-Treatment Selection (Imai, Keele, & Yamamoto 2010 JASA; Tchetgen Tchetgen & Phiri 2014 Biostatistics; VanderWeele & Chiba 2014 Epidemiology).
+- **Scope**: Implements sharp nonparametric partial identification bounds on Natural Direct Effects (NDE) and Natural Indirect Effects (NIE) when unobserved confounding violates sequential ignorability, computing sensitivity contours rho and R^2 bounding frontiers with dual-panel SVG visualizations.

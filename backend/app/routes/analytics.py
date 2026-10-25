@@ -1,3 +1,4 @@
+from app.engine.riclpm_engine import run_riclpm_analysis
 from app.engine.control_function_2sri_engine import run_control_function_2sri
 from app.engine.e_value_causal_engine import run_e_value_sensitivity
 from app.engine.cbps_engine import run_cbps_analysis
@@ -209,6 +210,8 @@ from app.schemas import (
     EValueOut,
     ControlFunction2SRIRequest,
     ControlFunction2SRIOut,
+    RICLPMRequest,
+    RICLPMOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -18588,6 +18591,87 @@ def run_control_function_2sri_endpoint(
                         "rho": res.get("endogeneity_test", {}).get("residual_coefficient_rho"),
                         "is_endogenous": res.get("endogeneity_test", {}).get("is_endogenous"),
                         "sample_size": res.get("sample_size")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+
+@router.post("/riclpm", response_model=RICLPMOut)
+def run_riclpm_endpoint(
+    survey_id: str,
+    payload: RICLPMRequest
+):
+    """
+    Random-Intercept Cross-Lagged Panel Model (RI-CLPM) & Structural Mediation Engine
+    (Hamaker, Kuiper, & Grasman 2015 Psychological Methods; Cole & Maxwell 2003).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        all_qids = payload.x_question_ids + payload.y_question_ids + (payload.m_question_ids or [])
+        for r_id, ans in data_by_resp.items():
+            rec = {}
+            for qid in all_qids:
+                rec[qid] = ans.get(qid)
+            records.append(rec)
+
+        try:
+            res = run_riclpm_analysis(
+                records=records,
+                x_question_ids=payload.x_question_ids,
+                y_question_ids=payload.y_question_ids,
+                m_question_ids=payload.m_question_ids,
+                var_x_name=payload.var_x_name or "X",
+                var_y_name=payload.var_y_name or "Y",
+                var_m_name=payload.var_m_name,
+                wave_labels=payload.wave_labels,
+                n_bootstraps=payload.n_bootstraps or 100,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi phân tích RI-CLPM: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="RICLPM_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "sample_size": res.get("sample_size"),
+                        "waves_count": res.get("waves_count"),
+                        "cross_lag_xy": res.get("within_person_dynamics", {}).get("mean_cross_lag_x_to_y"),
+                        "cross_lag_yx": res.get("within_person_dynamics", {}).get("mean_cross_lag_y_to_x"),
+                        "causal_direction": res.get("within_person_dynamics", {}).get("causal_direction"),
+                        "cfi": res.get("goodness_of_fit", {}).get("cfi")
                     }
                 )
             except Exception:

@@ -6551,3 +6551,37 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `ControlFunction2SRIRequest` (`treatment_question_id`, `outcome_question_id`, `instrument_question_ids`, `covariate_question_ids`, `outcome_family`, `n_bootstraps`, `scope`).
   - **Response:** `ControlFunction2SRIOut` (`status`, `sample_size`, `treated_count`, `control_count`, `treatment_type`, `outcome_family`, `first_stage`, `endogeneity_test`, `causal_effects`, `model_comparison`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CONTROL_FUNCTION_2SRI_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 168. Random-Intercept Cross-Lagged Panel Model (RI-CLPM) & Structural Mediation Engine (Hamaker, Kuiper, & Grasman 2015 Psychological Methods; Cole & Maxwell 2003; Preacher 2015)
+- **Mục tiêu:** Mô hình hóa quan hệ nhân quả động tương hỗ hai chiều giữa các biến số khảo sát lặp nhiều đợt sóng (multi-wave panel surveys, $T \ge 3$), tách biệt triệt để sự khác biệt ổn định giữa các cá nhân (Between-Person Trait Variance) khỏi các biến động nhân quả nội cá nhân (Within-Person Dynamic Reciprocal Causality), giải quyết sai lệch Nickell (1981) và ước lượng chuỗi tác động trung gian cấu trúc thời gian (Longitudinal Mediation Chains; Cole & Maxwell 2003).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hạn Chế Cốt Lõi của Classic CLPM và Cải Tiến RI-CLPM (Hamaker et al. 2015):**
+     - Mô hình CLPM cổ điển giả định đồng nhất hoàn toàn các quan sát theo thời gian, dẫn đến việc nhầm lẫn các đặc điểm cố định bền vững (ví dụ: nhân cách, tố chất, tầng lớp xã hội ổn định) với các tác động nhân quả tương tác qua các đợt sóng.
+     - RI-CLPM phân rã từng biến số tại đợt sóng $t$ thành:
+       $$X_{it} = \mu_{Xt} + I_{Xi} + x_{it}, \quad Y_{it} = \mu_{Yt} + I_{Yi} + y_{it}$$
+       trong đó $I_{Xi}, I_{Yi}$ là điểm chặn ngẫu nhiên cố định cá nhân (Random Intercepts), $\text{Cov}(I_X, I_Y) = \sigma_{I_X I_Y}$; còn $x_{it}, y_{it}$ là biến thiên nội tại cá nhân tại đợt $t$.
+  2. **Động Lực Học Nhân Quả Nội Cá Thể (Within-Person Autoregressive & Cross-Lagged SEM):**
+     - Các phương trình cấu trúc vận hành hoàn toàn trên mức độ biến thiên nội cá thể:
+       $$x_{i, t+1} = \alpha_{x} x_{it} + \beta_{yx} y_{it} + \epsilon_{x, i, t+1}$$
+       $$y_{i, t+1} = \alpha_{y} y_{it} + \beta_{xy} x_{it} + \epsilon_{y, i, t+1}$$
+     - $\alpha_x, \alpha_y$: Hệ số ổn định tự hồi quy (inertia / autoregressive persistence).
+     - $\beta_{xy}$: Tác động nhân quả thực chất từ sự gia tăng của $X$ lên $Y$ ở đợt sóng tiếp theo.
+     - $\beta_{yx}$: Tác động phản hồi ngược từ $Y$ sang $X$.
+     - Kiểm định tính đối xứng nhân quả (Wald Reciprocity Test): $H_0: \beta_{xy} = \beta_{yx}$.
+  3. **Ước Lượng Hợp Lý Cực Đại Cấu Trúc SEM (Full Information SEM ML):**
+     - Mô hình hóa ma trận hiệp phương sai lý thuyết $\boldsymbol{\Sigma}(\boldsymbol{\theta}) = \boldsymbol{\Sigma}_{\text{trait}} + \boldsymbol{\Sigma}_{\text{within}}$ với $\boldsymbol{\Sigma}_{\text{trait}} = \mathbf{J}_T \otimes \boldsymbol{\Psi}_{\text{trait}}$ và các khối $\boldsymbol{\Sigma}_{\text{within}}$ sinh ra từ hệ phương trình động học $\mathbf{B}$.
+     - Cực tiểu hóa hàm mất mát Wishart $F_{\text{ML}} = \log|\boldsymbol{\Sigma}| + \text{tr}(\mathbf{S} \boldsymbol{\Sigma}^{-1}) - \log|\mathbf{S}| - 2T$, loại bỏ hoàn toàn sai lệch Nickell trong chuỗi thời gian ngắn.
+  4. **Chuỗi Tác Động Trung Gian Thời Gian (Longitudinal Mediation Chains; Cole & Maxwell 2003):**
+     - Khi có biến trung gian $M$, mô hình hóa chuỗi nhân quả tuần tự: $X_1 \to M_2 \to Y_3$.
+     - Tác động gián tiếp: $\text{Indirect} = a \times b = \beta_{X_1 \to M_2} \times \beta_{M_2 \to Y_3}$.
+     - Khoảng tin cậy bất đối xứng Monte Carlo / Bootstrap 95% CI theo Preacher & Selig (2012).
+  5. **Bộ Chỉ Số Độ Phù Hợp SEM & Biểu Đồ Vector Kép SVG:**
+     - Chi-square model test $\chi^2(\text{df})$, CFI, TLI, RMSEA, SRMR.
+     - Kiểm định tỷ số hợp lý so sánh với Classic CLPM: $\Delta \chi^2(3)$ xác nhận tính ưu việt của việc kiểm soát điểm chặn ngẫu nhiên.
+     - Panel A: Sơ đồ đường dẫn cấu trúc (Structural Path Diagram) biểu diễn các điểm chặn $I_X, I_Y$, các nút đợt sóng $w_{Xt}, w_{Yt}$, các mũi tên tự hồi quy ngang và mũi tên nhân quả chéo kèm hệ số và mức ý nghĩa thống kê.
+     - Panel B: Đường cong đáp ứng động lực học (Dynamic Impulse Response Curve) mô phỏng cú sốc +1 SD từ $X_1$ lan truyền lên $Y$ qua 6 chu kỳ tương lai, đối chiếu RI-CLPM vs Classic CLPM.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/riclpm`
+  - **Payload:** `RICLPMRequest` (`x_question_ids`, `y_question_ids`, `m_question_ids`, `var_x_name`, `var_y_name`, `var_m_name`, `wave_labels`, `n_bootstraps`, `scope`).
+  - **Response:** `RICLPMOut` (`status`, `sample_size`, `waves_count`, `wave_labels`, `variables`, `between_person_traits`, `within_person_dynamics`, `longitudinal_mediation`, `goodness_of_fit`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `RICLPM_EVALUATED` vào chuỗi sổ cái SHA-256.

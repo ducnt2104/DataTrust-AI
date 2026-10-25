@@ -285,7 +285,9 @@ import {
   EValueRequest,
   EValueResult,
   ControlFunction2SRIRequest,
-  ControlFunction2SRIResult
+  ControlFunction2SRIResult,
+  RICLPMRequest,
+  RICLPMResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2931,5 +2933,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ControlFunction2SRIResult>(res);
+  },
+
+  async runRICLPM(
+    surveyId: string,
+    payload: RICLPMRequest
+  ): Promise<RICLPMResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/riclpm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<RICLPMResult>(res);
   }
 };

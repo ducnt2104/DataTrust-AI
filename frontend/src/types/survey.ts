@@ -10181,3 +10181,111 @@ export interface ControlFunction2SRIResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+
+// --- Random-Intercept Cross-Lagged Panel Model (RI-CLPM) Interfaces (Hamaker et al. 2015) ---
+export interface RICLPMAutoregParam {
+  estimate: number;
+  se: number;
+  p_value: number;
+}
+
+export interface RICLPMCrossLagParam {
+  estimate: number;
+  se: number;
+  t_stat: number;
+  p_value: number;
+  is_significant: boolean;
+}
+
+export interface RICLPMWaveTransition {
+  from_wave: string;
+  to_wave: string;
+  autoreg_x: RICLPMAutoregParam;
+  autoreg_y: RICLPMAutoregParam;
+  cross_lag_x_to_y: RICLPMCrossLagParam;
+  cross_lag_y_to_x: RICLPMCrossLagParam;
+  within_residual_corr: number;
+}
+
+export interface RICLPMBetweenTraits {
+  var_random_intercept_x: number;
+  var_random_intercept_y: number;
+  cov_random_intercepts: number;
+  trait_correlation: number;
+}
+
+export interface RICLPMWithinDynamics {
+  mean_cross_lag_x_to_y: number;
+  mean_cross_lag_y_to_x: number;
+  mean_autoreg_x: number;
+  mean_autoreg_y: number;
+  reciprocity_z_test: number;
+  reciprocity_p_value: number;
+  causal_direction: string;
+  wave_transitions: RICLPMWaveTransition[];
+}
+
+export interface RICLPMMediationSummary {
+  path_a_x_to_m?: number;
+  path_b_m_to_y?: number;
+  direct_effect_c_prime?: number;
+  indirect_effect?: number;
+  indirect_se?: number;
+  indirect_ci_95?: [number, number];
+  indirect_p_value?: number;
+  total_effect: number;
+  mediation_ratio: number;
+  is_significant?: boolean;
+  cascade_path_x1_to_y2?: number;
+  autoregressive_y2_to_y3?: number;
+  direct_effect?: number;
+  cumulative_indirect?: number;
+}
+
+export interface RICLPMGoodnessOfFit {
+  chi_square: number;
+  df: number;
+  p_value: number;
+  cfi: number;
+  tli: number;
+  rmsea: number;
+  srmr: number;
+  clpm_comparison: {
+    delta_chi2: number;
+    delta_df: number;
+    p_value: number;
+    ri_clpm_preferred: boolean;
+    interpretation: string;
+  };
+}
+
+export interface RICLPMRequest {
+  x_question_ids: string[];
+  y_question_ids: string[];
+  m_question_ids?: string[];
+  var_x_name?: string;
+  var_y_name?: string;
+  var_m_name?: string;
+  wave_labels?: string[];
+  n_bootstraps?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface RICLPMResult {
+  status: string;
+  sample_size: number;
+  waves_count: number;
+  wave_labels: string[];
+  variables: {
+    x_name: string;
+    y_name: string;
+    m_name?: string | null;
+  };
+  between_person_traits: RICLPMBetweenTraits;
+  within_person_dynamics: RICLPMWithinDynamics;
+  longitudinal_mediation: RICLPMMediationSummary;
+  goodness_of_fit: RICLPMGoodnessOfFit;
+  svg_visualization: string;
+  apa_narrative: string;
+}
