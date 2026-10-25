@@ -299,7 +299,9 @@ import {
   PartialAttritionBoundsRequest,
   PartialAttritionBoundsResult,
   RandomizedResponseRequest,
-  RandomizedResponseResult
+  RandomizedResponseResult,
+  MELSMAnalysisRequest,
+  MELSMAnalysisResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -3029,5 +3031,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<RandomizedResponseResult>(res);
+  },
+
+  async runMELSM(
+    surveyId: string,
+    payload: MELSMAnalysisRequest
+  ): Promise<MELSMAnalysisResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/melsm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<MELSMAnalysisResult>(res);
   }
 };

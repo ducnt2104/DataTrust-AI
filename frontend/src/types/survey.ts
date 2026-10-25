@@ -10661,3 +10661,59 @@ export interface RandomizedResponseResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+
+// --- Mixed-Effects Location Scale Models (MELSM) Interfaces (Hedeker et al. 2008, 2012; DataTrust Iteration 194) ---
+export interface MELSMFixedEffectRow {
+  parameter: string;
+  coefficient?: number;
+  coefficient_log_variance?: number;
+  std_error: number;
+  z_statistic: number;
+  p_value: number;
+  ci_95: [number, number];
+  variance_ratio?: number | null;
+}
+
+export interface MELSMVarianceComponents {
+  between_subject_mean_sd_sigma_u: number;
+  between_subject_scale_sd_sigma_omega: number;
+  location_scale_correlation_rho: number;
+}
+
+export interface MELSMScaleHeterogeneityTest {
+  lrt_statistic: number;
+  degrees_of_freedom: number;
+  p_value: number;
+  heterogeneity_significant: boolean;
+}
+
+export interface MELSMConsistencyTypology {
+  high_mean_stable: number;
+  high_mean_volatile: number;
+  low_mean_stable: number;
+  low_mean_volatile: number;
+}
+
+export interface MELSMAnalysisRequest {
+  subject_question_id: string;
+  outcome_question_id: string;
+  location_covariate_ids?: string[];
+  scale_covariate_ids?: string[];
+  alpha?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface MELSMAnalysisResult {
+  status: string;
+  message?: string;
+  sample_size_total: number;
+  sample_size_subjects: number;
+  location_fixed_effects: MELSMFixedEffectRow[];
+  scale_fixed_effects: MELSMFixedEffectRow[];
+  random_effects_variance_components: MELSMVarianceComponents;
+  scale_heterogeneity_test: MELSMScaleHeterogeneityTest;
+  subject_consistency_typology: MELSMConsistencyTypology;
+  svg_visualization: string;
+  apa_narrative: string;
+}

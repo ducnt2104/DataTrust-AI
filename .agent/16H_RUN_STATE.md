@@ -3324,3 +3324,35 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 ## 61. Planned Next Iteration: Iteration 194
 - **Feature**: Mixed-Effects Location Scale Models (MELSM) & Heteroskedastic Random Volatility Engine (Hedeker, Mermelstein, & Demirtas 2008 Biometrics; Hedeker et al. 2012 Psychological Methods).
 - **Scope**: Jointly models the conditional mean (location) and within-person residual variance / consistency (scale) in longitudinal and multi-item surveys, with random intercepts in both location and scale sub-models and dual-panel variance trajectory SVG visualizers.
+
+
+## 61. Iteration 194: Mixed-Effects Location Scale Models (MELSM) & Heteroskedastic Random Volatility Engine (Hedeker et al. 2008, 2012; Rast et al. 2012)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T19:04:00+07:00
+- **Scientific Foundation**:
+  - Dual Location-Scale Formulation: Jointly estimates the conditional mean (location sub-model $y_{ij} = X_{ij}^\top \beta + u_i + \varepsilon_{ij}$) and within-person residual variance (scale sub-model $\log(\sigma_{\varepsilon, ij}^2) = W_{ij}^\top \tau + \omega_i$) for longitudinal/repeated-measures surveys (Hedeker, Mermelstein, & Demirtas 2008 Biometrics; Hedeker et al. 2012 Psychological Methods).
+  - Bivariate Random Effects Covariance: Estimates random mean intercept variance $\sigma_u^2$, random scale volatility variance $\sigma_\omega^2$, and the cross-submodel correlation $\rho_{u, \omega} = \text{Corr}(u_i, \omega_i)$ using multidimensional Gauss-Hermite numerical quadrature.
+  - Scale Heterogeneity Likelihood Ratio Test: Formulates asymptotic $\chi^2(2)$ LRT comparing MELSM to baseline homogeneous linear mixed models, testing whether within-respondent volatility varies significantly across respondents.
+  - Strategic 4-Quadrant Consistency Typology: Categorizes respondents into High/Stable (ideal loyalist), High/Volatile (fragile satisfaction), Low/Stable (chronic disaffection), and Low/Volatile (critical churn risk).
+  - Responsive Dual-Panel SVG Visualizer: Panel A renders Empirical Bayes (EB) Bivariate Scatter between location $u_i$ and scale $\omega_i$; Panel B renders the 4-Quadrant Consistency Typology map.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/mixed_effects_location_scale_engine.py` (515 lines).
+  - Schemas: `MELSMAnalysisRequest`, `MELSMAnalysisOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/melsm` with `MELSM_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_mixed_effects_location_scale_engine.py` (4/4 passed in 3.75s).
+  - Route Tests: `backend/tests/test_mixed_effects_location_scale_routes.py` (2/2 passed in 1.17s).
+- **Frontend Components**:
+  - TypeScript Types: `MELSMFixedEffectRow`, `MELSMVarianceComponents`, `MELSMScaleHeterogeneityTest`, `MELSMConsistencyTypology`, `MELSMAnalysisRequest`, `MELSMAnalysisResult` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runMELSM` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/MELSMCard.tsx` (540 lines) with Subject ID selector, Outcome selector, Location covariates selector, Scale covariates selector, Alpha selector, 5 KPI cards (Total N & J Subjects, Fixed Mean Intercept $\beta_0$, Between-Subject SD $\sigma_u$, Volatility SD $\sigma_\omega$ with LRT, Location-Scale Correlation $\rho$), dual-panel SVG visualizer, tabs for Location/Scale Fixed Effects Tables, Consistency Typology breakdown, and APA 7th narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 6/6 passed (107/107 cumulative passed across Iterations 171-194).
+  - Frontend Production Build: 2,159 modules transformed, 0 errors in 2.23s.
+  - Contract Documentation: Section 175 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 62. Planned Next Iteration: Iteration 195
+- **Feature**: Endogenous Treatment Effects with Sample Selection (Heckman-Heckit Treatment Effects Model; Heckman 1979 Econometrica; Maddala 1983; Greene 2018).
+- **Scope**: Joint Full-Information Maximum Likelihood (FIML) and Two-Step Heckit estimation for binary participation/selection equation $d_i^* = Z_i^\top \gamma + u_i$ and primary continuous outcome $y_i = X_i^\top \beta + \delta d_i + \varepsilon_i$, with Inverse Mills Ratio (IMR $\lambda_i$), endogenous treatment effect $\delta_{\text{ETE}}$, cross-equation correlation $\rho_{u\varepsilon}$, and exclusion restriction diagnostics.

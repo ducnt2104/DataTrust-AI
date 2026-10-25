@@ -171,6 +171,7 @@ import { FactorialConjointAMCECard } from '../components/FactorialConjointAMCECa
 import { ManyWeakIVJIVECard } from '../components/ManyWeakIVJIVECard';
 import { PartialAttritionBoundsCard } from '../components/PartialAttritionBoundsCard';
 import { RandomizedResponseCard } from '../components/RandomizedResponseCard';
+import { MELSMCard } from '../components/MELSMCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1934,6 +1935,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Randomized Response Technique (RRT) & Crosswise Sensitive Item Prevalence Engine (Warner 1965; Jann 2012; DataTrust Iteration 193) */}
       <RandomizedResponseCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Mixed-Effects Location Scale Models (MELSM) & Heteroskedastic Volatility Engine (Hedeker et al. 2008, 2012; DataTrust Iteration 194) */}
+      <MELSMCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

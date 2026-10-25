@@ -1,3 +1,4 @@
+from app.engine.mixed_effects_location_scale_engine import run_melsm_analysis
 from app.engine.randomized_response_engine import run_randomized_response_analysis
 from app.engine.partial_attrition_bounds_engine import run_partial_attrition_bounds_analysis
 from app.engine.many_weak_iv_jive_engine import run_many_weak_iv_jive_analysis
@@ -230,6 +231,8 @@ from app.schemas import (
     PartialAttritionBoundsOut,
     RandomizedResponseRequest,
     RandomizedResponseOut,
+    MELSMAnalysisRequest,
+    MELSMAnalysisOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -19174,6 +19177,84 @@ def run_randomized_response_endpoint(
                         "model_type": res.get("model_type"),
                         "estimated_prevalence": res.get("estimated_prevalence"),
                         "sdb_gap": res.get("social_desirability_diagnostics", {}).get("sdb_gap_percentage_points") if res.get("social_desirability_diagnostics") else None,
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/melsm", response_model=MELSMAnalysisOut)
+def run_melsm_endpoint(
+    survey_id: str,
+    payload: MELSMAnalysisRequest
+):
+    """
+    Mixed-Effects Location Scale Models (MELSM) & Heteroskedastic Random Volatility Engine
+    (Hedeker, Mermelstein, & Demirtas 2008 Biometrics; Hedeker et al. 2012 Psychological Methods).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        all_qids = [payload.subject_question_id, payload.outcome_question_id]
+        if payload.location_covariate_ids:
+            all_qids.extend(payload.location_covariate_ids)
+        if payload.scale_covariate_ids:
+            all_qids.extend(payload.scale_covariate_ids)
+
+        for r_id, ans in data_by_resp.items():
+            rec = {qid: ans.get(qid) for qid in all_qids}
+            records.append(rec)
+
+        try:
+            res = run_melsm_analysis(
+                records=records,
+                subject_col=payload.subject_question_id,
+                outcome_col=payload.outcome_question_id,
+                location_covariate_cols=payload.location_covariate_ids,
+                scale_covariate_cols=payload.scale_covariate_ids,
+                alpha=payload.alpha or 0.05,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi phân tích MELSM: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="MELSM_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "sample_size_total": res.get("sample_size_total"),
+                        "sample_size_subjects": res.get("sample_size_subjects"),
+                        "rho": res.get("random_effects_variance_components", {}).get("location_scale_correlation_rho"),
+                        "lrt_stat": res.get("scale_heterogeneity_test", {}).get("lrt_statistic"),
                     }
                 )
             except Exception:

@@ -6784,3 +6784,39 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `RandomizedResponseRequest` (`rrt_question_id`, `model_type`, `p_randomizer`, `p_unrelated`, `direct_question_id`, `covariate_question_ids`, `alpha`, `scope`).
   - **Response:** `RandomizedResponseOut` (`status`, `sample_size`, `model_type`, `model_label`, `randomization_probability`, `observed_affirmative_rate`, `estimated_prevalence`, `raw_unbounded_prevalence`, `std_error`, `ci_95`, `variance_inflation_factor`, `social_desirability_diagnostics`, `rrt_logistic_regression`, `efficiency_curve`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `RANDOMIZED_RESPONSE_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 175. Mixed-Effects Location Scale Models (MELSM) & Heteroskedastic Volatility Engine (Hedeker, Mermelstein, & Demirtas 2008; Hedeker et al. 2012; Rast et al. 2012)
+- **Mục tiêu:** Mô hình hóa đồng thời mức trung bình điều kiện (Location Sub-Model) và phương sai dao động nội tại của từng cá nhân (Within-Person Scale Sub-Model) trong các khảo sát lặp lại hoặc dữ liệu chuỗi thời gian ngắn (Longitudinal/EMA/Ecological Momentary Assessment), phát hiện tính biến động không thuần nhất (Heteroskedasticity) và phân tầng tính nhất quán của người trả lời.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hạn Chế Của Mô Hình Tuyến Tính Hỗn Hợp Chuẩn (Standard LMM Limitations):**
+     - Mô hình LMM truyền thống chỉ giải phóng điểm chặn ngẫu nhiên $u_i \sim \mathcal{N}(0, \sigma_u^2)$ ở mức trung bình, nhưng áp đặt giả định phương sai sai số nội tại đồng nhất (Homoskedasticity): $\varepsilon_{ij} \sim \mathcal{N}(0, \sigma_\varepsilon^2)$.
+     - Thực tế trong đo lường hành vi và khảo sát: Một số cá nhân rất nhất quán trong phản hồi, trong khi những cá nhân khác cực kỳ thất thường, biến động dữ dội qua các lần đánh giá.
+  2. **Cấu Trúc Mô Hình Kép Vị Trí & Quy Mô (MELSM Specification):**
+     - **Location Sub-Model (Dự báo điểm trung bình):**
+       $$y_{ij} = X_{ij}^\top \beta + u_i + \varepsilon_{ij}, \quad u_i \sim \mathcal{N}(0, \sigma_u^2)$$
+     - **Scale Sub-Model (Dự báo log-phương sai sai số nội tại):**
+       $$\log(\sigma_{\varepsilon, ij}^2) = W_{ij}^\top \tau + \omega_i, \quad \omega_i \sim \mathcal{N}(0, \sigma_\omega^2)$$
+       trong đó $W_{ij}$ là các biến tác động lên độ ổn định (như độ phức tạp của câu hỏi, áp lực thời gian), và $\omega_i$ là hiệu ứng ngẫu nhiên đặc thù của người thứ $i$ phản ánh mức độ biến động cảm xúc nội tại (Within-Person Scale Random Intercept).
+  3. **Ma Trận Hiệp Phương Sai Bivariate Random Effects & Hệ Số Tương Quan $\rho_{u, \omega}$:**
+     $$\begin{pmatrix} u_i \\ \omega_i \end{pmatrix} \sim \mathcal{N}\left(\begin{pmatrix} 0 \\ 0 \end{pmatrix}, \begin{pmatrix} \sigma_u^2 & \rho_{u\omega} \sigma_u \sigma_\omega \\ \rho_{u\omega} \sigma_u \sigma_\omega & \sigma_\omega^2 \end{pmatrix}\right)$$
+     - $\rho_{u, \omega} < 0$: Những người có điểm đánh giá trung bình cao thì phản hồi ổn định và nhất quán hơn.
+     - $\rho_{u, \omega} > 0$: Những người có điểm đánh giá cao lại có xu hướng rung lắc, biến động thất thường hơn.
+  4. **Ước Lượng Hợp Lý Cực Đại Bằng Cầu Phương Gauss-Hermite (Gauss-Hermite Quadrature Integration):**
+     - Khử tích phân hai chiều của các biến tiềm ẩn $(u_i, \omega_i)$ qua hàm hợp lý biên bằng cầu phương Gauss-Hermite đa biến.
+  5. **Kiểm Định Tỷ Số Hợp Lý (Likelihood Ratio Test - LRT) Cho Phương Sai Không Đồng Nhất:**
+     $$\text{LRT} = 2 \left( \ell_{\text{MELSM}} - \ell_{\text{Homogeneous LMM}} \right) \sim \chi^2(2)$$
+     - Bác bỏ giả thuyết thuần nhất khi $p < \alpha$, chứng minh sự cần thiết phải phân tích phương sai ngẫu nhiên cấp cá nhân.
+  6. **Phân Tầng Tính Nhất Quán (Consistency Typology - 4 Góc Phần Tư):**
+     - Dựa trên ước lượng Empirical Bayes $(\hat{u}_i, \hat{\omega}_i)$, phân loại người tham gia thành 4 nhóm:
+       - *Cao - Ổn Định (High Mean / Stable):* Khách hàng lý tưởng nhất, thỏa mãn cao và phản hồi kiên định.
+       - *Cao - Biến Động (High Mean / Volatile):* Thỏa mãn nhưng nhạy cảm với trải nghiệm từng phiên.
+       - *Thấp - Ổn Định (Low Mean / Stable):* Không hài lòng mang tính hệ thống, định kiến cố hữu.
+       - *Thấp - Biến Động (Low Mean / Volatile):* Nguy cơ cao nhất, bức xúc và tâm lý thất thường.
+  7. **Trực Quan Hóa Vector Kép SVG & Báo Cáo APA 7th:**
+     - Panel A: Đồ thị tán xạ Bivariate Empirical Bayes giữa vị trí $u_i$ và quy mô $\omega_i$.
+     - Panel B: Bản đồ 4 góc phần tư phân tầng tính nhất quán với số lượng và màu sắc chiến lược.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/melsm`
+  - **Payload:** `MELSMAnalysisRequest` (`subject_question_id`, `outcome_question_id`, `location_covariate_ids`, `scale_covariate_ids`, `alpha`, `scope`).
+  - **Response:** `MELSMAnalysisOut` (`status`, `sample_size_total`, `sample_size_subjects`, `location_fixed_effects`, `scale_fixed_effects`, `random_effects_variance_components`, `scale_heterogeneity_test`, `subject_consistency_typology`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `MELSM_EVALUATED` vào chuỗi sổ cái SHA-256.
