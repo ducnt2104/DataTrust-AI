@@ -127,6 +127,7 @@ import { LeeBoundsCard } from '../components/LeeBoundsCard';
 import { SurrogateIndexCard } from '../components/SurrogateIndexCard';
 import { ConformalCounterfactualCard } from '../components/ConformalCounterfactualCard';
 import { CausalSensitivityBiasCard } from '../components/CausalSensitivityBiasCard';
+import { BCFCard } from '../components/BCFCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1450,6 +1451,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Causal Sensitivity Analysis & Omitted Variable Bias Contours (Cinelli & Hazlett 2020) */}
       <CausalSensitivityBiasCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Bayesian Causal Forest (BCF; Hahn, Murray, & Carver 2020) */}
+      <BCFCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

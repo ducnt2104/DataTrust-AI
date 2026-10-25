@@ -211,7 +211,9 @@ import {
   ConformalCounterfactualRequest,
   ConformalCounterfactualResult,
   CausalSensitivityRequest,
-  CausalSensitivityResult
+  CausalSensitivityResult,
+  BCFRequest,
+  BCFResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2440,5 +2442,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<CausalSensitivityResult>(res);
+  },
+
+  async runBCF(
+    surveyId: string,
+    payload: BCFRequest
+  ): Promise<BCFResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/bcf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<BCFResult>(res);
   }
 };

@@ -5421,3 +5421,27 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `CausalSensitivityBiasRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `q_reduction`, `alpha_level`, `benchmark_question_ids`, `benchmark_multipliers`, `scope`).
   - **Response:** `CausalSensitivityBiasOut` (`status`, `overall_summary`, `covariate_benchmarks`, `benchmark_scenarios`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_SENSITIVITY_BIAS_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 130. Bayesian Causal Forest (BCF) & Heterogeneous Treatment Effects Engine (Hahn, Murray, & Carver 2020 Bayesian Analysis; Hill 2011 JCGS)
+- **Mục tiêu:** Giải quyết triệt để khuyết tật "Regularization-Induced Confounding (RIC)" trong các mô hình học máy cây nhân quả truyền thống (BART, Causal Forests). Khi hàm tiên lượng nền $Y(0)$ có liên hệ mạnh với xác suất gán can thiệp qua điểm số xu hướng propensity score $\pi(X)$, các tiên nghiệm co ngót thông thường sẽ ép cả hiệu ứng tiên lượng và hiệu ứng can thiệp về 0, gây ra độ chệch nghiêm trọng không biến mất ngay cả khi $N \to \infty$. Động cơ phân tách tường minh mô hình thành hàm tiên lượng $\mu(X, \hat{\pi}(X))$ và hàm điều hòa can thiệp $\tau(X)$, cung cấp toàn bộ phân phối hậu nghiệm cho CATE, khoảng tin cậy Bayes (Credible Intervals), phân rã phương sai và phát hiện phân nhóm mục tiêu tối ưu.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Đặc tả Mô hình BCF (Hahn, Murray, & Carver 2020):**
+     $$Y_i = \mu(X_i, \hat{\pi}(X_i)) + \tau(X_i) W_i + \varepsilon_i, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^2)$$
+     - $\hat{\pi}(X_i) = P(W_i = 1 \mid X_i)$: Ước lượng điểm số xu hướng được đưa trực tiếp vào hàm tiên lượng nền $\mu$, trực giao hóa hiệu ứng can thiệp khỏi tương quan gây nhiễu.
+     - $\tau(X_i)$: Hàm điều hòa hiệu ứng can thiệp cá thể (CATE) với tiên nghiệm co ngót tập trung trực tiếp vào mức độ không đồng nhất.
+  2. **Lấy mẫu Hậu nghiệm Bayes (Bayesian Posterior Draws):**
+     - Sinh $B$ mẫu hậu nghiệm $\tau^{(b)}(X_i)$ để ước lượng:
+       - Trung bình hậu nghiệm CATE: $\hat{\tau}(X_i) = \frac{1}{B} \sum_{b=1}^B \tau^{(b)}(X_i)$.
+       - Khoảng tin cậy hậu nghiệm 95% Credible Interval: $[\tau_{i, 0.025}, \tau_{i, 0.975}]$.
+       - Xác suất hiệu ứng có lợi: $P(\tau(X_i) > 0 \mid \text{Data})$.
+  3. **Phân rã Phương sai Bayes (Bayesian Variance Decomposition):**
+     - Xác định tỷ lệ phần trăm biến thiên của biến kết quả $Y$ cấu thành từ:
+       $$\text{Var}(Y) \approx \text{Var}(\hat{\mu}) + \text{Var}(\hat{\tau} \cdot W) + \sigma^2$$
+       (Phần trăm Tiên lượng nền vs Phần trăm Can thiệp vs Phần trăm Nhiễu dư).
+  4. **Phát hiện Phân đoạn Mục tiêu Tối ưu (Optimal Sub-population Discovery):**
+     - Phân vùng cá thể theo các thuộc tính $X$ có tương quan mạnh nhất với biến thiên $\tau(X)$, phân bổ 3 nhóm hành động chính sách: `HIGH_PRIORITY`, `TARGETED`, `CONTRAINDICATED`.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/bcf`
+  - **Payload:** `BCFRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `n_posterior_draws`, `alpha_ridge`, `scope`).
+  - **Response:** `BCFOut` (`status`, `overall_summary`, `subgroups`, `individual_sample`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `BCF_EVALUATED` vào chuỗi sổ cái SHA-256.

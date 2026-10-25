@@ -2024,3 +2024,34 @@ eq 0\}$
 ## 14. Planned Next Iteration: Iteration 149
 - **Feature**: Bayesian Causal Forest (BCF) & Heterogeneous Treatment Effects Engine (Hahn, Murray, & Carver 2020 Bayesian Analysis; Hill 2011 JCGS).
 - **Scope**: Resolves Regularization-Induced Confounding (RIC) in tree ensembles by separating prognostic baseline $\mu(X, \hat{\pi}(X))$ from treatment effect moderating trees $\tau(X)$, producing full posterior credible intervals for individual and subgroup CATE, discovering optimal targeted intervention sub-populations.
+
+
+## 15. Iteration 149: Bayesian Causal Forest (BCF) & Heterogeneous Treatment Effects Engine (Hahn, Murray, & Carver 2020 Bayesian Analysis; Hill 2011 JCGS)
+- **Timestamp**: 2026-10-25T12:18:00+07:00
+- **Scientific Foundation**:
+  - Eliminates Regularization-Induced Confounding (RIC) in tree ensembles by explicitly modeling prognostic baseline outcome $\mu(X, \hat{\pi}(X))$ with estimated propensity scores $\hat{\pi}(X)$ and treatment moderation $\tau(X)$.
+  - Direct Bayesian shrinkage on treatment moderation avoids dragging treatment effects toward zero due to strong prognostic confounding.
+  - Generates full posterior distributions for CATE $\tau(X_i)$, individualized 95% Credible Intervals, and posterior probabilities of positive treatment returns $P(\tau_i > 0 \mid \text{Data})$.
+  - Bayesian Variance Decomposition: Quantifies the percentage of outcome variance attributable to prognostic baseline vs treatment moderation vs residual noise.
+  - Sub-population discovery: Segments survey respondents into `HIGH_PRIORITY`, `TARGETED`, and `CONTRAINDICATED` intervention tiers.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/bcf_engine.py` (420 lines).
+  - Pydantic Schemas: `BCFRequest` and `BCFOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/bcf` with `BCF_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_bcf_engine.py` (2/2 passed).
+  - Route Tests: `backend/tests/test_bcf_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `BCFSubgroup`, `BCFIndividualSample`, `BCFResult`, `BCFRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runBCF` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/BCFCard.tsx` (430 lines) with outcome, treatment, and covariate selectors, posterior draws selector, KPI stat cards (Posterior ATE, $P(\text{ATE} > 0)$, CATE Heterogeneity SD, RIC Correction badge), Bayesian variance decomposition progress bar, dual-panel SVG visualizer (Posterior Density Histogram & Subgroup Bars), discovered targeting segments table, individual predictions table with search, and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed in 1.98s**.
+  - Frontend Production Build: **2,115 modules transformed, 0 errors in 1.64s**.
+  - Contract Documentation: Section 130 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 16. Planned Next Iteration: Iteration 150
+- **Feature**: Shift-Share Instrumental Variables & Rotemberg Diagnostics (Goldsmith-Pinkham, Sorkin, & Swift 2020 AER; Borusyak, Hull, & Jaravel 2022 Restud; Adao, Kolesár, & Morales 2019).
+- **Scope**: Bartik instruments for multi-sector / regional survey exposures, Rotemberg share decompositions to identify which industry/quota shares drive causal identification, and spatial correlation-robust inference.

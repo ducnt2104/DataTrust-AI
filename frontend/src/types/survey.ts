@@ -7984,3 +7984,62 @@ export interface CausalSensitivityRequest {
   benchmark_multipliers?: number[];
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Bayesian Causal Forest (BCF; Hahn et al. 2020) Types ---
+export interface BCFSubgroup {
+  segment_name: string;
+  rule: string;
+  sample_size: number;
+  cate_mean: number;
+  credible_interval_95: [number, number];
+  posterior_prob_positive: number;
+  targeting_tier: 'HIGH_PRIORITY' | 'TARGETED' | 'CONTRAINDICATED';
+}
+
+export interface BCFIndividualSample {
+  unit_id: number;
+  treatment_w: number;
+  outcome_y: number;
+  propensity_pi: number;
+  prognostic_mu: number;
+  cate_mean: number;
+  cate_ci_95: [number, number];
+  prob_positive: number;
+}
+
+export interface BCFResult {
+  status: string;
+  message?: string;
+  overall_summary?: {
+    sample_size: number;
+    treated_count: number;
+    control_count: number;
+    posterior_draws_count: number;
+    posterior_ate_mean: number;
+    posterior_ate_se: number;
+    posterior_ate_ci_95: [number, number];
+    posterior_prob_positive_ate: number;
+    treatment_heterogeneity_sd: number;
+    residual_sigma: number;
+    variance_decomposition: {
+      prognostic_baseline_pct: number;
+      treatment_effect_pct: number;
+      residual_noise_pct: number;
+    };
+    ric_correction_active: boolean;
+  };
+  subgroups?: BCFSubgroup[];
+  individual_sample?: BCFIndividualSample[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface BCFRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids: string[];
+  n_posterior_draws?: number;
+  alpha_ridge?: number;
+  scope?: 'all' | 'verified_clean';
+}
