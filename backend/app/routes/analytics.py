@@ -1,3 +1,11 @@
+from app.engine.extreme_bounds_engine import ExtremeBoundsEngine
+from app.engine.bsem_engine import compute_bsem_analysis
+from app.engine.dynamic_factor_model_engine import compute_dynamic_factor_analysis
+from app.engine.causal_mediation_sensitivity_engine import run_causal_mediation_sensitivity
+from app.engine.causal_tree_engine import run_causal_interaction_tree
+from app.engine.dtw_clustering_engine import run_dtw_trajectory_clustering
+from app.engine.gaussian_copula_engine import run_gaussian_copula_estimation
+from app.engine.multiple_testing_fdr_engine import compute_fdr_corrections, run_pairwise_fdr_matrix
 from app.engine.rdd_local_randomization_engine import RDDLocalRandomizationEngine
 from app.engine.policy_learning_engine import PolicyLearningEngine
 from app.engine.multiple_mediators_engine import MultipleMediatorsEngine
@@ -7871,18 +7879,119 @@ def analyze_extreme_value_theory(
         return res
 
 
-with open('backend/app/routes/analytics.py', 'r', encoding='utf-8') as f:
-    content = f.read()
+@router.post("/extreme-bounds", response_model=ExtremeBoundsAnalysisOut)
+def run_extreme_bounds_analysis(survey_id: str, payload: ExtremeBoundsAnalysisRequest):
+    """
+    Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997)
+    Kiểm định độ nhạy đặc tả mô hình qua toàn bộ tổ hợp biến kiểm soát ứng viên.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
 
-target = '@router.post("/extreme-bounds", response_model=ExtremeBoundsAnalysisOut)'
-repl = '@router.post("/extreme-bounds", response_model=ExtremeBoundsAnalysisOut)'
+        focus_qid = payload.focus_question_id
+        outcome_qid = payload.outcome_question_id
+        cand_qids = payload.candidate_question_ids
+        free_qids = payload.free_question_ids or []
 
-assert target in content, 'target not found'
-content = content.replace(target, repl, 1)
+        if not focus_qid or not outcome_qid:
+            raise HTTPException(status_code=400, detail="Thiếu biến trọng tâm hoặc biến kết quả.")
 
-with open('backend/app/routes/analytics.py', 'w', encoding='utf-8') as f:
-    f.write(content)
-print('')
+        if not cand_qids:
+            raise HTTPException(status_code=400, detail="Cần tối thiểu 1 biến kiểm soát ứng viên để phân tích EBA.")
+
+        all_qids = list(dict.fromkeys([outcome_qid, focus_qid] + free_qids + cand_qids))
+
+        placeholders = ",".join(["?"] * len(all_qids))
+        q_rows = conn.execute(
+            f"SELECT id, title FROM questions WHERE survey_id = ? AND id IN ({placeholders})",
+            (survey_id, *all_qids)
+        ).fetchall()
+        q_dict = {q["id"]: q["title"] for q in q_rows}
+
+        if focus_qid not in q_dict or outcome_qid not in q_dict:
+            raise HTTPException(status_code=400, detail="Biến trọng tâm hoặc kết quả không tồn tại trong khảo sát.")
+
+        if payload.scope == "verified_clean":
+            resp_rows = conn.execute("""
+                SELECT id FROM responses
+                WHERE survey_id = ? AND review_status NOT IN ('verified_fraud', 'quota_screened_out')
+                  AND (risk_level != 'high' OR review_status = 'verified_valid')
+            """, (survey_id,)).fetchall()
+        else:
+            resp_rows = conn.execute("SELECT id FROM responses WHERE survey_id = ?", (survey_id,)).fetchall()
+
+        if not resp_rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Không có phản hồi trong phạm vi được chọn."}
+
+        resp_ids = [r["id"] for r in resp_rows]
+        resp_placeholders = ",".join(["?"] * len(resp_ids))
+
+        ans_rows = conn.execute(f"""
+            SELECT response_id, question_id, answer_value
+            FROM response_answers
+            WHERE response_id IN ({resp_placeholders})
+              AND question_id IN ({placeholders})
+        """, (*resp_ids, *all_qids)).fetchall()
+
+        resp_map = {rid: {} for rid in resp_ids}
+        for a in ans_rows:
+            resp_map[a["response_id"]][a["question_id"]] = a["answer_value"]
+
+        def parse_num(val):
+            if val is None:
+                return None
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return None
+
+        data_rows = []
+        for rid in resp_ids:
+            r_ans = resp_map[rid]
+            row_dict = {}
+            row_ok = True
+            for qid in all_qids:
+                num_v = parse_num(r_ans.get(qid))
+                if num_v is None:
+                    row_ok = False
+                    break
+                row_dict[qid] = num_v
+            if row_ok:
+                data_rows.append(row_dict)
+
+        if len(data_rows) < 15:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Chỉ có {len(data_rows)} phản hồi đầy đủ dữ liệu (cần tối thiểu 15 phản hồi để chạy EBA)."
+            }
+
+        res = ExtremeBoundsEngine.analyze(
+            data=data_rows,
+            focus_var=focus_qid,
+            outcome_var=outcome_qid,
+            candidate_vars=cand_qids,
+            free_vars=free_qids,
+            max_controls_per_model=payload.max_controls_per_model,
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="EXTREME_BOUNDS_ANALYSIS_EVALUATED",
+            details={
+                "focus_qid": focus_qid,
+                "outcome_qid": outcome_qid,
+                "total_models": res.get("summary", {}).get("total_models_evaluated"),
+                "leamer_verdict": res.get("summary", {}).get("leamer_verdict"),
+                "sala_cdf": res.get("summary", {}).get("sala_i_martin_cdf"),
+                "scope": payload.scope,
+            }
+        )
+
+        return res
 
 
 
@@ -7895,7 +8004,7 @@ def run_causal_discovery_analysis(
     """
     Executes observational Causal Discovery DAG identification using LiNGAM & ANM (Shimizu et al. 2006; Hoyer et al. 2009).
     """
-    with get_db_connection() as conn:
+    with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id, title, question_type FROM questions WHERE survey_id = ?", (survey_id,))
         q_rows = cursor.fetchall()
@@ -7925,9 +8034,11 @@ def run_causal_discovery_analysis(
                 "message": f"Chỉ có {len(resp_ids)} phản hồi (cần tối thiểu 15 phản hồi để xác định mô hình phi Gauss LiNGAM)."
             }
 
+        r_ph = ",".join(["?"] * len(resp_ids))
+        q_ph = ",".join(["?"] * len(var_qids))
         cursor.execute(
-            f"SELECT response_id, question_id, numeric_value FROM answers WHERE survey_id = ? AND question_id IN ({','.join(['?']*len(var_qids))})",
-            (survey_id, *var_qids)
+            f"SELECT response_id, question_id, answer_value FROM response_answers WHERE response_id IN ({r_ph}) AND question_id IN ({q_ph})",
+            (*resp_ids, *var_qids)
         )
         ans_rows = cursor.fetchall()
 
@@ -7936,8 +8047,12 @@ def run_causal_discovery_analysis(
             rid = row["response_id"]
             if rid not in resp_map:
                 resp_map[rid] = {}
-            if row["numeric_value"] is not None:
-                resp_map[rid][row["question_id"]] = row["numeric_value"]
+            val = row["answer_value"]
+            if val is not None:
+                try:
+                    resp_map[rid][row["question_id"]] = float(val)
+                except (ValueError, TypeError):
+                    pass
 
         data_rows = []
         for rid in resp_ids:
@@ -10507,7 +10622,7 @@ def run_bsem_analysis(survey_id: str, payload: BSEMRequest):
     """
     Executes full Bayesian Structural Equation Modeling (BSEM) with MCMC Gibbs Sampling.
     """
-    with get_connection() as conn:
+    with get_db() as conn:
         survey = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
         if not survey:
             raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
@@ -10529,29 +10644,51 @@ def run_bsem_analysis(survey_id: str, payload: BSEMRequest):
         q_titles = {q["id"]: q["title"] for q in q_rows}
 
         # Fetch responses
+        scope_clause = ""
         if payload.scope == "verified_clean":
-            resp_rows = conn.execute(
-                "SELECT id, answers FROM responses WHERE survey_id = ? AND is_clean = 1",
-                (survey_id,)
-            ).fetchall()
-        else:
-            resp_rows = conn.execute(
-                "SELECT id, answers FROM responses WHERE survey_id = ?",
-                (survey_id,)
-            ).fetchall()
+            scope_clause = " AND is_flagged = 0 "
+
+        resp_rows = conn.execute(
+            f"SELECT id FROM responses WHERE survey_id = ? {scope_clause}",
+            (survey_id,)
+        ).fetchall()
+        resp_ids = [r["id"] for r in resp_rows]
+        if not resp_ids:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": "Không có phản hồi nào trong phạm vi khảo sát đã chọn."
+            }
+
+        r_ph = ",".join(["?"] * len(resp_ids))
+        q_ph = ",".join(["?"] * len(all_qids))
+        ans_rows = conn.execute(
+            f"SELECT response_id, question_id, answer_value FROM response_answers WHERE response_id IN ({r_ph}) AND question_id IN ({q_ph})",
+            (*resp_ids, *all_qids)
+        ).fetchall()
+
+        resp_map = {rid: {} for rid in resp_ids}
+        for a in ans_rows:
+            resp_map[a["response_id"]][a["question_id"]] = a["answer_value"]
+
+        def parse_num_bsem(val):
+            if val is None:
+                return None
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return None
 
         records = []
-        for r in resp_rows:
-            ans_dict = json.loads(r["answers"]) if isinstance(r["answers"], str) else (r["answers"] or {})
+        for rid in resp_ids:
+            r_ans = resp_map[rid]
             row_dict = {}
             row_ok = True
             for qid in all_qids:
-                v = ans_dict.get(qid)
+                v = parse_num_bsem(r_ans.get(qid))
                 if v is None:
                     row_ok = False
                     break
                 row_dict[qid] = v
-
             if row_ok:
                 records.append(row_dict)
 
@@ -10734,12 +10871,12 @@ def run_dynamic_factor_model_analysis(survey_id: str, payload: DynamicFactorMode
         # Fetch responses
         if payload.scope == "verified_clean":
             resp_rows = conn.execute(
-                "SELECT id, created_at FROM responses WHERE survey_id = ? AND is_flagged = 0 ORDER BY created_at ASC",
+                "SELECT id, submitted_at FROM responses WHERE survey_id = ? AND is_flagged = 0 ORDER BY submitted_at ASC",
                 (survey_id,)
             ).fetchall()
         else:
             resp_rows = conn.execute(
-                "SELECT id, created_at FROM responses WHERE survey_id = ? ORDER BY created_at ASC",
+                "SELECT id, submitted_at FROM responses WHERE survey_id = ? ORDER BY submitted_at ASC",
                 (survey_id,)
             ).fetchall()
 
