@@ -1,3 +1,4 @@
+from app.engine.diff_in_disc_engine import run_diff_in_discontinuities
 from app.engine.rif_oaxaca_decomposition_engine import run_rif_oaxaca_decomposition
 from app.engine.synthetic_diff_in_diff_engine import compute_synthetic_diff_in_diff
 import pandas as pd
@@ -170,6 +171,8 @@ from app.schemas import (
     SyntheticDiffInDiffOut,
     RIFOaxacaDecompositionRequest,
     RIFOaxacaDecompositionOut,
+    DiffInDiscontinuitiesRequest,
+    DiffInDiscontinuitiesOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17517,6 +17520,84 @@ def run_rif_oaxaca_decomposition_endpoint(
                         "total_median_gap": res.get("median_rif_estimates", {}).get("total_median_gap"),
                         "explained_endowments": res.get("median_rif_estimates", {}).get("explained_endowments"),
                         "unexplained_coefficients": res.get("median_rif_estimates", {}).get("unexplained_coefficients")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/diff-in-discontinuities", response_model=DiffInDiscontinuitiesOut)
+def run_diff_in_discontinuities_endpoint(
+    survey_id: str,
+    payload: DiffInDiscontinuitiesRequest
+):
+    """
+    Difference-in-Discontinuities Design (Diff-in-Disc / RD-DID; Grembi et al. 2016 AER).
+    Combines Regression Discontinuity Design with Difference-in-Differences to identify
+    causal policy impacts when baseline outcomes have pre-existing cutoff jumps.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                "running": ans.get(payload.running_question_id),
+                "period": ans.get(payload.period_question_id),
+                "outcome": ans.get(payload.outcome_question_id),
+                "unit": ans.get(payload.unit_question_id, r_id) if payload.unit_question_id else r_id
+            })
+
+        res = run_diff_in_discontinuities(
+            records=records,
+            running_col="running",
+            cutoff=payload.cutoff,
+            period_col="period",
+            outcome_col="outcome",
+            unit_col="unit",
+            post_period_val=payload.post_period_val,
+            bandwidth=payload.bandwidth,
+            kernel_type=payload.kernel_type,
+            alpha_level=payload.alpha_level
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="DIFF_IN_DISCONTINUITIES_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "tau": res.get("estimates", {}).get("diff_in_disc_tau"),
+                        "gamma_0": res.get("estimates", {}).get("baseline_pre_jump_gamma0"),
+                        "cutoff": payload.cutoff
                     }
                 )
             except Exception:

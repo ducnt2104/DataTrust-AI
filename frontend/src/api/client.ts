@@ -259,7 +259,9 @@ import {
   SyntheticDiffInDiffRequest,
   SyntheticDiffInDiffResult,
   RIFOaxacaDecompositionRequest,
-  RIFOaxacaDecompositionResult
+  RIFOaxacaDecompositionResult,
+  DiffInDiscontinuitiesRequest,
+  DiffInDiscontinuitiesResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2754,5 +2756,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<RIFOaxacaDecompositionResult>(res);
+  },
+  async runDiffInDiscontinuities(
+    surveyId: string,
+    payload: DiffInDiscontinuitiesRequest
+  ): Promise<DiffInDiscontinuitiesResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/diff-in-discontinuities`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<DiffInDiscontinuitiesResult>(res);
   }
 };

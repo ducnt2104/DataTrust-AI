@@ -2735,6 +2735,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 41. Planned Next Iteration: Iteration 174
-- **Feature**: Difference-in-Discontinuities Design with Partial Compliance & Pre-Existing Boundary Cutoff Controls (Diff-in-Disc / RD-DID; Grembi, Nannicini, & Troiano 2016 AER; Villa 2022).
-- **Scope**: Combines Regression Discontinuity Design (RDD) with Difference-in-Differences (DID) to identify causal policy impacts when baseline potential outcomes have a discontinuous jump or institutional confounder at the threshold prior to policy enactment.
+## 41. Iteration 174: Difference-in-Discontinuities Design Engine (Diff-in-Disc / RD-DID; Grembi, Nannicini, & Troiano 2016 AER; Villa 2022)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T15:36:00+07:00
+- **Scientific Foundation**:
+  - Overcomes standard Regression Discontinuity (RDD) invalidation when a pre-existing jump or institutional confounder exists at the cutoff prior to policy enactment (Grembi, Nannicini, & Troiano 2016 AER).
+  - Local Linear WLS Interaction Specification: Estimates local polynomials on centered running variable x_tilde = X - c within bandwidth h, extracting the Diff-in-Disc causal parameter tau from the triple interaction (D * T * x_tilde).
+  - Baseline Cutoff Confounder Placebo Test: Directly tests the pre-existing baseline cutoff jump gamma_0, computing the exact bias purged relative to naive post-period RDD.
+  - Nonparametric Triangular Kernel & Cluster-Robust Covariance: Implements optimal boundary weighting and cluster sandwich covariance matrices for robust inference.
+  - McCrary Density Sorting Diagnostic: Formally tests for score manipulation across the cutoff boundary.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays pre-period vs post-period local linear fitted regressions around cutoff c; Panel B displays bandwidth robustness sensitivity curves across 0.5h to 1.5h.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/diff_in_disc_engine.py` (380 lines).
+  - Schemas: `DiffInDiscontinuitiesRequest`, `DiffInDiscontinuitiesOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/diff-in-discontinuities` with `DIFF_IN_DISCONTINUITIES_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_diff_in_disc_engine.py` (3/3 passed in 0.26s).
+  - Route Tests: `backend/tests/test_diff_in_disc_routes.py` (1/1 passed in 2.24s).
+- **Frontend Components**:
+  - TypeScript Types: `DiffInDiscBandwidthPoint`, `DiffInDiscEstimates`, `DiffInDiscDiagnostics`, `DiffInDiscontinuitiesResult`, `DiffInDiscontinuitiesRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runDiffInDiscontinuities` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/DiffInDiscontinuitiesCard.tsx` (510 lines) with running score, cutoff, period, outcome, cluster selectors, bandwidth input, kernel selector, 4 KPI cards (Diff-in-Disc tau, baseline pre-jump gamma0, naive post-RD comparison, bandwidth & McCrary test), dual-panel SVG visualizer, bandwidth sensitivity table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed** (94/94 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,139 modules transformed, 0 errors in 1.38s**.
+  - Contract Documentation: Section 155 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 42. Planned Next Iteration: Iteration 175
+- **Feature**: Double/Debiased Machine Learning with Multiway Cluster-Robust Cross-Fitting Engine (Cluster-DML; Chiang, Kato, Ma, & Sasaki 2022 Journal of Econometrics; Belloni et al. 2016).
+- **Scope**: Extends Double Machine Learning (Chernozhukov et al. 2018) to complex survey sampling designs with multiway hierarchical clusters (e.g. school-classrooms, region-firms, interviewer effects), ensuring Neyman orthogonality and cluster-split sample cross-fitting.

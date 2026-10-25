@@ -9401,3 +9401,62 @@ export interface RIFOaxacaDecompositionRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Difference-in-Discontinuities (Diff-in-Disc / RD-DID; Grembi et al. 2016 AER) Types ---
+export interface DiffInDiscBandwidthPoint {
+  multiplier: number;
+  bandwidth: number;
+  tau_estimate: number;
+  se: number;
+  ci_95: [number, number];
+  p_value: number;
+}
+
+export interface DiffInDiscEstimates {
+  diff_in_disc_tau: number;
+  se: number;
+  ci_95: [number, number];
+  t_stat: number;
+  p_value: number;
+  is_significant: boolean;
+  naive_post_rd_tau: number;
+  baseline_pre_jump_gamma0: number;
+  baseline_pre_p_value: number;
+  bias_correction_delta: number;
+}
+
+export interface DiffInDiscDiagnostics {
+  optimal_bandwidth_h: number;
+  kernel_type: string;
+  effective_sample_size_n_h: number;
+  mccrary_density_p_value: number;
+  mccrary_sorting_detected: boolean;
+}
+
+export interface DiffInDiscontinuitiesResult {
+  status: string;
+  message?: string;
+  sample_size_total?: number;
+  sample_size_effective_h?: number;
+  cutoff_threshold?: number;
+  post_period_label?: string;
+  estimates?: DiffInDiscEstimates;
+  diagnostics?: DiffInDiscDiagnostics;
+  bandwidth_sensitivity?: DiffInDiscBandwidthPoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface DiffInDiscontinuitiesRequest {
+  running_question_id: string;
+  cutoff: number;
+  period_question_id: string;
+  outcome_question_id: string;
+  unit_question_id?: string;
+  post_period_val?: any;
+  bandwidth?: number;
+  kernel_type?: 'triangular' | 'epanechnikov' | 'uniform';
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

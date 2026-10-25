@@ -6154,3 +6154,31 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `RIFOaxacaDecompositionRequest` (`group_question_id`, `outcome_question_id`, `covariate_question_ids`, `reference_group_val`, `target_quantiles`, `num_bootstrap_reps`, `alpha_level`, `scope`).
   - **Response:** `RIFOaxacaDecompositionOut` (`status`, `sample_size`, `group_a_label`, `group_b_label`, `sample_counts`, `mean_decomposition`, `median_rif_estimates`, `glass_ceiling_diagnostics`, `quantile_decomposition_curve`, `detailed_covariates`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `RIF_OAXACA_DECOMPOSITION_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 155. Difference-in-Discontinuities Design Engine (Diff-in-Disc / RD-DID; Grembi, Nannicini, & Troiano 2016 AER; Villa 2022)
+- **Mục tiêu:** Nhận diện và ước lượng Hiệu ứng Can thiệp Nhân quả Cục bộ (Local Average Treatment Effect) tại ngưỡng đứt gãy (Cutoff c) đối với các khảo sát hoặc dữ liệu chính sách có quan sát lặp lại hai thời kỳ (Tiền can thiệp Pre và Hậu can thiệp Post). Phương pháp giải quyết tình trạng vi phạm nghiêm trọng giả định liên tục của thiết kế Hồi quy Đứt gãy chuẩn (Standard RDD) khi tại ngưỡng cutoff c vốn đã tồn tại sẵn một bước nhảy nền cố hữu mang tính lịch sử hoặc thể chế (ví dụ: ngưỡng quy mô dân số cũ, phân loại quy mô doanh nghiệp đã có từ trước khi chính sách mới ra đời).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Phương Trình Nhận Diện Causal Diff-in-Disc (Grembi et al. 2016):**
+     - Thay vì giả định tính liên tục đơn thuần của các kết quả tiềm năng tại ngưỡng, Diff-in-Disc chỉ đòi hỏi giả định yếu hơn: Giả định Xu hướng Song song Cục bộ tại ngưỡng (Local Parallel Trends at Cutoff):
+       tau^diff-in-disc = [ lim_{x down c} E[Y_post | X=x] - lim_{x up c} E[Y_post | X=x] ] - [ lim_{x down c} E[Y_pre | X=x] - lim_{x up c} E[Y_pre | X=x] ]
+  2. **Đặc Tả Hồi Quy Tuyến Tính Cục Bộ Trọng Số (Local Linear WLS Specification):**
+     - Trong vùng dải băng |X - c| <= h, với biến điểm chạy đã tái định tâm x_tilde = X - c:
+       Y_{it} = beta_0 + beta_1 * x_tilde_{it} + beta_2 * T_t + beta_3 * (T_t * x_tilde_{it}) + beta_4 * D_{it} + beta_5 * (D_{it} * x_tilde_{it}) + beta_6 * (D_{it} * T_t) + beta_7 * (D_{it} * T_t * x_tilde_{it}) + epsilon_{it}
+     - **beta_4 = gamma_0:** Bước nhảy nền tiền can thiệp tại ngưỡng (Pre-existing baseline cutoff jump / Placebo test). Nếu gamma_0 != 0, mô hình RDD chuẩn sẽ bị thổi phồng hoặc bóp méo sai lệch.
+     - **beta_6 = tau^diff-in-disc:** Hiệu ứng can thiệp thuần túy sau khi trừ bỏ bước nhảy nền.
+     - **Độ chệch được triệt tiêu:** Delta = Naive Post-RD - tau^diff-in-disc = gamma_0.
+  3. **Hàm Nhân Trọng Số & Sai Số Chuẩn Vững Theo Cụm:**
+     - Sử dụng hàm nhân Tam giác (Triangular Kernel) tối ưu hóa xấp xỉ biên cục bộ:
+       K(u) = (1 - |x_tilde| / h) * 1(|x_tilde| <= h)
+     - Ma trận hiệp phương xuyến sandwich hiệu chỉnh cụm (Cluster-robust Huber-White covariance matrix) đảm bảo suy luận thống kê vững chắc trước hiện tượng tự tương quan chuỗi thời gian của từng đơn vị.
+  4. **Kiểm Định Thao Túng Mật Độ McCrary & Phân Tích Độ Nhạy:**
+     - Kiểm định tỷ lệ phân bố quan sát ở hai bên ngưỡng nhằm phát hiện hiện tượng đối tượng khảo sát cố tình thao túng điểm chạy để vượt qua ngưỡng (Density Sorting).
+     - Ma trận độ nhạy dải băng kiểm tra tính ổn định của tau qua các dải h in {0.5h, 0.75h, 1.0h, 1.25h, 1.5h}.
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị đường hồi quy đứt gãy so sánh đồng thời hai đường cong: Đường cong Hậu can thiệp (Post-Policy, màu tím nét liền) và Đường cong Tiền can thiệp (Pre-Policy, màu xám nét đứt) tại ngưỡng cutoff c, hiển thị rõ bước nhảy nền và bước nhảy can thiệp.
+     - Panel B: Đồ thị độ nhạy dải băng hiển thị ước lượng tau và dải tin cậy 95% theo các mức mở rộng dải băng.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/diff-in-discontinuities`
+  - **Payload:** `DiffInDiscontinuitiesRequest` (`running_question_id`, `cutoff`, `period_question_id`, `outcome_question_id`, `unit_question_id`, `post_period_val`, `bandwidth`, `kernel_type`, `alpha_level`, `scope`).
+  - **Response:** `DiffInDiscontinuitiesOut` (`status`, `sample_size_total`, `sample_size_effective_h`, `cutoff_threshold`, `post_period_label`, `estimates`, `diagnostics`, `bandwidth_sensitivity`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `DIFF_IN_DISCONTINUITIES_EVALUATED` vào chuỗi sổ cái SHA-256.

@@ -151,6 +151,7 @@ import { CausalSurvivalRMSTCard } from '../components/CausalSurvivalRMSTCard';
 import { DynamicDiscreteChoiceCard } from '../components/DynamicDiscreteChoiceCard';
 import { SyntheticDiffInDiffCard } from '../components/SyntheticDiffInDiffCard';
 import { RIFOaxacaDecompositionCard } from '../components/RIFOaxacaDecompositionCard';
+import { DiffInDiscontinuitiesCard } from '../components/DiffInDiscontinuitiesCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1714,6 +1715,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Distributional Oaxaca-Blinder & RIF Decomposition Engine (Firpo et al. 2009 Econometrica, 2018) */}
       <RIFOaxacaDecompositionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Difference-in-Discontinuities Design Engine (Diff-in-Disc / RD-DID; Grembi et al. 2016 AER) */}
+      <DiffInDiscontinuitiesCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,
