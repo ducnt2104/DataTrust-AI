@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.lee_bounds_engine import estimate_lee_bounds
 from app.engine.mte_engine import estimate_mte
 from app.engine.larf_engine import estimate_larf
 from app.engine.post_double_selection_lasso_engine import PostDoubleSelectionLassoEngine
@@ -86,6 +87,8 @@ from app.schemas import (
     LARFOut,
     MTERequest,
     MTEOut,
+    LeeBoundsRequest,
+    LeeBoundsOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -14443,6 +14446,111 @@ def run_mte_analysis(
                 "ate_estimate": res.get("parameters", {}).get("ate", {}).get("estimate") if res.get("parameters") else None,
                 "att_estimate": res.get("parameters", {}).get("att", {}).get("estimate") if res.get("parameters") else None,
                 "selection_pattern": res.get("selection_sorting_pattern"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/lee-bounds", response_model=LeeBoundsOut)
+def run_lee_bounds_analysis(
+    survey_id: str,
+    payload: LeeBoundsRequest
+):
+    """
+    Non-random Survey Attrition & Selection Bounds (Lee 2009 Review of Economic Studies).
+    Estimates sharp non-parametric bounds on treatment effects under non-random survey attrition,
+    loss to follow-up, or selective response reporting, with optional covariate tightening.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+        df_records = []
+        for rid, answers in resp_dict.items():
+            # For Lee bounds, treatment must be present. Outcome might be present or missing (indicating attrition)
+            if payload.treatment_question_id in answers:
+                record = {}
+                try:
+                    record[payload.treatment_question_id] = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                if payload.outcome_question_id in answers:
+                    try:
+                        record[payload.outcome_question_id] = float(answers[payload.outcome_question_id])
+                    except (ValueError, TypeError):
+                        record[payload.outcome_question_id] = np.nan
+                else:
+                    record[payload.outcome_question_id] = np.nan
+
+                if payload.response_question_id and payload.response_question_id in answers:
+                    try:
+                        record[payload.response_question_id] = float(answers[payload.response_question_id])
+                    except (ValueError, TypeError):
+                        record[payload.response_question_id] = 1.0 if not np.isnan(record[payload.outcome_question_id]) else 0.0
+
+                for cid in cov_ids:
+                    if cid in answers:
+                        try:
+                            record[cid] = float(answers[cid])
+                        except (ValueError, TypeError):
+                            pass
+
+                df_records.append(record)
+
+        if len(df_records) < 30:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng phản hồi (N={len(df_records)}) chưa đạt tối thiểu 30 mẫu cho phân tích Lee Bounds."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        res = estimate_lee_bounds(
+            df=df,
+            outcome_col=payload.outcome_question_id,
+            treatment_col=payload.treatment_question_id,
+            response_col=payload.response_question_id,
+            covariate_cols=cov_ids,
+            alpha_level=payload.alpha_level,
+            n_bootstraps=payload.n_bootstraps
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="LEE_BOUNDS_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "lower_bound": res.get("bounds", {}).get("unconditional", {}).get("lower_bound") if res.get("bounds") else None,
+                "upper_bound": res.get("bounds", {}).get("unconditional", {}).get("upper_bound") if res.get("bounds") else None,
+                "trimming_fraction_q": res.get("response_rates", {}).get("trimming_fraction_q") if res.get("response_rates") else None,
                 "status": res.get("status")
             }
         )

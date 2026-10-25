@@ -203,7 +203,9 @@ import {
   LARFRequest,
   LARFResult,
   MTERequest,
-  MTEResult
+  MTEResult,
+  LeeBoundsRequest,
+  LeeBoundsResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2384,5 +2386,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<MTEResult>(res);
+  },
+
+  async runLeeBounds(
+    surveyId: string,
+    payload: LeeBoundsRequest
+  ): Promise<LeeBoundsResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/lee-bounds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<LeeBoundsResult>(res);
   }
 };

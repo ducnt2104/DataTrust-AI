@@ -5276,3 +5276,47 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG trực quan hóa kép đường cong MTE và trọng số chính sách.
   - `apa_narrative`: Báo cáo học thuật chuẩn mực APA 7th Edition theo Heckman & Vytlacil (2005).
 - **Niêm phong kiểm toán:** Ghi nhận `MTE_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 126. Non-random Survey Attrition & Selection Bounds Engine (Lee Bounds; Lee 2009 Restud)
+- **Mục tiêu:** Cung cấp động cơ xác lập cận phi tham số sắc nét (sharp non-parametric bounds) bảo vệ suy diễn nhân quả trước hiện tượng hao hụt mẫu không ngẫu nhiên (non-random attrition), mất liên lạc theo dõi (loss to follow-up), hoặc từ chối báo cáo chọn lọc (selective reporting) trong các khảo sát theo chiều dọc, nghiên cứu thử nghiệm can thiệp hoặc bảng lặp lại.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hạn chế của Phân tích Hoàn tất Mẫu (Naive Complete-Case Analysis):** Khi tỷ lệ phản hồi giữa nhóm can thiệp và đối chứng chênh lệch ($P(R=1 \mid T=1) \neq P(R=1 \mid T=0)$), việc chỉ phân tích những người hoàn thành khảo sát sẽ tạo ra chệch lựa chọn thành phần (compositional selection bias), làm sai lệch dấu và độ lớn của hiệu ứng thực tế.
+  2. **Định lý Cận Sắc nét Lee (Lee 2009 Review of Economic Studies):**
+     - Dưới giả định tính đơn điệu (Monotonicity: can thiệp chỉ thúc đẩy phản hồi theo một hướng, $R_i(1) \ge R_i(0)$ đối với mọi cá nhân), tỷ lệ phản hồi thặng dư trong nhóm có tỷ lệ phản hồi cao hơn là:
+       $$q = \frac{|P(R=1 \mid T=1) - P(R=1 \mid T=0)|}{\max(P(R=1 \mid T=1), P(R=1 \mid T=0))}$$
+     - Cắt tỉa (trimming) tỷ lệ $q$ ở hai đầu phân phối kết quả $Y$ của nhóm có độ phản hồi cao:
+       - **Cận Dưới ($\Delta_{LB}$):** Cắt bỏ $q$ phân vị cao nhất của $Y$ (kịch bản bảo thủ nhất khi người phản hồi thêm đều có điểm số cao vượt trội).
+       - **Cận Trên ($\Delta_{UB}$):** Cắt bỏ $q$ phân vị thấp nhất của $Y$ (kịch bản thuận lợi nhất khi người phản hồi thêm đều có điểm số thấp).
+       Khoảng $[\Delta_{LB}, \Delta_{UB}]$ đại diện cho cận sắc nét tuyệt đối của hiệu ứng can thiệp đối với phân nhóm luôn luôn phản hồi ("always-reporters").
+  3. **Thắt chặt Cận qua Phân tầng Biến kiểm soát (Covariate-Tightened Lee Bounds):**
+     - Khi có sẵn các biến nhân khẩu học hoặc tiền can thiệp $X$, tỷ lệ cắt gọt $q(x)$ được tính toán trong từng tầng phân vị $x$, và các cận phân tầng được tích hợp có trọng số theo quy mô mẫu:
+       $$\Delta_{LB}^{\text{tight}} = \sum_x w(x) \Delta_{LB}(x), \quad \Delta_{UB}^{\text{tight}} = \sum_x w(x) \Delta_{UB}(x)$$
+       giúp thu hẹp đáng kể khoảng bất định $[\Delta_{LB}, \Delta_{UB}]$.
+  4. **Suy diễn Thống kê Imbens-Manski (2004 Econometrica) / Stoye (2009):**
+     - Do tham số được nhận diện theo khoảng (partially identified), việc áp dụng sai số chuẩn $1.96 \times SE$ ở cả hai đầu sẽ tạo ra độ bao phủ bảo thủ quá mức. Hệ thống tính toán giá trị tới hạn chính xác $c_\alpha$ thỏa mãn:
+       $$\Phi\left( c_\alpha + \frac{\hat{\Delta}_{UB} - \hat{\Delta}_{LB}}{\max(\hat{SE}_{LB}, \hat{SE}_{UB})} \right) - \Phi(-c_\alpha) = 1 - \alpha$$
+       cung cấp khoảng tin cậy 95% chuẩn xác nhất $\text{CI}_{95\%} = [\hat{\Delta}_{LB} - c_\alpha \hat{SE}_{LB}, \, \hat{\Delta}_{UB} + c_\alpha \hat{SE}_{UB}]$.
+  5. **Đồ thị SVG Kép Khoa học:**
+     - Panel A: Forest Plot so sánh Naive OLS vs Sharp Unconditional Lee Bounds vs Tightened Bounds kèm dải tin cậy Imbens-Manski 95% và đường tham chiếu Null (0.0).
+     - Panel B: Biểu đồ thanh tỷ lệ duy trì mẫu (Treated Retention vs Control Retention) và tỷ lệ cắt gọt thặng dư $q$.
+  6. **Báo cáo Học thuật Chuẩn APA 7th Edition:** Tự động biên soạn theo chuẩn Lee (2009) và Horowitz & Manski (2000).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/lee-bounds`
+- **Request Body (`LeeBoundsRequest`):**
+  - `outcome_question_id`: UUID biến kết quả theo dõi $Y$.
+  - `treatment_question_id`: UUID biến can thiệp nhị phân $T$.
+  - `response_question_id`: UUID biến chỉ báo phản hồi $R$ (Tùy chọn; tự động nhận diện giá trị thiếu nếu bỏ trống).
+  - `covariate_question_ids`: Danh sách UUID các biến kiểm soát tiền can thiệp để thắt chặt cận $X$.
+  - `alpha_level`: Mức ý nghĩa thống kê (Mặc định 0.05).
+  - `n_bootstraps`: Số lần tái chọn mẫu bootstrap (Mặc định 300).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`LeeBoundsOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"ERROR"`.
+  - `model_type`: `"LEE_BOUNDS_RESTUD_2009"`.
+  - `sample_size`: Tổng cỡ mẫu phân tích $N$.
+  - `observed_sample_size`: Số lượng đối tượng có dữ liệu kết quả quan sát được.
+  - `response_rates`: Tỷ lệ phản hồi nhóm can thiệp, nhóm đối chứng, độ chênh lệch, tỷ lệ cắt gọt $q$, nhóm bị cắt tỉa.
+  - `bounds`: Chi tiết cận không điều kiện (`lower_bound`, `upper_bound`, SE, Imbens-Manski CI, cờ `excludes_zero`) và cận thắt chặt bằng biến kiểm soát.
+  - `naive_complete_case`: Ước lượng ngây thơ bỏ qua hao hụt kèm SE và CI.
+  - `svg_visualization`: Đồ thị SVG trực quan hóa kép Forest Plot & Tỷ lệ hao hụt.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn mực APA 7th Edition theo Lee (2009).
+- **Niêm phong kiểm toán:** Ghi nhận `LEE_BOUNDS_EVALUATED` vào chuỗi sổ cái SHA-256.

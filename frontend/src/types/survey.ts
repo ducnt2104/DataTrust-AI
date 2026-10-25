@@ -7732,3 +7732,66 @@ export interface MTERequest {
   policy_shift_pct?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+export interface LeeBoundsResponseRates {
+  treated_response_rate: number;
+  control_response_rate: number;
+  differential_response_rate: number;
+  trimming_fraction_q: number;
+  trimmed_group: string;
+}
+
+export interface LeeBoundsUnconditional {
+  lower_bound: number;
+  upper_bound: number;
+  se_lower: number;
+  se_upper: number;
+  im_critical_value: number;
+  ci_lower: number;
+  ci_upper: number;
+  excludes_zero: boolean;
+}
+
+export interface LeeBoundsTightened {
+  lower_bound: number;
+  upper_bound: number;
+  ci_lower: number;
+  ci_upper: number;
+  is_available: boolean;
+}
+
+export interface LeeBoundsNaive {
+  estimate: number;
+  std_error: number;
+  ci_lower: number;
+  ci_upper: number;
+  p_value: number;
+}
+
+export interface LeeBoundsResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  sample_size?: number;
+  observed_sample_size?: number;
+  bootstrap_replications?: number;
+  response_rates?: LeeBoundsResponseRates;
+  bounds?: {
+    unconditional: LeeBoundsUnconditional;
+    covariate_tightened: LeeBoundsTightened;
+  };
+  naive_complete_case?: LeeBoundsNaive;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface LeeBoundsRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  response_question_id?: string;
+  covariate_question_ids?: string[];
+  alpha_level?: number;
+  n_bootstraps?: number;
+  scope?: 'all' | 'verified_clean';
+}

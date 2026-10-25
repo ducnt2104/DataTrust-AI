@@ -1911,3 +1911,28 @@ eq 0\}$
   - Backend Unit & Route Tests: **5/5 passed in 2.73s**.
   - Frontend Production Build: **2,110 modules transformed, 0 errors in 2.68s**.
   - Contract Documentation: Section 125 appended to `docs/API_CONTRACT.md`.
+
+## 9. Iteration 145: Non-random Survey Attrition & Selection Bounds Engine (Lee Bounds; Lee 2009 Restud)
+- **Timestamp**: 2026-10-25T11:47:00+07:00
+- **Scientific Foundation**:
+  - Sharp non-parametric bounding framework for treatment effects under selective attrition, non-random loss to follow-up, and missing survey outcomes.
+  - Identification of excess retention proportion: $q = |P(R=1|T=1) - P(R=1|T=0)| / \max(P(R=1|T=1), P(R=1|T=0))$.
+  - Two-sided trimming of potential outcomes in the higher-retention group to construct sharp lower and upper bounds $[\Delta_{LB}, \Delta_{UB}]$ for "always-reporters".
+  - Covariate-tightened Lee bounds via stratified trimming across baseline pre-treatment covariates.
+  - Imbens-Manski (2004) / Stoye (2009) confidence interval inversion solving $\Phi(c + (UB-LB)/\max(se_{LB}, se_{UB})) - \Phi(-c) = 1 - \alpha$.
+  - Attrition robustness diagnosis: checking whether 95% interval strictly excludes zero.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/lee_bounds_engine.py` (480 lines).
+  - Pydantic Schemas: `LeeBoundsRequest` and `LeeBoundsOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/lee-bounds` with `LEE_BOUNDS_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_lee_bounds_engine.py` (4/4 passed).
+  - Route Tests: `backend/tests/test_lee_bounds_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `LeeBoundsResponseRates`, `LeeBoundsUnconditional`, `LeeBoundsTightened`, `LeeBoundsNaive`, `LeeBoundsResult`, `LeeBoundsRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runLeeBounds` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/LeeBoundsCard.tsx` (430 lines) with variable selectors, optional response indicator, covariate tightening checklist, retention rate metric highlights, trimming fraction $q$, sharp bounds comparison table, robustness verdict banner, dual-panel SVG visualizer (Forest Plot & Retention Bars), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **5/5 passed in 2.15s**.
+  - Frontend Production Build: **2,111 modules transformed, 0 errors in 1.74s**.
+  - Contract Documentation: Section 126 appended to `docs/API_CONTRACT.md`.
