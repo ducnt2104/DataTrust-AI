@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.multi_cutoff_rd_engine import estimate_multi_cutoff_rd
 from app.engine.dpm_deconvolution_engine import estimate_dpm_deconvolution
 from app.engine.conformal_optimal_transport_engine import estimate_conformal_optimal_transport
 from app.engine.local_instrumental_variables_engine import estimate_local_instrumental_variables
@@ -128,6 +129,8 @@ from app.schemas import (
     ConformalOptimalTransportOut,
     DPMDeconvolutionRequest,
     DPMDeconvolutionOut,
+    MultiCutoffRDRequest,
+    MultiCutoffRDOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -16093,6 +16096,124 @@ def run_dpm_deconvolution_analysis(
                 "latent_var": res.get("overall_summary", {}).get("latent_true_variance"),
                 "noise_sd": res.get("overall_summary", {}).get("measurement_error_sd"),
                 "entropy_reduction": res.get("overall_summary", {}).get("entropy_reduction"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/multi-cutoff-rd", response_model=MultiCutoffRDOut)
+def run_multi_cutoff_rd_analysis(
+    survey_id: str,
+    payload: MultiCutoffRDRequest
+):
+    """
+    Multi-Cutoff Regression Discontinuity & Boundary Treatment Effects Engine.
+    Cattaneo, M. D., et al. (2015); Keele, L. J., & Titiunik, R. (2015); Bertanha, M. (2020).
+    Normalizes running variables across disparate policy thresholds, estimates cutoff-specific
+    local treatment effects tau(c_g), pooled boundary effects, McCrary sorting tests, and cutoff invariance.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.running_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    x_val = float(answers[payload.running_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                rec = {
+                    payload.outcome_question_id: y_val,
+                    payload.running_question_id: x_val
+                }
+
+                if payload.cutoff_question_id and payload.cutoff_question_id in answers:
+                    try:
+                        rec[payload.cutoff_question_id] = float(answers[payload.cutoff_question_id])
+                    except (ValueError, TypeError):
+                        pass
+
+                if payload.group_question_id and payload.group_question_id in answers:
+                    rec[payload.group_question_id] = str(answers[payload.group_question_id]).strip()
+
+                valid_covs = True
+                for c_id in cov_ids:
+                    if c_id in answers:
+                        try:
+                            rec[c_id] = float(answers[c_id])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                    else:
+                        valid_covs = False
+
+                if valid_covs:
+                    df_records.append(rec)
+
+        if len(df_records) < 30:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 30 bản ghi hợp lệ để ước lượng Multi-Cutoff RD (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_multi_cutoff_rd(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                running_col=payload.running_question_id,
+                cutoff_col=payload.cutoff_question_id,
+                fixed_cutoffs=payload.fixed_cutoffs,
+                group_col=payload.group_question_id,
+                covariate_cols=cov_ids,
+                bandwidth=payload.bandwidth,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Multi-Cutoff RD: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="MULTI_CUTOFF_RD_EVALUATED",
+            details={
+                "n_cutoffs": res.get("overall_summary", {}).get("n_distinct_cutoffs"),
+                "tau_pooled": res.get("overall_summary", {}).get("tau_pooled"),
+                "se_pooled": res.get("overall_summary", {}).get("se_pooled"),
+                "p_value_pooled": res.get("overall_summary", {}).get("p_value_pooled"),
+                "is_heterogeneous": res.get("overall_summary", {}).get("is_cutoff_heterogeneous"),
                 "status": res.get("status")
             }
         )

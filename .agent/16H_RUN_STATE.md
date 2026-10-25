@@ -2320,3 +2320,35 @@ eq 0\}$
 ## 26. Planned Next Iteration: Iteration 159
 - **Feature**: Multi-Cutoff Regression Discontinuity & Boundary Treatment Effects Engine (Multi-Cutoff RD; Cattaneo, Frandsen, & Titiunik 2015 JASA; Keele & Titiunik 2015; Bertanha 2020 JASA).
 - **Scope**: Extends Regression Discontinuity Designs to multi-cutoff policy rules where eligibility thresholds vary by geographic region, age cohort, or income tiers, estimating cutoff-specific treatment effects $\tau(c)$, normalized pooled boundary effects, and testing for sorting/manipulation across multi-dimensional cutoff frontiers.
+
+
+---
+
+## 26. Iteration 159: Multi-Cutoff Regression Discontinuity & Boundary Treatment Effects Engine (Multi-Cutoff RD; Cattaneo, Frandsen, & Titiunik 2015 JASA; Keele & Titiunik 2015; Bertanha 2020 JASA)
+- **Timestamp**: 2026-10-25T13:33:00+07:00
+- **Scientific Foundation**:
+  - Extends Regression Discontinuity Designs to complex settings where eligibility thresholds vary across jurisdictions, demographics, or policy tiers ($c_g$).
+  - Normalized Running Variable $\tilde{X}_i = X_i - c_{g(i)}$: Re-centers heterogeneous boundaries to a unified threshold at 0, preventing compositional distortion.
+  - Local Linear Regression with Triangular Kernels: Computes boundary limits $\lim_{\tilde{X} \downarrow 0} \mathbb{E}[Y \mid \tilde{X}]$ and $\lim_{\tilde{X} \uparrow 0} \mathbb{E}[Y \mid \tilde{X}]$ within optimal CCT bandwidths, providing heteroskedasticity-robust inference.
+  - Pooled & Cutoff-Specific Effects: Aggregates individual frontier jumps $\tau(c_g)$ into a pooled boundary effect $\tau_{\text{pooled}}$, tests for treatment effect invariance across cutoffs ($H_0: \tau(c_1) = \dots = \tau(c_G)$ via Wald test), and conducts McCrary density sorting tests.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/multi_cutoff_rd_engine.py` (390 lines).
+  - Pydantic Schemas: `MultiCutoffRDRequest` and `MultiCutoffRDOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/multi-cutoff-rd` with `MULTI_CUTOFF_RD_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_multi_cutoff_rd_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_multi_cutoff_rd_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `CutoffSpecificSummary`, `MultiCutoffRDSummary`, `MultiCutoffRDResult`, `MultiCutoffRDRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runMultiCutoffRD` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/MultiCutoffRDCard.tsx` (460 lines) with outcome, running variable, group / region column, bandwidth input, KPI stat cards (Pooled $\tau_{\text{pooled}}$, Cutoff Heterogeneity Invariance, McCrary Density Sorting test, Fronts & Effective $N_{\text{eff}}$), cutoff-specific estimates table, dual-panel SVG visualizer (Centered binned scatter RD plot & cutoff-specific forest plot), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 1.95s** (36/36 cumulative passed in 30.51s).
+  - Frontend Production Build: **2,125 modules transformed, 0 errors in 1.87s**.
+  - Contract Documentation: Section 140 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 27. Planned Next Iteration: Iteration 160
+- **Feature**: High-Dimensional Causal Mediation & Latent Path Invariance Engine (HD-Mediation; Imai, Keele, & Tingley 2010 JASA; VanderWeele 2015; Zhao & Luo 2022 JRSS-B).
+- **Scope**: Implements high-dimensional causal mediation analysis when survey instruments measure dozens of candidate psychometric or behavioral mediators ($M_1, \dots, M_K$), decomposing total causal effects into Average Controlled Direct Effect (ACDE), Natural Direct Effect (NDE), and Natural Indirect Effects (NIE) with de-biasing and sensitivity to unobserved mediator-outcome confounding.

@@ -8555,3 +8555,58 @@ export interface DPMDeconvolutionRequest {
   dp_alpha?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Multi-Cutoff Regression Discontinuity (Cattaneo 2015, Bertanha 2020) Types ---
+export interface CutoffSpecificSummary {
+  cutoff_value: number;
+  sample_size: number;
+  effective_n: number;
+  tau_estimate: number;
+  se: number;
+  t_statistic: number;
+  p_value: number;
+  ci_95: [number, number];
+}
+
+export interface MultiCutoffRDSummary {
+  sample_size: number;
+  n_distinct_cutoffs: number;
+  cutoffs_list: number[];
+  bandwidth_h: number;
+  effective_n_pooled: number;
+  tau_pooled: number;
+  se_pooled: number;
+  t_statistic_pooled: number;
+  p_value_pooled: number;
+  ci_95_pooled: [number, number];
+  wald_test_heterogeneity: number;
+  p_value_heterogeneity: number;
+  is_cutoff_heterogeneous: boolean;
+  heterogeneity_verdict: string;
+  mccrary_z_statistic: number;
+  mccrary_p_value: number;
+  is_manipulation_suspected: boolean;
+  manipulation_verdict: string;
+}
+
+export interface MultiCutoffRDResult {
+  status: string;
+  message?: string;
+  overall_summary?: MultiCutoffRDSummary;
+  cutoff_summaries?: CutoffSpecificSummary[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface MultiCutoffRDRequest {
+  outcome_question_id: string;
+  running_question_id: string;
+  cutoff_question_id?: string;
+  group_question_id?: string;
+  fixed_cutoffs?: Record<string, number>;
+  covariate_question_ids?: string[];
+  bandwidth?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

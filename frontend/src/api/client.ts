@@ -231,7 +231,9 @@ import {
   ConformalOptimalTransportRequest,
   ConformalOptimalTransportResult,
   DPMDeconvolutionRequest,
-  DPMDeconvolutionResult
+  DPMDeconvolutionResult,
+  MultiCutoffRDRequest,
+  MultiCutoffRDResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2572,5 +2574,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<DPMDeconvolutionResult>(res);
+  },
+  async runMultiCutoffRD(
+    surveyId: string,
+    payload: MultiCutoffRDRequest
+  ): Promise<MultiCutoffRDResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/multi-cutoff-rd`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<MultiCutoffRDResult>(res);
   }
 };

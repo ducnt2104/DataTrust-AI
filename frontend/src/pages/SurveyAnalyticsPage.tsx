@@ -137,6 +137,7 @@ import { AutoDMLRieszCard } from '../components/AutoDMLRieszCard';
 import { LocalInstrumentalVariablesCard } from '../components/LocalInstrumentalVariablesCard';
 import { ConformalOptimalTransportCard } from '../components/ConformalOptimalTransportCard';
 import { DPMDeconvolutionCard } from '../components/DPMDeconvolutionCard';
+import { MultiCutoffRDCard } from '../components/MultiCutoffRDCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1567,6 +1568,17 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           question_type: q.question_type
         }))}
       />
+
+      {/* Multi-Cutoff Regression Discontinuity & Boundary Treatment Effects (Cattaneo 2015; Bertanha 2020) */}
+      <MultiCutoffRDCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
 
 
 

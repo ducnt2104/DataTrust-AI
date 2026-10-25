@@ -5685,3 +5685,27 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `DPMDeconvolutionRequest` (`target_question_id`, `replicate_question_id`, `error_variance_ratio`, `max_components`, `dp_alpha`, `scope`).
   - **Response:** `DPMDeconvolutionOut` (`status`, `overall_summary`, `components`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `DPM_DECONVOLUTION_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 140. Multi-Cutoff Regression Discontinuity & Boundary Treatment Effects Engine (Multi-Cutoff RD; Cattaneo, Frandsen, & Titiunik 2015 JASA; Keele & Titiunik 2015; Bertanha 2020 JASA)
+- **Mục tiêu:** Mở rộng thiết kế Hồi quy Gián đoạn (Regression Discontinuity Designs - RDD) sang các bối cảnh chính sách phức hợp nơi điều kiện hưởng chính sách được xác định bởi nhiều ngưỡng khác nhau (Multi-Cutoffs) phụ thuộc vào địa bàn hành chính, nhóm thu nhập, phân tầng rủi ro tín dụng hoặc nhóm đối tượng khảo sát. Thay vì gộp mẫu tùy tiện gây sai lệch cấu trúc quần thể, động cơ thực hiện quy chuẩn hóa và định tâm biến gán ngưỡng $\tilde{X}_i = X_i - c_{g(i)}$ về điểm 0, ước lượng hiệu ứng can thiệp địa phương cục bộ $\tau(c_g)$ tại từng biên giới chính sách bằng hồi quy tuyến tính cục bộ hạt nhân tam giác (triangular kernel local linear regression), tổng hợp hiệu ứng biên gộp $\tau_{\text{pooled}}$ (sample-weighted và density-weighted), kiểm định tính thao túng mật độ McCrary tại đường biên chuẩn hóa, và kiểm định Wald kiểm tra tính bất biến của hiệu ứng chính sách qua các ngưỡng ($H_0: \tau(c_1) = \dots = \tau(c_G)$).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định tâm Biến Gán Ngưỡng Đa chiều (Normalized Running Variable):**
+     - Với mỗi quan sát $i$ thuộc nhóm $g$, biến gán ngưỡng định tâm: $\tilde{X}_i = X_i - c_g$.
+     - Trạng thái can thiệp được chuẩn hóa: $D_i = \mathbf{1}\{ \tilde{X}_i \ge 0 \}$.
+     - Băng thông tối ưu $h$ được tính toán theo quy tắc Silverman-CCT plug-in hoặc người dùng tùy biến.
+  2. **Ước lượng Hồi quy Tuyến tính Cục bộ Hạt nhân Tam giác:**
+     - Trọng số hạt nhân tam giác: $K(u) = (1 - |u|) \mathbf{1}\{|u| \le 1\}$ với $u = \tilde{X}_i / h$.
+     - Khảo sát mô hình hai phía độc lập:
+       - Phía trên ($D=1$): $\min_{\alpha_r, \beta_r} \sum_{i: \tilde{X}_i \ge 0} K\left(\frac{\tilde{X}_i}{h}\right) \left( Y_i - \alpha_r - \beta_r \tilde{X}_i \right)^2$.
+       - Phía dưới ($D=0$): $\min_{\alpha_l, \beta_l} \sum_{i: \tilde{X}_i < 0} K\left(\frac{\tilde{X}_i}{h}\right) \left( Y_i - \alpha_l - \beta_l \tilde{X}_i \right)^2$.
+     - Bước nhảy biên: $\hat{\tau} = \hat{\alpha}_r - \hat{\alpha}_l$ với sai số chuẩn vững không đồng nhất (heteroskedasticity-robust standard error).
+  3. **Hiệu ứng Biên Gộp & Kiểm định Bất biến Ngưỡng (Cutoff Invariance; Bertanha 2020):**
+     - Hiệu ứng biên gộp chuẩn hóa: $\hat{\tau}_{\text{pooled}}$ phản ánh tác động trung bình của chính sách trên toàn bộ các biên giới.
+     - Kiểm định Wald: $\chi^2 = \sum_{g=1}^G w_g (\hat{\tau}(c_g) - \bar{\tau})^2 \sim \chi^2(G - 1)$. Nếu $p < 0.05$, bác bỏ tính bất biến, khẳng định hiệu ứng can thiệp thay đổi tùy thuộc vào vị trí ngưỡng chính sách.
+  4. **Kiểm định Thao túng Mật độ McCrary Đa ngưỡng (McCrary 2008):**
+     - Kiểm tra tính liên tục của hàm mật độ xác suất của $\tilde{X}$ tại điểm 0: $z = \frac{N^+ - N^-}{\sqrt{N^+ + N^-}}$. Không bác bỏ giả thuyết $H_0$ chứng minh các đối tượng không thể thao túng chính xác vị trí của mình qua các ngưỡng biên giới chính sách.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/multi-cutoff-rd`
+  - **Payload:** `MultiCutoffRDRequest` (`outcome_question_id`, `running_question_id`, `cutoff_question_id`, `group_question_id`, `fixed_cutoffs`, `covariate_question_ids`, `bandwidth`, `alpha_level`, `scope`).
+  - **Response:** `MultiCutoffRDOut` (`status`, `overall_summary`, `cutoff_summaries`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `MULTI_CUTOFF_RD_EVALUATED` vào chuỗi sổ cái SHA-256.
