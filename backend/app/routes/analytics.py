@@ -1,3 +1,4 @@
+from app.engine.iv_late_quantile_engine import run_iv_late_quantile_decomposition
 from app.engine.causal_matrix_completion_engine import run_causal_matrix_completion
 from app.engine.causal_sensitivity_bounds_engine import run_causal_sensitivity_bounds
 from app.engine.distributional_synthetic_control_engine import run_distributional_synthetic_control
@@ -185,6 +186,8 @@ from app.schemas import (
     CausalSensitivityBoundsOut,
     CausalMatrixCompletionRequest,
     CausalMatrixCompletionOut,
+    IVLATEQuantileRequest,
+    IVLATEQuantileOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17916,3 +17919,81 @@ def run_causal_matrix_completion_endpoint(
 
         return res
 
+
+
+@router.post("/iv-late-quantile", response_model=IVLATEQuantileOut)
+def run_iv_late_quantile_endpoint(
+    survey_id: str,
+    payload: IVLATEQuantileRequest
+):
+    """
+    Nonparametric IV-LATE Quantile Decomposition and Complier Treatment Effect Engine
+    (Abadie 2002; Frolich and Melly 2013; Kitagawa 2015).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "no_data",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            rec = {
+                "outcome": ans.get(payload.outcome_question_id),
+                "treatment": ans.get(payload.treatment_question_id),
+                "instrument": ans.get(payload.instrument_question_id),
+            }
+            if payload.covariate_question_ids:
+                for cid in payload.covariate_question_ids:
+                    rec[cid] = ans.get(cid)
+            records.append(rec)
+
+        res = run_iv_late_quantile_decomposition(
+            records=records,
+            outcome_col="outcome",
+            treatment_col="treatment",
+            instrument_col="instrument",
+            covariate_cols=payload.covariate_question_ids,
+            num_quantiles=payload.num_quantiles
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="IV_LATE_QUANTILE_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "complier_share": res.get("complier_share"),
+                        "mean_late": res.get("mean_late"),
+                        "median_qte_complier": res.get("median_qte_complier"),
+                        "sample_size": res.get("sample_size"),
+                        "monotonicity_passed": res.get("monotonicity_test", {}).get("passed")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res

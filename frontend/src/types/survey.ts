@@ -9699,3 +9699,50 @@ export interface CausalMatrixCompletionRequest {
   scope?: 'all' | 'verified_clean';
 }
 
+
+export interface IVLATEMonotonicityTest {
+  passed: boolean;
+  min_density_difference: number;
+  defiers_detected: boolean;
+}
+
+export interface IVLATEComplierInequality {
+  gini_treated_c: number;
+  gini_control_c: number;
+  delta_gini_c: number;
+  iqr_treated_c: number;
+  iqr_control_c: number;
+  delta_iqr_c: number;
+  first_order_stochastic_dominance: boolean;
+}
+
+export interface IVLATEQuantilePoint {
+  tau: number;
+  q_treated_complier: number;
+  q_control_complier: number;
+  qte_complier: number;
+}
+
+export interface IVLATEQuantileRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  instrument_question_id: string;
+  covariate_question_ids?: string[];
+  num_quantiles?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface IVLATEQuantileResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  complier_share?: number;
+  first_stage_diff?: number;
+  mean_late?: number;
+  median_qte_complier?: number;
+  monotonicity_test?: IVLATEMonotonicityTest;
+  complier_inequality?: IVLATEComplierInequality;
+  quantile_curve?: IVLATEQuantilePoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}

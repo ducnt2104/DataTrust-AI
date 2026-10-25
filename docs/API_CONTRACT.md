@@ -6304,3 +6304,39 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Response:** `CausalMatrixCompletionOut` (`status`, `sample_size`, `dimensions`, `adoption_counts`, `algorithm_convergence`, `estimates`, `unit_heterogeneity`, `event_study_trajectory`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_MATRIX_COMPLETION_EVALUATED` vào chuỗi sổ cái SHA-256.
 
+
+
+### 160. Nonparametric IV-LATE Quantile Decomposition & Complier Treatment Effect Engine (Abadie 2002; Frölich & Melly 2013; Kitagawa 2015)
+- **Mục tiêu:** Ước lượng phi tham số hiệu ứng can thiệp cục bộ trên toàn bộ phân phối kết quả của phân nhóm tuân thủ (Compliers Quantile Treatment Effects - QTE-C) khi can thiệp không tuân thủ hoàn hảo (Imperfect Compliance / Non-compliance). Bằng cách khai thác biến công cụ ngẫu nhiên $Z$ và tính toán hệ số trọng số Kappa Abadie (2002), công cụ tái lập hàm phân phối tiềm năng đối chứng $F_{Y(0)|C}(y)$ và can thiệp $F_{Y(1)|C}(y)$ của nhóm compliers mà không cần bất kỳ giả định tham số hay dạng hàm tuyến tính nào. Đồng thời, kiểm định tính đơn điệu của biến công cụ theo Kitagawa (2015) để loại trừ triệt để sự hiện diện của nhóm chống đối (Defiers) và đánh giá chuyển dịch bất bình đẳng ($\Delta	ext{Gini}_C, \Delta	ext{IQR}_C$) cùng tính trội ngẫu nhiên bậc một (First-Order Stochastic Dominance - FSD).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định danh Phân phối Tiềm năng Nhóm Tuân thủ qua Trọng số Abadie Kappa:**
+     - Xác suất nhận công cụ điều kiện: $P(Z=1|X)$.
+     - Trọng số Kappa Abadie (2002):
+       $$\kappa = 1 - \frac{D(1 - Z)}{1 - P(Z=1|X)} - \frac{(1 - D)Z}{P(Z=1|X)}$$
+     - Tính chất kỳ vọng có trọng số Abadie: $\mathbb{E}[\kappa \cdot g(Y, D, X)] = \mathbb{E}[g(Y, D, X) \mid C] \cdot P(C)$, trong đó $C$ là tập hợp nhóm tuân thủ (Compliers: $D(1)=1, D(0)=0$).
+     - Tỷ trọng nhóm tuân thủ: $P(C) = \mathbb{E}[\kappa] = \mathbb{E}[D \mid Z=1] - \mathbb{E}[D \mid Z=0]$.
+  2. **Ước lượng Phân vị Có Trọng số QTE-C (Frölich & Melly 2013):**
+     - Trọng số nhóm can thiệp tuân thủ: $w_1 = \max(0, \kappa \cdot D)$.
+     - Trọng số nhóm đối chứng tuân thủ: $w_0 = \max(0, \kappa \cdot (1 - D))$.
+     - Hàm phân vị có trọng số:
+       $$Q_{d|C}(\tau) = \inf \left\{ y : \frac{\sum_{i: D_i=d} \kappa_i \cdot \mathbf{1}\{Y_i \le y\}}{\sum_{i: D_i=d} \kappa_i} \ge \tau \right\}, \quad d \in \{0, 1\}$$
+     - Hiệu ứng phân vị trên nhóm tuân thủ:
+       $$\text{QTE}_C(\tau) = Q_{1|C}(\tau) - Q_{0|C}(\tau), \quad \forall \tau \in (0, 1)$$
+  3. **Kiểm định Tính Đơn điệu Không Defiers (Kitagawa 2015 Econometrica):**
+     - Giả định cốt lõi của LATE là $D(1) \ge D(0)$, loại trừ Defiers ($D(1)=0, D(0)=1$).
+     - Chuẩn đoán Kitagawa kiểm tra tính không âm của mật độ chung trên lưới $y$:
+       $$\Delta f_1(y) = f(y, D=1 \mid Z=1) - f(y, D=1 \mid Z=0) \ge 0$$
+       $$\Delta f_0(y) = f(y, D=0 \mid Z=0) - f(y, D=0 \mid Z=1) \ge 0$$
+     - Giá trị $\min_y \min(\Delta f_1(y), \Delta f_0(y)) < -\delta$ cảnh báo sự hiện diện của nhóm defiers vi phạm giả định LATE.
+  4. **Phân tích Bất bình đẳng & Trội Ngẫu nhiên Phân vị (Complier Welfare & Inequality):**
+     - Tính toán hệ số bất bình đẳng Gini có trọng số cho $Y(1)|C$ và $Y(0)|C$.
+     - $\Delta\text{Gini}_C = \text{Gini}(Y(1)|C) - \text{Gini}(Y(0)|C)$. Nếu $\Delta\text{Gini}_C < 0$, can thiệp thu hẹp chênh lệch nội bộ nhóm tuân thủ.
+     - Biến thiên khoảng tứ phân vị $\Delta\text{IQR}_C = \text{IQR}_1(C) - \text{IQR}_0(C)$.
+     - Kiểm định First-Order Stochastic Dominance (FSD): $\text{QTE}_C(\tau) > 0$ với mọi $\tau \in [0.05, 0.95]$.
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị Quỹ đạo QTE-C($\tau$) kèm đường tham chiếu Mean LATE (Wald estimator).
+     - Panel B: Đồ thị hàm mật độ phân phối tiềm năng $f(y|D=1, C)$ và $f(y|D=0, C)$ thể hiện trực quan sự dịch chuyển phúc lợi của nhóm tuân thủ.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/iv-late-quantile`
+  - **Payload:** `IVLATEQuantileRequest` (`outcome_question_id`, `treatment_question_id`, `instrument_question_id`, `covariate_question_ids`, `num_quantiles`, `scope`).
+  - **Response:** `IVLATEQuantileOut` (`status`, `sample_size`, `complier_share`, `first_stage_diff`, `mean_late`, `median_qte_complier`, `monotonicity_test`, `complier_inequality`, `quantile_curve`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `IV_LATE_QUANTILE_EVALUATED` vào chuỗi sổ cái SHA-256.

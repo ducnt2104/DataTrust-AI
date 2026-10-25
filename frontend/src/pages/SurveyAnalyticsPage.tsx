@@ -156,6 +156,7 @@ import { ClusterDMLCard } from '../components/ClusterDMLCard';
 import { DistributionalSyntheticControlCard } from '../components/DistributionalSyntheticControlCard';
 import { CausalSensitivityBoundsCard } from '../components/CausalSensitivityBoundsCard';
 import { CausalMatrixCompletionCard } from '../components/CausalMatrixCompletionCard';
+import { IVLATEQuantileCard } from '../components/IVLATEQuantileCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1769,6 +1770,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Causal Matrix Completion & Nuclear Norm Regularization (Athey et al. 2021 JASA) */}
       <CausalMatrixCompletionCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Nonparametric IV-LATE Quantile Decomposition (Abadie 2002; Frölich & Melly 2013) */}
+      <IVLATEQuantileCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

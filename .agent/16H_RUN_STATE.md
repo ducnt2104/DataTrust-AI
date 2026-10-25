@@ -2879,3 +2879,36 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 ## 46. Planned Next Iteration: Iteration 179
 - **Feature**: Nonparametric Instrumental Variable & Local Average Treatment Effect (LATE) Quantile Decomposition Engine (Abadie, Angrist, & Imbens 2002 Econometrica; Frölich & Melly 2013 Quantitative Economics).
 - **Scope**: Estimates heterogeneous causal effects on compliers across the entire outcome distribution using unconditional instrumental variable quantile regressions, testing monotonicity and complier share bounds.
+
+
+## 46. Iteration 179: Nonparametric IV-LATE Quantile Decomposition & Complier Treatment Effect Engine (Abadie 2002; Frölich & Melly 2013; Kitagawa 2015)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T16:22:00+07:00
+- **Scientific Foundation**:
+  - Nonparametric Quantile Treatment Effects on Compliers (QTE-C): Formulates causal treatment effects on the complier distribution under non-compliance (Abadie 2002 Econometrica; Frölich & Melly 2013 Quantitative Economics).
+  - Abadie Kappa Weights: kappa = 1 - D(1-Z)/(1-P(Z=1|X)) - (1-D)Z/P(Z=1|X), extracting complier expectation E[Y(d)|C] without parametric functional forms.
+  - Weighted Quantile Reconstruction: Solves inverted CDF inf{y: sum kappa * 1(Y <= y) / sum kappa >= tau} to compute counterfactual complier quantiles Q_1(C) and Q_0(C) across tau in [0.05, 0.95].
+  - Kitagawa (2015 Econometrica) Monotonicity Diagnostic: Tests non-negativity of bivariate joint densities delta_f_1(y) = f(y, D=1|Z=1) - f(y, D=1|Z=0) >= 0 and delta_f_0(y) = f(y, D=0|Z=0) - f(y, D=0|Z=1) >= 0 to confirm absence of Defiers.
+  - Complier Welfare & Inequality Shift: Measures Delta Gini_C and Delta IQR_C, along with First-Order Stochastic Dominance (FSD).
+  - Responsive Dual-Panel SVG Visualization: Panel A displays the QTE-C trajectory across quantiles with Wald Mean LATE benchmark; Panel B displays the counterfactual complier density functions f(y|D=1, C) and f(y|D=0, C).
+- **Backend Components**:
+  - Core Engine: backend/app/engine/iv_late_quantile_engine.py (420 lines).
+  - Schemas: IVLATEQuantileRequest, IVLATEQuantileOut, IVLATEMonotonicityTest, IVLATEComplierInequality, IVLATEQuantilePoint in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/iv-late-quantile with IV_LATE_QUANTILE_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_iv_late_quantile_engine.py (3/3 passed in 0.27s).
+  - Route Tests: backend/tests/test_iv_late_quantile_routes.py (1/1 passed in 1.52s).
+- **Frontend Components**:
+  - TypeScript Types: IVLATEMonotonicityTest, IVLATEComplierInequality, IVLATEQuantilePoint, IVLATEQuantileRequest, IVLATEQuantileResult in frontend/src/types/survey.ts.
+  - API Client Method: runIVLATEQuantileDecomposition in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/IVLATEQuantileCard.tsx (475 lines) with Outcome, Treatment, Instrument, and optional Covariates selectors, grid quantiles slider, 5 KPI cards (Complier share, Mean LATE, Median QTE-C, Kitagawa Monotonicity status, Welfare FSD), dual-panel SVG visualizer, tabs for quantile trajectory, welfare/inequality, monotonicity diagnostic, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (36/36 cumulative passed across Iterations 171-179 in 18.78s).
+  - Frontend Production Build: 2,144 modules transformed, 0 errors in 1.77s.
+  - Contract Documentation: Section 160 appended to docs/API_CONTRACT.md.
+
+---
+
+## 47. Planned Next Iteration: Iteration 180
+- **Feature**: Conformal Causal Inference & Distribution-Free Counterfactual Prediction Bands Engine (Chernozhukov, Wüthrich, & Zhu 2021 JASA; Lei & Candès 2021 JRSS-B).
+- **Scope**: Implements exact non-asymptotic conformal prediction intervals for counterfactual outcomes and individual treatment effects with finite-sample 1-alpha coverage guarantees, propensity-weighted non-conformity scores under covariate shift, and conformalized quantile regression (CQR).
