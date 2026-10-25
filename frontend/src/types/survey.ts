@@ -7483,3 +7483,55 @@ export interface WeakIVRobustRequest {
   grid_points?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Sequential Causal Mediation Analysis (Hayes Model 6 / Imai & Yamamoto 2013) ---
+export interface SequentialMediationEffect {
+  estimate: number;
+  bootstrap_se: number;
+  ci_lower: number;
+  ci_upper: number;
+  is_significant: boolean;
+}
+
+export interface SequentialMediationProportions {
+  proportion_mediated_total: number;
+  proportion_mediated_sequential: number;
+}
+
+export interface SequentialMediationEquation {
+  dependent_variable: string;
+  r_squared: number;
+  coefficients: Record<string, number>;
+}
+
+export interface SequentialMediationResult {
+  status: string;
+  model_type?: string;
+  message?: string;
+  sample_size?: number;
+  bootstrap_replications?: number;
+  effects?: {
+    direct_effect: SequentialMediationEffect;
+    indirect_path1_m1: SequentialMediationEffect;
+    indirect_path2_m2: SequentialMediationEffect;
+    indirect_sequential_m1_m2: SequentialMediationEffect;
+    indirect_total: SequentialMediationEffect;
+    total_effect: SequentialMediationEffect;
+  };
+  proportions?: SequentialMediationProportions;
+  regression_equations?: SequentialMediationEquation[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface SequentialMediationRequest {
+  treatment_question_id: string;
+  mediator1_question_id: string;
+  mediator2_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids?: string[];
+  n_bootstraps?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

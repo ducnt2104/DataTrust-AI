@@ -5077,3 +5077,54 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép Test Inversion Curves & Robust Forest Plot.
   - `apa_narrative`: Đoạn thuyết minh học thuật chuẩn APA 7th Edition.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `WEAK_IV_ROBUST_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 122. Sequential Causal Mediation & Path-Specific Decomposition (Hayes Model 6, Imai & Yamamoto 2013)
+
+- **Mục đích & Cơ sở Khoa học:**
+  1. **Hạn chế của Mô hình Trung gian Song song (Parallel Mediation Flaw):**
+     - Trong các nghiên cứu hành vi và chính sách, các biến trung gian thường không hoạt động độc lập mà diễn ra theo chuỗi tuần tự thời gian: can thiệp $T$ tác động lên trung gian cấp 1 $M_1$ (ví dụ: nhận thức về sự minh bạch), $M_1$ tác động lên trung gian cấp 2 $M_2$ (ví dụ: niềm tin thể chế), và $M_2$ dẫn tới kết quả $Y$ (ví dụ: sẵn sàng chia sẻ dữ liệu).
+     - Mô hình trung gian song song (Preacher & Hayes 2008) giả định $M_1 \perp M_2 \mid T, X$. Khi $M_1 \to M_2$, mô hình song song bị chệch nghiêm trọng do bỏ sót yếu tố gây nhiễu trung gian bị ảnh hưởng bởi can thiệp (treatment-induced mediator-outcome confounding; VanderWeele et al. 2014).
+  2. **Phân rã Đường dẫn Causal 4 Thành phần Riêng biệt (Path-Specific Decomposition):**
+     - Mô hình cấu trúc Hayes Model 6 (Imai & Yamamoto 2013 JRSS-B):
+       $$M_{1, i} = \alpha_1 + a_1 T_i + \gamma_1' X_i + \varepsilon_{1, i}$$
+       $$M_{2, i} = \alpha_2 + a_2 T_i + d_{21} M_{1, i} + \gamma_2' X_i + \varepsilon_{2, i}$$
+       $$Y_i = \alpha_y + c' T_i + b_1 M_{1, i} + b_2 M_{2, i} + \gamma_y' X_i + \varepsilon_{y, i}$$
+     - Tổng hiệu ứng can thiệp $TE = c$ được phân rã thành:
+       - **Hiệu ứng Trực tiếp (Direct Effect - DE):** $c'$ (tác động của $T$ lên $Y$ không qua bất kỳ trung gian nào).
+       - **Đường dẫn Đơn lập 1 (Specific Indirect Path 1):** $a_1 \times b_1$ ($T \to M_1 \to Y$ độc lập).
+       - **Đường dẫn Đơn lập 2 (Specific Indirect Path 2):** $a_2 \times b_2$ ($T \to M_2 \to Y$ độc lập).
+       - **Đường dẫn Tuần tự (Sequential Indirect Path):** $a_1 \times d_{21} \times b_2$ ($T \to M_1 \to M_2 \to Y$ phản ánh cơ chế chuỗi xích thực thụ).
+       - **Tổng Hiệu ứng Gián tiếp (Total Indirect Effect):** $IE_{\text{total}} = a_1 b_1 + a_2 b_2 + a_1 d_{21} b_2$.
+       - Đảm bảo tính nhất quán đại số tuyệt đối: $TE \equiv DE + IE_{\text{total}}$.
+  3. **Suy diễn Thống kê Phân vị Bootstrap Phi Tham số (Non-parametric Percentile Bootstrap):**
+     - Do tích của các hệ số hồi quy $(a_1 d_{21} b_2)$ không có phân phối chuẩn ngay cả trong mẫu lớn, phương pháp kiểm định Sobel truyền thống có độ chệch lớn và lực kiểm định yếu.
+     - Hệ thống thực hiện tái chọn mẫu bootstrap phi tham số $B$ lần lặp (mặc định 500-1000) để thiết lập khoảng tin cậy phân vị 95% chính xác cho từng đường dẫn causal.
+  4. **Tỷ lệ Hòa giải và Tác động Chính sách:**
+     - Tính toán tỷ lệ trung gian tổng $P_{\text{total}} = IE_{\text{total}} / TE$ và tỷ lệ đường dẫn tuần tự $P_{\text{seq}} = IE_{\text{seq}} / TE$ giúp các nhà nghiên cứu xác định chính xác nút thắt can thiệp hành vi có hiệu quả cao nhất.
+  5. **Đồ thị SVG Kép Khoa học:**
+     - Panel A: Sơ đồ đường dẫn DAG cấu trúc chuẩn mực với các hệ số đường dẫn $(a_1, a_2, d_{21}, b_1, b_2, c')$, mũi tên định hướng và liên kết chuỗi nổi bật màu Indigo.
+     - Panel B: Biểu đồ Forest Plot so sánh các đường dẫn gián tiếp và trực tiếp kèm khoảng tin cậy phân vị bootstrap 95% và nhãn ý nghĩa thống kê.
+  6. **Đoạn Thuyết minh Học thuật Chuẩn APA 7th Edition:**
+     - Tự động biên soạn theo chuẩn mực kinh tế lượng và tâm lý học Hayes (2017) và Imai & Yamamoto (2013).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/sequential-mediation`
+- **Request Body (`SequentialMediationRequest`):**
+  - `treatment_question_id`: UUID câu hỏi đo lường biến can thiệp $T$.
+  - `mediator1_question_id`: UUID câu hỏi biến trung gian cấp 1 $M_1$.
+  - `mediator2_question_id`: UUID câu hỏi biến trung gian cấp 2 $M_2$.
+  - `outcome_question_id`: UUID câu hỏi đo lường kết quả $Y$.
+  - `covariate_question_ids`: Danh sách UUID các biến kiểm soát ngoại sinh $X$ (Tùy chọn).
+  - `n_bootstraps`: Số lần tái chọn mẫu bootstrap (Mặc định 500).
+  - `alpha_level`: Mức ý nghĩa thống kê (Mặc định 0.05).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`SequentialMediationOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"ERROR"`.
+  - `model_type`: `"SEQUENTIAL_CAUSAL_MEDIATION_HAYES_6"`.
+  - `sample_size`: Cỡ mẫu phân tích $N$.
+  - `bootstrap_replications`: Số lần lặp bootstrap hợp lệ.
+  - `effects`: Chi tiết ước lượng điểm, sai số chuẩn bootstrap, khoảng tin cậy 95% và cờ ý nghĩa cho: `direct_effect`, `indirect_path1_m1`, `indirect_path2_m2`, `indirect_sequential_m1_m2`, `indirect_total`, `total_effect`.
+  - `proportions`: Tỷ lệ trung gian tổng (`proportion_mediated_total`) và tỷ lệ đường dẫn tuần tự (`proportion_mediated_sequential`).
+  - `regression_equations`: Hệ số hồi quy OLS và hệ số xác định $R^2$ cho 3 phương trình cấu trúc của $M_1$, $M_2$, $Y$.
+  - `svg_visualization`: Đồ thị SVG khoa học kép Structural Path DAG & Bootstrap Forest Plot.
+  - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition theo Hayes Model 6.
+- **Niêm phong kiểm toán:** Tự động ghi nhận `SEQUENTIAL_MEDIATION_EVALUATED` vào chuỗi sổ cái SHA-256.

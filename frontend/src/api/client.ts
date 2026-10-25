@@ -195,7 +195,9 @@ import {
   DynamicPanelGMMRequest,
   DynamicPanelGMMResult,
   WeakIVRobustRequest,
-  WeakIVRobustResult
+  WeakIVRobustResult,
+  SequentialMediationRequest,
+  SequentialMediationResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2326,5 +2328,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<WeakIVRobustResult>(res);
+  },
+
+  // --- Sequential Causal Mediation Analysis (Hayes Model 6 / Imai & Yamamoto 2013) ---
+  async runSequentialMediation(
+    surveyId: string,
+    payload: SequentialMediationRequest
+  ): Promise<SequentialMediationResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/sequential-mediation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<SequentialMediationResult>(res);
   }
 };

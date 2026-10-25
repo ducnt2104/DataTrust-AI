@@ -1800,3 +1800,31 @@
   - Test Suite: 10/10 passed across Iterations 139 & 140.
   - Frontend Production Build: **2,106 modules transformed, 0 errors in 1.28s**.
   - Contract Documentation: Section 121 appended to `docs/API_CONTRACT.md`.
+
+## 5. Iteration 141: Sequential Causal Mediation & Path-Specific Decomposition (Hayes Model 6; Imai & Yamamoto 2013)
+- **Timestamp**: 2026-10-25T11:15:00+07:00
+- **Scientific Foundation**:
+  - Overcomes parallel mediation flaws by modeling intermediate confounding induced by treatment ($T \to M_1 \to M_2 \to Y$).
+  - Full path-specific decomposition:
+    - Direct effect $c'$ ($T \to Y$)
+    - Specific indirect path 1 ($a_1 \times b_1$, $T \to M_1 \to Y$)
+    - Specific indirect path 2 ($a_2 \times b_2$, $T \to M_2 \to Y$)
+    - Chained sequential indirect pathway ($a_1 \times d_{21} \times b_2$, $T \to M_1 \to M_2 \to Y$)
+    - Total indirect effect and Total effect ($TE \equiv DE + IE_{\text{total}}$)
+  - Non-parametric percentile bootstrap inference (500 resamples) for exact confidence intervals and standard errors.
+  - Proportions mediated calculations: $P_{\text{total}} = IE_{\text{total}} / TE$, $P_{\text{seq}} = IE_{\text{seq}} / TE$.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/sequential_mediation_engine.py` (520 lines).
+  - Pydantic Schemas: `SequentialMediationRequest` and `SequentialMediationOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/sequential-mediation` with `SEQUENTIAL_MEDIATION_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_sequential_mediation_engine.py` (4/4 tests passed).
+  - Route Tests: `backend/tests/test_sequential_mediation_routes.py` (1/1 end-to-end route test passed).
+- **Frontend Components**:
+  - TypeScript Types: `SequentialMediationEffect`, `SequentialMediationProportions`, `SequentialMediationEquation`, `SequentialMediationResult`, `SequentialMediationRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runSequentialMediation` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/SequentialMediationCard.tsx` (420 lines) with interactive variable selectors, bootstrap controls, path-specific decomposition table, fitted equations, dual-panel SVG visualizer (Structural Path DAG & Bootstrap Forest Plot), and APA 7th Edition narrative generator with one-click copy.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - All 15/15 tests across Iterations 139, 140, 141 passed cleanly.
+  - Frontend Production Build: **2,107 modules transformed, 0 errors in 2.39s**.
+  - Contract Documentation: Section 122 appended to `docs/API_CONTRACT.md`.

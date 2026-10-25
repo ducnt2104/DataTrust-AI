@@ -119,6 +119,7 @@ import { PolicyLearningCard } from '../components/PolicyLearningCard';
 import { RDDLocalRandomizationCard } from '../components/RDDLocalRandomizationCard';
 import { DynamicPanelGMMCard } from '../components/DynamicPanelGMMCard';
 import { WeakIVRobustCard } from '../components/WeakIVRobustCard';
+import { SequentialMediationCard } from '../components/SequentialMediationCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1362,6 +1363,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Weak-Instrument Robust Inference (Anderson-Rubin 1949, Moreira 2003 CLR, Montiel Olea & Pflueger 2013) */}
       <WeakIVRobustCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Sequential Causal Mediation Analysis (Hayes Model 6 / Imai & Yamamoto 2013) */}
+      <SequentialMediationCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

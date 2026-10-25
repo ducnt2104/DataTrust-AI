@@ -1,3 +1,4 @@
+from app.engine.sequential_mediation_engine import SequentialMediationEngine
 from app.engine.weak_iv_robust_engine import WeakIVRobustEngine
 from app.engine.dynamic_panel_gmm_engine import DynamicPanelGMMEngine
 from app.engine.extreme_bounds_engine import ExtremeBoundsEngine
@@ -73,6 +74,8 @@ from app.schemas import (
     DynamicPanelGMMOut,
     WeakIVRobustRequest,
     WeakIVRobustOut,
+    SequentialMediationRequest,
+    SequentialMediationOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -14026,6 +14029,123 @@ def run_weak_iv_robust_analysis(
                 "instrument_qids": z_ids,
                 "covariate_qids": cov_ids,
                 "effective_f": res.get("diagnostics", {}).get("effective_f") if res.get("diagnostics") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/sequential-mediation", response_model=SequentialMediationOut)
+def run_sequential_mediation_analysis(
+    survey_id: str,
+    payload: SequentialMediationRequest
+):
+    """
+    Sequential Causal Mediation Analysis (Hayes Model 6 / Imai & Yamamoto 2013).
+    Estimates chained causal mechanisms with intermediate confounding:
+    Direct effect, isolated Path 1 (T->M1->Y), isolated Path 2 (T->M2->Y),
+    and sequential indirect pathway (T->M1->M2->Y) with bootstrap confidence intervals.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        resp_data: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_data:
+                resp_data[rid] = {}
+            resp_data[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+
+        t_list = []
+        m1_list = []
+        m2_list = []
+        y_list = []
+        cov_matrix_rows = []
+
+        for resp_id, answers in resp_data.items():
+            if (payload.treatment_question_id not in answers or
+                payload.mediator1_question_id not in answers or
+                payload.mediator2_question_id not in answers or
+                payload.outcome_question_id not in answers):
+                continue
+
+            has_all_covs = True
+            c_vals = []
+            for cid in cov_ids:
+                if cid not in answers:
+                    has_all_covs = False
+                    break
+                try:
+                    c_vals.append(float(answers[cid]))
+                except (ValueError, TypeError):
+                    has_all_covs = False
+                    break
+
+            if not has_all_covs:
+                continue
+
+            try:
+                tv = float(answers[payload.treatment_question_id])
+                m1v = float(answers[payload.mediator1_question_id])
+                m2v = float(answers[payload.mediator2_question_id])
+                yv = float(answers[payload.outcome_question_id])
+
+                t_list.append(tv)
+                m1_list.append(m1v)
+                m2_list.append(m2v)
+                y_list.append(yv)
+                cov_matrix_rows.append(c_vals)
+            except (ValueError, TypeError):
+                continue
+
+        cov_mat = np.array(cov_matrix_rows, dtype=float) if len(cov_ids) > 0 and len(cov_matrix_rows) > 0 else None
+
+        res = SequentialMediationEngine.estimate(
+            treatment=np.array(t_list, dtype=float),
+            mediator1=np.array(m1_list, dtype=float),
+            mediator2=np.array(m2_list, dtype=float),
+            outcome=np.array(y_list, dtype=float),
+            covariates=cov_mat,
+            n_bootstraps=payload.n_bootstraps,
+            alpha_level=payload.alpha_level,
+            treatment_label=q_map.get(payload.treatment_question_id, "Biến can thiệp T"),
+            mediator1_label=q_map.get(payload.mediator1_question_id, "Trung gian 1 (M1)"),
+            mediator2_label=q_map.get(payload.mediator2_question_id, "Trung gian 2 (M2)"),
+            outcome_label=q_map.get(payload.outcome_question_id, "Biến kết quả Y")
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="SEQUENTIAL_MEDIATION_EVALUATED",
+            details={
+                "treatment_qid": payload.treatment_question_id,
+                "m1_qid": payload.mediator1_question_id,
+                "m2_qid": payload.mediator2_question_id,
+                "outcome_qid": payload.outcome_question_id,
+                "n_samples": len(t_list),
+                "n_bootstraps": payload.n_bootstraps,
                 "status": res.get("status")
             }
         )
