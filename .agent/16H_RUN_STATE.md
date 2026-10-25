@@ -2625,6 +2625,32 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 37. Planned Next Iteration: Iteration 170
-- **Feature**: Nonparametric Causal Mediation Analysis with Unobserved Confounder Sensitivity Bounds (Imai, Keele, & Yamamoto 2010; VanderWeele 2015; Tchetgen Tchetgen 2013).
-- **Scope**: Decomposes total treatment effect into Natural Direct Effect (NDE) and Natural Indirect Effect (NIE) across intermediate survey mediators via quasi-Bayesian Monte Carlo simulation, computing the critical correlation threshold (rho-0 bound) where mediator-outcome unobserved confounding would nullify findings.
+## 37. Iteration 170: Nonparametric Causal Mediation Analysis with Unobserved Confounder Sensitivity Bounds (Imai, Keele, & Yamamoto 2010 JASA; VanderWeele 2015; Tchetgen Tchetgen 2013)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T15:01:00+07:00
+- **Scientific Foundation**:
+  - Decomposes Total Causal Effect into Natural Direct Effect (ADE zeta) and Natural Indirect Effect (ACME delta) using the potential outcomes causal mediation framework (Imai, Keele, & Yamamoto 2010 JASA; VanderWeele 2015).
+  - Quasi-Bayesian Monte Carlo Inference: Simulates S = 400 parameter draws from the multivariate normal posterior (King et al. 2000), obtaining exact empirical distributions, standard errors, and 95% Quasi-Bayesian credible intervals for ACME, ADE, and Proportion Mediated.
+  - Imai-Keele Sensitivity Analysis on Sequential Ignorability: Evaluates indirect effect robustness against unobserved mediator-outcome confounding across correlation grid rho in [-0.80, +0.80], solving analytically for the critical threshold rho_0 where ACME(rho_0) = 0.
+  - Robustness Classification: Classifies mediation credibility into High Robustness (|rho_0| >= 0.40), Moderate (0.20 <= |rho_0| < 0.40), and Fragile (|rho_0| < 0.20).
+  - Responsive Dual-Panel SVG: Panel A plots causal mediation path flow (T -> M -> Y) with path coefficients a, b, c'; Panel B plots sensitivity curve ACME(rho) with 95% confidence bands and critical boundary marker rho_0.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/causal_mediation_sensitivity_engine.py` (410 lines).
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/causal-mediation-sensitivity` with `CAUSAL_MEDIATION_SENSITIVITY_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_causal_mediation_sensitivity_engine.py` (3/3 passed in 0.24s).
+  - Route Tests: `backend/tests/test_causal_mediation_sensitivity_routes.py` (1/1 passed in 1.36s).
+- **Frontend Components**:
+  - TypeScript Types: `CausalMediationPathEstimate`, `CausalMediationSensitivityPoint`, `CausalMediationSensitivityResult`, `CausalMediationSensitivityRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runCausalMediationSensitivity` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/CausalMediationSensitivityCard.tsx` (527 lines) with treatment, mediator, outcome selectors, pre-treatment covariates checklist, 6 diagnostic cards, 4 decomposition KPI cards, dual-panel SVG visualizer, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed** (76/76 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,135 modules transformed, 0 errors in 1.55s**.
+  - Contract Documentation: Section 151 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 38. Planned Next Iteration: Iteration 171
+- **Feature**: Causal Tree & Honest Recursive Interaction Partitioning Engine (Athey & Imbens 2016 PNAS; Wager & Athey 2018 JASA).
+- **Scope**: Partitions heterogeneous survey respondents into distinct subgroup treatment effect leaves (tau_hat(x) = Y_bar_1(L) - Y_bar_0(L)) using sample splitting ("Honesty": one half for tree construction, one half for unbiased leaf effect estimation), maximizing treatment effect variance across leaves while penalizing leaf sample size.

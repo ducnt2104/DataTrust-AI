@@ -1,41 +1,47 @@
 """
-Causal Mediation Analysis with Sensitivity Analysis for Unmeasured Confounding Engine.
-Based on the groundbreaking econometric and statistical methodology by:
-- Imai, Keele, & Tingley (2010), "A General Approach to Causal Mediation Analysis", Psychological Methods, 15(4), 309-334.
-- Imai, Keele, & Yamamoto (2010), "Identification, Inference and Sensitivity Analysis for Causal Mediation Effects", Statistical Science, 25(1), 51-71.
-- Tingley, Yamamoto, Hirose, Keele, & Imai (2014), "mediation: R Package for Causal Mediation Analysis", Journal of Statistical Software, 59(5).
+DataTrust - Nonparametric Causal Mediation Analysis with Unobserved Confounder Sensitivity Bounds
+=================================================================================================
+Academic Foundations:
+- Imai, K., Keele, L., & Yamamoto, T. (2010). Identification, Inference and Sensitivity
+  Analysis for Causal Mediation Effects. Statistical Science, 25(1), 51-71.
+- Imai, K., Keele, L., & Tingley, D. (2010). A General Approach to Causal Mediation
+  Analysis. Psychological Methods, 15(4), 309-334.
+- VanderWeele, T. J. (2015). Explanation in Causal Inference: Methods for Mediation
+  and Interaction. Oxford University Press.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 import math
 import numpy as np
+from scipy import stats
 
 
-def _normal_cdf(x: float) -> float:
-    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+def _fit_linear_model(
+    y: np.ndarray,
+    X: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, np.ndarray]:
+    """Fits OLS with intercept and returns coefs, se, residuals, r2, sigma, cov_beta."""
+    n, k = X.shape
+    X_design = np.column_stack([np.ones(n), X])
+    xtx = X_design.T @ X_design
+    ridge = 1e-7 * np.eye(xtx.shape[0])
+    cov_unscaled = np.linalg.inv(xtx + ridge)
+    beta = cov_unscaled @ (X_design.T @ y)
 
+    y_pred = X_design @ beta
+    residuals = y - y_pred
+    df_e = max(1, n - (k + 1))
+    sigma2 = np.sum(residuals ** 2) / df_e
+    sigma = math.sqrt(max(1e-12, sigma2))
 
-def _ols_fit(X: np.ndarray, y: np.ndarray):
-    """
-    Fit OLS regression y = X beta + e.
-    Returns: beta, se, residuals, sigma_sq, r_sq
-    """
-    n, p = X.shape
-    xtx = X.T @ X
-    # Add small ridge if near singular
-    if np.linalg.matrix_rank(xtx) < p:
-        xtx += 1e-7 * np.eye(p)
-    inv_xtx = np.linalg.inv(xtx)
-    beta = inv_xtx @ (X.T @ y)
-    residuals = y - X @ beta
-    dof = max(1, n - p)
-    sigma_sq = float(np.sum(residuals ** 2) / dof)
-    cov_beta = sigma_sq * inv_xtx
+    cov_beta = sigma2 * cov_unscaled
     se = np.sqrt(np.maximum(1e-12, np.diag(cov_beta)))
-    ss_tot = float(np.sum((y - np.mean(y)) ** 2))
-    ss_res = float(np.sum(residuals ** 2))
-    r_sq = float(1.0 - (ss_res / ss_tot)) if ss_tot > 1e-12 else 0.0
-    return beta, se, residuals, sigma_sq, r_sq, inv_xtx
+
+    ss_tot = np.sum((y - np.mean(y)) ** 2)
+    ss_res = np.sum(residuals ** 2)
+    r2 = 1.0 - (ss_res / ss_tot) if ss_tot > 1e-12 else 0.0
+
+    return beta, se, residuals, r2, sigma, cov_beta
 
 
 def run_causal_mediation_sensitivity(
@@ -44,473 +50,476 @@ def run_causal_mediation_sensitivity(
     mediator_col: str,
     outcome_col: str,
     covariate_cols: Optional[List[str]] = None,
-    target_treatment_val: Optional[Any] = None
+    target_treatment_val: Optional[Any] = None,
+    simulations: int = 400,
+    alpha_level: float = 0.05,
+    scope: str = "all",
+    **kwargs
 ) -> Dict[str, Any]:
     """
-    Executes Causal Mediation Analysis with unmeasured confounding sensitivity analysis.
+    Executes Causal Mediation Analysis & Imai-Keele-Yamamoto (2010) Sensitivity Analysis.
+    Compatible with both flat dict records and wrapped answers records.
     """
-    covariates = covariate_cols or []
-    valid_rows = []
+    if covariate_cols is None:
+        covariate_cols = []
 
-    for r in records:
-        t_raw = r.get(treatment_col)
-        m_raw = r.get(mediator_col)
-        y_raw = r.get(outcome_col)
+    # Handle records filtering if wrapped
+    filtered_records = records
+    if scope == "verified_clean":
+        filtered_records = [
+            r for r in records
+            if not r.get("is_speeding", False)
+            and not r.get("is_straightlining", False)
+            and not r.get("anomaly_flags")
+        ]
+        if len(filtered_records) < 20:
+            filtered_records = records
 
-        if t_raw is None or m_raw is None or y_raw is None:
+    t_list: List[float] = []
+    m_list: List[float] = []
+    y_list: List[float] = []
+    z_list: List[List[float]] = []
+
+    for r in filtered_records:
+        ans = r.get("answers", r) # extract inner answers if present, else flat dict
+        if (treatment_col not in ans or
+            mediator_col not in ans or
+            outcome_col not in ans):
             continue
 
         try:
-            m_val = float(m_raw)
-            y_val = float(y_raw)
+            t_raw = ans[treatment_col]
+            if target_treatment_val is not None:
+                t_val = 1.0 if str(t_raw).strip() == str(target_treatment_val).strip() else 0.0
+            else:
+                t_val = float(t_raw)
+            m_val = float(ans[mediator_col])
+            y_val = float(ans[outcome_col])
         except (ValueError, TypeError):
             continue
 
-        # Treatment binary coding (0 or 1)
-        if target_treatment_val is not None:
-            t_val = 1.0 if str(t_raw).strip() == str(target_treatment_val).strip() else 0.0
-        else:
-            try:
-                t_num = float(t_raw)
-                t_val = 1.0 if t_num > 0.5 else 0.0
-            except (ValueError, TypeError):
-                # String comparison
-                t_str = str(t_raw).strip().lower()
-                t_val = 1.0 if t_str in ["1", "true", "yes", "treatment", "treated"] else 0.0
-
-        # Covariates
-        cov_vals = []
-        valid_cov = True
-        for c in covariates:
-            c_raw = r.get(c)
-            if c_raw is None:
-                valid_cov = False
+        row_z: List[float] = []
+        skip = False
+        for zid in covariate_cols:
+            if zid not in ans:
+                skip = True
                 break
             try:
-                cov_vals.append(float(c_raw))
+                row_z.append(float(ans[zid]))
             except (ValueError, TypeError):
-                valid_cov = False
+                skip = True
                 break
 
-        if not valid_cov:
+        if skip:
             continue
 
-        valid_rows.append((t_val, m_val, y_val, cov_vals))
+        t_list.append(t_val)
+        m_list.append(m_val)
+        y_list.append(y_val)
+        z_list.append(row_z)
 
-    n_sample = len(valid_rows)
-    if n_sample < 20:
+    n = len(t_list)
+    if n < 20:
         return {
-            "status": "error",
-            "message": f"Số lượng mẫu hợp lệ sau tiền xử lý (N={n_sample}) không đủ để ước lượng kiểm định độ nhạy trung gian nhân quả (cần tối thiểu N >= 20)."
+            "status": "INSUFFICIENT_SAMPLE",
+            "sample_size": n,
+            "message": f"Chỉ có {n} phản hồi hợp lệ (cần tối thiểu 20 phản hồi).",
         }
 
-    T = np.array([row[0] for row in valid_rows], dtype=float)
-    M = np.array([row[1] for row in valid_rows], dtype=float)
-    Y = np.array([row[2] for row in valid_rows], dtype=float)
+    t_arr = np.array(t_list, dtype=float)
+    m_arr = np.array(m_list, dtype=float)
+    y_arr = np.array(y_list, dtype=float)
 
-    n_treated = int(np.sum(T == 1.0))
-    n_control = int(np.sum(T == 0.0))
+    # Treatment binary binarization
+    unique_t = np.unique(t_arr)
+    if len(unique_t) == 2 and set(unique_t).issubset({0.0, 1.0}):
+        t_bin = t_arr
+    else:
+        med_t = float(np.median(t_arr))
+        t_bin = (t_arr > med_t).astype(float)
 
+    n_treated = int(np.sum(t_bin == 1.0))
+    n_control = int(np.sum(t_bin == 0.0))
     if n_treated < 3 or n_control < 3:
         return {
-            "status": "error",
-            "message": f"Biến can thiệp thiếu phân bổ nhóm hợp lệ (Treated={n_treated}, Control={n_control}; mỗi nhóm cần tối thiểu 3 quan sát)."
+            "status": "IMBALANCED_TREATMENT",
+            "message": f"Nhóm can thiệp phân bố quá lệch (Treated: {n_treated}, Control: {n_control}).",
         }
 
-    # Covariate matrix
-    if len(covariates) > 0:
-        C = np.array([row[3] for row in valid_rows], dtype=float)
-    else:
-        C = np.empty((n_sample, 0), dtype=float)
+    num_z = len(covariate_cols)
+    z_arr = np.array(z_list, dtype=float) if num_z > 0 else np.empty((n, 0), dtype=float)
 
-    # 1. Mediator Model: M = alpha_0 + alpha_T * T + X * alpha_X + e_M
-    X_M = np.column_stack([np.ones(n_sample), T, C]) if C.shape[1] > 0 else np.column_stack([np.ones(n_sample), T])
-    beta_m_model, se_m_model, e_M, sigma_sq_M, r_sq_M, _ = _ols_fit(X_M, M)
+    # 1. Mediator Model: M ~ 1 + T + Z
+    X_m = np.column_stack([t_bin, z_arr]) if num_z > 0 else t_bin.reshape(-1, 1)
+    beta_m, se_m, res_m, r2_m, sigma_m, cov_m = _fit_linear_model(m_arr, X_m)
 
-    alpha_T = float(beta_m_model[1])
-    se_alpha_T = float(se_m_model[1])
-    z_alpha_T = alpha_T / max(1e-9, se_alpha_T)
-    p_alpha_T = float(2.0 * (1.0 - _normal_cdf(abs(z_alpha_T))))
+    # 2. Outcome Model: Y ~ 1 + T + M + Z
+    X_y = np.column_stack([t_bin, m_arr, z_arr]) if num_z > 0 else np.column_stack([t_bin, m_arr])
+    beta_y, se_y, res_y, r2_y, sigma_y, cov_y = _fit_linear_model(y_arr, X_y)
 
-    sigma_M = math.sqrt(max(1e-9, sigma_sq_M))
+    path_a = float(beta_m[1])
+    se_path_a = float(se_m[1])
+    path_b = float(beta_y[2])
+    se_path_b = float(se_y[2])
+    path_c_prime = float(beta_y[1])
+    se_path_c_prime = float(se_y[1])
 
-    # 2. Outcome Model: Y = beta_0 + beta_T * T + beta_M * M + X * beta_X + e_Y
-    X_Y = np.column_stack([np.ones(n_sample), T, M, C]) if C.shape[1] > 0 else np.column_stack([np.ones(n_sample), T, M])
-    beta_y_model, se_y_model, e_Y, sigma_sq_Y, r_sq_Y, _ = _ols_fit(X_Y, Y)
+    # Point estimates under sequential ignorability (rho = 0)
+    acme_point = path_a * path_b
+    ade_point = path_c_prime
+    total_point = acme_point + ade_point
+    prop_mediated = (acme_point / total_point * 100.0) if abs(total_point) > 1e-6 else 0.0
 
-    beta_T = float(beta_y_model[1])      # Direct effect
-    se_beta_T = float(se_y_model[1])
-    z_beta_T = beta_T / max(1e-9, se_beta_T)
-    p_beta_T = float(2.0 * (1.0 - _normal_cdf(abs(z_beta_T))))
+    # 3. Quasi-Bayesian Monte Carlo Simulation (King et al. 2000; Imai et al. 2010)
+    n_sims = min(max(100, simulations), 800)
+    rng = np.random.default_rng(101)
 
-    beta_M = float(beta_y_model[2])      # Mediator effect on outcome
-    se_beta_M = float(se_y_model[2])
-    z_beta_M = beta_M / max(1e-9, se_beta_M)
-    p_beta_M = float(2.0 * (1.0 - _normal_cdf(abs(z_beta_M))))
+    draws_m = rng.multivariate_normal(beta_m, cov_m, size=n_sims)
+    draws_y = rng.multivariate_normal(beta_y, cov_y, size=n_sims)
 
-    sigma_Y = math.sqrt(max(1e-9, sigma_sq_Y))
+    sim_acme = draws_m[:, 1] * draws_y[:, 2]
+    sim_ade = draws_y[:, 1]
+    sim_total = sim_acme + sim_ade
 
-    # 3. Baseline Mediation Parameters (rho = 0, Sequential Ignorability)
-    acme_baseline = float(alpha_T * beta_M)
-    ade_baseline = float(beta_T)
-    total_effect = float(acme_baseline + ade_baseline)
+    acme_se = float(np.std(sim_acme))
+    ade_se = float(np.std(sim_ade))
+    total_se = float(np.std(sim_total))
 
-    # Sobel / Delta Method SE for ACME
-    se_acme = float(math.sqrt(alpha_T**2 * se_beta_M**2 + beta_M**2 * se_alpha_T**2))
-    z_acme = acme_baseline / max(1e-9, se_acme)
-    p_acme = float(2.0 * (1.0 - _normal_cdf(abs(z_acme))))
-    ci_acme_lower = float(acme_baseline - 1.96 * se_acme)
-    ci_acme_upper = float(acme_baseline + 1.96 * se_acme)
+    z_crit = float(stats.norm.ppf(1.0 - alpha_level / 2.0))
+    ci_acme = [float(np.percentile(sim_acme, alpha_level / 2.0 * 100)), float(np.percentile(sim_acme, (1 - alpha_level / 2.0) * 100))]
+    ci_ade = [float(np.percentile(sim_ade, alpha_level / 2.0 * 100)), float(np.percentile(sim_ade, (1 - alpha_level / 2.0) * 100))]
+    ci_total = [float(np.percentile(sim_total, alpha_level / 2.0 * 100)), float(np.percentile(sim_total, (1 - alpha_level / 2.0) * 100))]
 
-    prop_mediated = float(acme_baseline / total_effect) if abs(total_effect) > 1e-6 else 0.0
+    p_acme = float(2.0 * (1.0 - stats.norm.cdf(abs(acme_point) / max(1e-8, acme_se))))
+    p_ade = float(2.0 * (1.0 - stats.norm.cdf(abs(ade_point) / max(1e-8, ade_se))))
+    p_total = float(2.0 * (1.0 - stats.norm.cdf(abs(total_point) / max(1e-8, total_se))))
 
-    # 4. Sensitivity Analysis (Imai, Keele, Tingley 2010):
-    # Closed-form exact threshold rho_tilde where delta(rho) = 0:
-    # beta_M = rho * sigma_Y / (sigma_M * sqrt(1 - rho^2))
-    # => rho_tilde = (beta_M * sigma_M) / sqrt(sigma_Y^2 + beta_M^2 * sigma_M^2)
-    denom_threshold = math.sqrt(sigma_Y**2 + (beta_M**2 * sigma_M**2))
-    rho_tilde = float((beta_M * sigma_M) / denom_threshold) if denom_threshold > 1e-9 else 0.0
-    r2_star_product = float(rho_tilde ** 2)
+    # 4. Imai-Keele Sensitivity Analysis on Sequential Ignorability (rho in [-0.8, +0.8])
+    rho_grid = np.linspace(-0.80, 0.80, 33)
+    sensitivity_curve: List[Dict[str, Any]] = []
 
-    # Robustness Classification
-    abs_rho = abs(rho_tilde)
-    if abs_rho >= 0.35:
-        robustness_level = "HIGHLY_ROBUST"
-        robustness_badge = "Vững chắc cao trước nhiễu tiềm ẩn"
-        robustness_desc = (
-            f"Kết luận trung gian rất vững chắc. Tương quan sai số do nhiễu chưa quan sát (|rho|={abs_rho:.3f} >= 0.35) "
-            "phải rất lớn mới có thể triệt tiêu hoàn toàn hiệu ứng trung gian nhân quả ACME."
-        )
-    elif abs_rho >= 0.15:
-        robustness_level = "MODERATELY_ROBUST"
-        robustness_badge = "Vững chắc trung bình"
-        robustness_desc = (
-            f"Kết luận trung gian có độ nhạy vừa phải (|rho|={abs_rho:.3f}). "
-            "Một yếu tố nhiễu đồng thời giải thích khoảng trung bình biến thiên dư thừa có thể làm đảo chiều kết luận."
-        )
-    else:
-        robustness_level = "FRAGILE_TO_CONFOUNDING"
-        robustness_badge = "Nhạy cảm cao với nhiễu tiềm ẩn (Dễ tổn thương)"
-        robustness_desc = (
-            f"Kết luận trung gian rất nhạy cảm (|rho|={abs_rho:.3f} < 0.15). "
-            "Chỉ cần một yếu tố nhiễu thứ ba không quan sát có tương quan nhỏ giữa biến trung gian và kết quả là đủ làm hiệu ứng ACME suy giảm về 0."
-        )
-
-    # Sensitivity Curve Grid Evaluation
-    rho_grid_points = [-0.8, -0.6, -0.4, -0.2, -0.1, 0.0, 0.1, 0.2, 0.4, 0.6, 0.8]
-    sensitivity_curve = []
-
-    for r_val in rho_grid_points:
-        if abs(r_val) >= 0.999:
+    for rho_val in rho_grid:
+        if abs(rho_val) >= 0.999:
             continue
-        # delta(rho) = alpha_T * (beta_M - rho * sigma_Y / (sigma_M * sqrt(1 - rho^2)))
-        bias_factor = (r_val * sigma_Y) / (sigma_M * math.sqrt(1.0 - r_val**2))
-        acme_rho = float(alpha_T * (beta_M - bias_factor))
-        # Variance approximation
-        se_rho = float(math.sqrt((beta_M - bias_factor)**2 * se_alpha_T**2 + alpha_T**2 * se_beta_M**2))
-        ci_low = float(acme_rho - 1.96 * se_rho)
-        ci_high = float(acme_rho + 1.96 * se_rho)
+        factor = (rho_val * sigma_y) / (max(1e-6, sigma_m) * math.sqrt(max(1e-6, 1.0 - rho_val**2)))
+        adj_acme = float(path_a * (path_b - factor))
+        ci_low = adj_acme - z_crit * acme_se
+        ci_high = adj_acme + z_crit * acme_se
+
         sensitivity_curve.append({
-            "rho": round(r_val, 2),
-            "acme": round(acme_rho, 4),
-            "se": round(se_rho, 4),
+            "rho": round(float(rho_val), 2),
+            "acme": round(adj_acme, 4),
             "ci_lower": round(ci_low, 4),
             "ci_upper": round(ci_high, 4),
-            "is_zero_in_ci": bool(ci_low <= 0.0 <= ci_high)
         })
 
-    # 5. Generate Dual-Panel Vector SVG
-    svg_chart = _generate_causal_mediation_svg(
-        alpha_T=alpha_T,
-        se_alpha_T=se_alpha_T,
-        p_alpha_T=p_alpha_T,
-        beta_M=beta_M,
-        se_beta_M=se_beta_M,
-        p_beta_M=p_beta_M,
-        beta_T=beta_T,
-        se_beta_T=se_beta_T,
-        p_beta_T=p_beta_T,
-        acme_baseline=acme_baseline,
-        rho_tilde=rho_tilde,
-        sensitivity_curve=sensitivity_curve,
-        treatment_name=treatment_col,
-        mediator_name=mediator_col,
-        outcome_name=outcome_col
+    # Exact analytic solution for rho at which ACME(rho) = 0:
+    denom_rho = sigma_y**2 + (path_b**2) * (sigma_m**2)
+    if denom_rho > 1e-12:
+        exact_rho_zero = float(np.sign(path_b) * math.sqrt(min(0.99, max(0.0, (path_b**2 * sigma_m**2) / denom_rho))))
+    else:
+        exact_rho_zero = 0.0
+
+    rho_robustness_label = (
+        "Bền vững cao (|ρ₀| ≥ 0.40)"
+        if abs(exact_rho_zero) >= 0.40
+        else "Bền vững trung bình (0.20 ≤ |ρ₀| < 0.40)"
+        if abs(exact_rho_zero) >= 0.20
+        else "Dễ bị tổn thương (|ρ₀| < 0.20)"
     )
 
-    # 6. APA 7th Edition Narrative
+    # 5. Dual-Panel SVG Visualization
+    svg_chart = _render_mediation_svg(
+        path_a=path_a,
+        path_b=path_b,
+        path_c_prime=path_c_prime,
+        acme=acme_point,
+        ade=ade_point,
+        total=total_point,
+        prop_med=prop_mediated,
+        exact_rho_zero=exact_rho_zero,
+        sensitivity_curve=sensitivity_curve,
+        p_acme=p_acme,
+    )
+
+    # 6. APA Narrative
+    is_acme_sig = p_acme < alpha_level
+    sig_text = (
+        f"có ý nghĩa thống kê (z = {acme_point / max(1e-8, acme_se):.3f}, p = {p_acme:.4f})"
+        if is_acme_sig
+        else f"không có ý nghĩa thống kê (z = {acme_point / max(1e-8, acme_se):.3f}, p = {p_acme:.4f})"
+    )
+
     apa_narrative = (
-        f"Phân tích trung gian nhân quả và kiểm định độ nhạy theo khung phương pháp luận Imai, Keele, và Tingley (2010) "
-        f"được tiến hành trên cỡ mẫu N = {n_sample} người tham gia (Can thiệp: n = {n_treated}, Đối chứng: n = {n_control}). "
-        f"Dưới giả định tuần tự bỏ qua (Sequential Ignorability, rho = 0), hiệu ứng trung gian nhân quả trung bình (ACME) "
-        f"được ước lượng đạt delta = {acme_baseline:.4f} (SE = {se_acme:.4f}, 95% CI [{ci_acme_lower:.4f}, {ci_acme_upper:.4f}], "
-        f"z = {z_acme:.3f}, p = {p_acme:.4f}), đóng góp {prop_mediated * 100:.1f}% vào tổng hiệu ứng can thiệp (Total Effect tau = {total_effect:.4f}). "
-        f"Hiệu ứng can thiệp trực tiếp (ADE) ước lượng đạt zeta = {ade_baseline:.4f} (SE = {se_beta_T:.4f}, p = {p_beta_T:.4f}). "
-        f"Kiểm định độ nhạy đối với nhiễu tiềm ẩn không quan sát chỉ ra rằng ngưỡng tương quan sai số triệt tiêu hiệu ứng trung gian "
-        f"là rho* = {rho_tilde:.4f} (tương đương tích phương sai giải thích dư thừa R*2_M * R*2_Y = {r2_star_product:.4f}). "
-        f"Mức độ vững chắc của kết luận nghiên cứu được xếp hạng: {robustness_badge}. {robustness_desc}"
+        f"Phân tích trung gian nhân quả theo Imai, Keele, and Yamamoto (2010) với {n_sims} lượt mô phỏng Quasi-Bayesian "
+        f"(N = {n}, Nhóm Can thiệp = {n_treated}, Đối chứng = {n_control}). "
+        f"Average Causal Mediation Effect (ACME / Hiệu ứng trung gian nhân quả) ước tính là delta = {acme_point:.4f} "
+        f"(SE = {acme_se:.4f}, 95% CI [{ci_acme[0]:.4f}, {ci_acme[1]:.4f}], p = {p_acme:.4f}), {sig_text}. "
+        f"Hiệu ứng trực tiếp (ADE) là zeta = {ade_point:.4f} (SE = {ade_se:.4f}, p = {p_ade:.4f}), "
+        f"Tổng hiệu ứng nhân quả là tau = {total_point:.4f} (p = {p_total:.4f}). "
+        f"Tỷ lệ hiệu ứng được truyền dẫn qua biến trung gian đạt {prop_mediated:.1f}%. "
+        f"Kiểm định độ nhạy với giả định Ignorability Tuần tự xác định ngưỡng tương quan tới hạn rho_0 = {exact_rho_zero:+.3f} "
+        f"({rho_robustness_label})."
     )
 
     return {
         "status": "success",
+        "sample_size": n,
+        "n_treated": n_treated,
+        "n_control": n_control,
         "treatment_field": treatment_col,
         "mediator_field": mediator_col,
         "outcome_field": outcome_col,
-        "covariate_fields": covariates,
+        "covariate_fields": covariate_cols,
         "sample_diagnostics": {
-            "n_total": n_sample,
+            "n_total": n,
+            "total_sample": n,
             "n_treated": n_treated,
+            "treated_count": n_treated,
             "n_control": n_control,
-            "mean_mediator": round(float(np.mean(M)), 4),
-            "sd_mediator": round(sigma_M, 4),
-            "mean_outcome": round(float(np.mean(Y)), 4),
-            "sd_outcome": round(sigma_Y, 4),
-            "r_squared_mediator_model": round(r_sq_M, 4),
-            "r_squared_outcome_model": round(r_sq_Y, 4)
+            "control_count": n_control,
+            "mean_mediator": round(float(np.mean(m_arr)), 3),
+            "sd_mediator": round(float(np.std(m_arr)), 3),
+            "mean_outcome": round(float(np.mean(y_arr)), 3),
+            "sd_outcome": round(float(np.std(y_arr)), 3),
+            "r_squared_mediator_model": round(r2_m, 4),
+            "r_squared_outcome_model": round(r2_y, 4),
         },
         "path_estimates": {
             "path_a": {
-                "coefficient": round(alpha_T, 4),
-                "se": round(se_alpha_T, 4),
-                "z_stat": round(z_alpha_T, 3),
-                "p_value": round(p_alpha_T, 4),
-                "is_significant": bool(p_alpha_T < 0.05)
+                "coefficient": round(path_a, 4),
+                "se": round(se_path_a, 4),
+                "t_stat": round(path_a / max(1e-8, se_path_a), 3),
+                "p_value": round(float(2.0 * (1.0 - stats.t.cdf(abs(path_a / max(1e-8, se_path_a)), df=max(1, n - X_m.shape[1] - 1)))), 4),
             },
             "path_b": {
-                "coefficient": round(beta_M, 4),
-                "se": round(se_beta_M, 4),
-                "z_stat": round(z_beta_M, 3),
-                "p_value": round(p_beta_M, 4),
-                "is_significant": bool(p_beta_M < 0.05)
+                "coefficient": round(path_b, 4),
+                "se": round(se_path_b, 4),
+                "t_stat": round(path_b / max(1e-8, se_path_b), 3),
+                "p_value": round(float(2.0 * (1.0 - stats.t.cdf(abs(path_b / max(1e-8, se_path_b)), df=max(1, n - X_y.shape[1] - 1)))), 4),
             },
             "path_c_prime": {
-                "coefficient": round(beta_T, 4),
-                "se": round(se_beta_T, 4),
-                "z_stat": round(z_beta_T, 3),
-                "p_value": round(p_beta_T, 4),
-                "is_significant": bool(p_beta_T < 0.05)
-            }
+                "coefficient": round(path_c_prime, 4),
+                "se": round(se_path_c_prime, 4),
+                "t_stat": round(path_c_prime / max(1e-8, se_path_c_prime), 3),
+                "p_value": round(float(2.0 * (1.0 - stats.t.cdf(abs(path_c_prime / max(1e-8, se_path_c_prime)), df=max(1, n - X_y.shape[1] - 1)))), 4),
+            },
+        },
+        "path_coefficients": {
+            "path_a_treatment_to_mediator": round(path_a, 4),
+            "se_a": round(se_path_a, 4),
+            "path_b_mediator_to_outcome": round(path_b, 4),
+            "se_b": round(se_path_b, 4),
+            "path_c_prime_direct": round(path_c_prime, 4),
+            "se_c_prime": round(se_path_c_prime, 4),
         },
         "baseline_effects": {
-            "acme": round(acme_baseline, 4),
-            "se_acme": round(se_acme, 4),
-            "ci_95_lower": round(ci_acme_lower, 4),
-            "ci_95_upper": round(ci_acme_upper, 4),
-            "z_stat": round(z_acme, 3),
+            "acme": round(acme_point, 4),
+            "se_acme": round(acme_se, 4),
+            "acme_se": round(acme_se, 4),
             "p_value": round(p_acme, 4),
-            "is_significant": bool(p_acme < 0.05),
-            "ade": round(ade_baseline, 4),
-            "se_ade": round(se_beta_T, 4),
-            "p_ade": round(p_beta_T, 4),
-            "total_effect": round(total_effect, 4),
-            "proportion_mediated": round(prop_mediated, 4)
+            "acme_p": round(p_acme, 4),
+            "ci_95_lower": round(ci_acme[0], 4),
+            "ci_95_upper": round(ci_acme[1], 4),
+            "acme_ci_95": [round(ci_acme[0], 4), round(ci_acme[1], 4)],
+            "z_stat": round(acme_point / max(1e-8, acme_se), 3),
+            "ade": round(ade_point, 4),
+            "se_ade": round(ade_se, 4),
+            "ade_se": round(ade_se, 4),
+            "p_ade": round(p_ade, 4),
+            "ade_p": round(p_ade, 4),
+            "ade_ci_95": [round(ci_ade[0], 4), round(ci_ade[1], 4)],
+            "total_effect": round(total_point, 4),
+            "total_se": round(total_se, 4),
+            "total_p": round(p_total, 4),
+            "total_ci_95": [round(ci_total[0], 4), round(ci_total[1], 4)],
+            "proportion_mediated": round(prop_mediated / 100.0, 4),
+            "is_significant": bool(is_acme_sig),
+        },
+        "causal_effects": {
+            "acme_indirect": {
+                "estimate": round(acme_point, 4),
+                "se": round(acme_se, 4),
+                "p_value": round(p_acme, 4),
+                "ci_95": [round(ci_acme[0], 4), round(ci_acme[1], 4)],
+                "is_significant": bool(is_acme_sig),
+            },
+            "ade_direct": {
+                "estimate": round(ade_point, 4),
+                "se": round(ade_se, 4),
+                "p_value": round(p_ade, 4),
+                "ci_95": [round(ci_ade[0], 4), round(ci_ade[1], 4)],
+            },
+            "total_effect": {
+                "estimate": round(total_point, 4),
+                "se": round(total_se, 4),
+                "p_value": round(p_total, 4),
+                "ci_95": [round(ci_total[0], 4), round(ci_total[1], 4)],
+            },
+            "proportion_mediated_pct": round(prop_mediated, 2),
         },
         "sensitivity_analysis": {
-            "critical_rho_threshold": round(rho_tilde, 4),
-            "r2_star_product": round(r2_star_product, 4),
-            "robustness_level": robustness_level,
-            "robustness_badge": robustness_badge,
-            "robustness_description": robustness_desc,
-            "sensitivity_curve": sensitivity_curve
+            "critical_rho_threshold": round(exact_rho_zero, 4),
+            "critical_rho_zero": round(exact_rho_zero, 4),
+            "r2_star_product": round(exact_rho_zero**2, 4),
+            "robustness_level": rho_robustness_label,
+            "robustness_badge": "Bền vững cao" if abs(exact_rho_zero) >= 0.4 else "Trung bình" if abs(exact_rho_zero) >= 0.2 else "Dễ tổn thương",
+            "robustness_description": f"Cần nhiễu tiềm ẩn |rho| >= {abs(exact_rho_zero):.2f} để triệt tiêu hiệu ứng trung gian.",
+            "sensitivity_curve": sensitivity_curve,
+            "sensitivity_grid": sensitivity_curve,
+            "curve_points": sensitivity_curve,
         },
         "svg_chart": svg_chart,
-        "apa_narrative": apa_narrative
+        "svg_visualization": svg_chart,
+        "apa_narrative": apa_narrative,
     }
 
 
-def _generate_causal_mediation_svg(
-    alpha_T: float,
-    se_alpha_T: float,
-    p_alpha_T: float,
-    beta_M: float,
-    se_beta_M: float,
-    p_beta_M: float,
-    beta_T: float,
-    se_beta_T: float,
-    p_beta_T: float,
-    acme_baseline: float,
-    rho_tilde: float,
+# Dual signature compatibility
+def run_causal_mediation_sensitivity_analysis(
+    records: List[Dict[str, Any]],
+    treatment_question_id: str,
+    mediator_question_id: str,
+    outcome_question_id: str,
+    covariate_question_ids: Optional[List[str]] = None,
+    simulations: int = 400,
+    alpha_level: float = 0.05,
+    scope: str = "all",
+    **kwargs
+) -> Dict[str, Any]:
+    return run_causal_mediation_sensitivity(
+        records=records,
+        treatment_col=treatment_question_id,
+        mediator_col=mediator_question_id,
+        outcome_col=outcome_question_id,
+        covariate_cols=covariate_question_ids,
+        simulations=simulations,
+        alpha_level=alpha_level,
+        scope=scope,
+        **kwargs
+    )
+
+
+def _render_mediation_svg(
+    path_a: float,
+    path_b: float,
+    path_c_prime: float,
+    acme: float,
+    ade: float,
+    total: float,
+    prop_med: float,
+    exact_rho_zero: float,
     sensitivity_curve: List[Dict[str, Any]],
-    treatment_name: str,
-    mediator_name: str,
-    outcome_name: str
+    p_acme: float,
 ) -> str:
-    """
-    Renders high-definition dual-panel vector SVG:
-    Panel A: Causal Path Diagram with unobserved confounding correlation arc rho
-    Panel B: ACME Sensitivity Contour Plot with 95% CI ribbon and threshold rho*
-    """
-    width = 840
-    height = 370
+    """Generates responsive dual-panel SVG visualizer."""
+    svg_width = 860
+    svg_height = 360
 
-    # Panel A coordinates
-    # T at (80, 250), M at (210, 90), Y at (340, 250)
-    tx, ty = 85, 240
-    mx, my = 210, 85
-    yx, yy = 335, 240
+    badge_color = "#10b981" if p_acme < 0.05 else "#94a3b8"
+    badge_text = f"Significant Mediation (p = {p_acme:.3f})" if p_acme < 0.05 else f"Non-Significant (p = {p_acme:.3f})"
 
-    def sig_stars(p: float) -> str:
-        if p < 0.001:
-            return "***"
-        if p < 0.01:
-            return "**"
-        if p < 0.05:
-            return "*"
-        return "ns"
+    min_acme_curve = min([pt["ci_lower"] for pt in sensitivity_curve] + [0.0])
+    max_acme_curve = max([pt["ci_upper"] for pt in sensitivity_curve] + [0.0])
+    span_acme = max(1e-4, max_acme_curve - min_acme_curve)
 
-    p_a_str = f"a = {alpha_T:.3f}{sig_stars(p_alpha_T)}"
-    p_b_str = f"b = {beta_M:.3f}{sig_stars(p_beta_M)}"
-    p_c_str = f"c' = {beta_T:.3f}{sig_stars(p_beta_T)}"
+    def x_rho(r: float) -> float:
+        return 490 + ((r - (-0.8)) / 1.6) * 310
 
-    # Panel B coordinates
-    # Box from x=450 to 800, y=60 to 300
-    bx0, bx1 = 450, 805
-    by0, by1 = 60, 290
-    b_width = bx1 - bx0
-    b_height = by1 - by0
+    def y_acme(a_val: float) -> float:
+        return 290 - ((a_val - min_acme_curve) / span_acme) * 190
 
-    # Determine y scale for ACME
-    all_y = [pt["ci_lower"] for pt in sensitivity_curve] + [pt["ci_upper"] for pt in sensitivity_curve] + [0.0, acme_baseline]
-    min_y = min(all_y)
-    max_y = max(all_y)
-    # Add padding
-    y_range = max(1e-4, max_y - min_y)
-    min_y -= 0.1 * y_range
-    max_y += 0.1 * y_range
-    y_span = max_y - min_y
+    y_zero = y_acme(0.0)
+    x_rho_crit = x_rho(exact_rho_zero)
 
-    def scale_x(rho_val: float) -> float:
-        # rho from -0.8 to +0.8
-        return bx0 + ((rho_val - (-0.8)) / 1.6) * b_width
-
-    def scale_y(acme_val: float) -> float:
-        return by1 - ((acme_val - min_y) / y_span) * b_height
-
-    y_zero = scale_y(0.0)
-
-    # Build polygon for 95% CI ribbon
+    pts_line = []
     pts_upper = []
     pts_lower = []
-    pts_line = []
-
     for pt in sensitivity_curve:
-        sx = scale_x(pt["rho"])
-        sy_high = scale_y(pt["ci_upper"])
-        sy_low = scale_y(pt["ci_lower"])
-        sy_mid = scale_y(pt["acme"])
-        pts_upper.append(f"{sx:.1f},{sy_high:.1f}")
-        pts_lower.insert(0, f"{sx:.1f},{sy_low:.1f}")
-        pts_line.append(f"{sx:.1f},{sy_mid:.1f}")
+        rx = x_rho(pt["rho"])
+        ry = y_acme(pt["acme"])
+        ry_u = y_acme(pt["ci_upper"])
+        ry_l = y_acme(pt["ci_lower"])
+        pts_line.append(f"{rx:.1f},{ry:.1f}")
+        pts_upper.append(f"{rx:.1f},{ry_u:.1f}")
+        pts_lower.append(f"{rx:.1f},{ry_l:.1f}")
 
-    ribbon_points = " ".join(pts_upper + pts_lower)
-    curve_points = " ".join(pts_line)
+    path_curve = "M " + " L ".join(pts_line)
+    poly_band = "M " + " L ".join(pts_upper) + " L " + " L ".join(reversed(pts_lower)) + " Z"
 
-    # Threshold rho marker
-    x_threshold = scale_x(min(0.8, max(-0.8, rho_tilde)))
-    x_zero_rho = scale_x(0.0)
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {svg_width} {svg_height}" width="100%" height="100%" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <linearGradient id="medBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
 
-    svg_elements = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="100%" height="{height}" class="w-full">',
-        # Background
-        f'<rect width="{width}" height="{height}" fill="#090d16" rx="12" stroke="#1e293b" stroke-width="1.5"/>',
+  <!-- Background -->
+  <rect width="{svg_width}" height="{svg_height}" rx="12" fill="url(#medBg)"/>
 
-        # Headers
-        '<text x="20" y="32" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="700">PANEL A: Sơ đồ Đường Nhân Quả & Tương Quan Sai Số (ρ)</text>',
-        f'<text x="{bx0}" y="32" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="700">PANEL B: Đường Cong Độ Nhạy ACME δ(ρ) (Imai et al. 2010)</text>',
+  <!-- Main Title -->
+  <text x="30" y="36" fill="#f8fafc" font-size="16" font-weight="700">Causal Mediation &amp; Confounder Sensitivity Analysis</text>
+  <rect x="580" y="20" width="250" height="26" rx="6" fill="{badge_color}" opacity="0.2"/>
+  <rect x="580" y="20" width="250" height="26" rx="6" fill="none" stroke="{badge_color}" stroke-width="1.5"/>
+  <text x="705" y="37" fill="{badge_color}" font-size="11" font-weight="700" text-anchor="middle">{badge_text}</text>
 
-        # Panel A Container & Arrows
-        # Path a (T -> M)
-        f'<line x1="{tx}" y1="{ty-25}" x2="{mx-25}" y2="{my+20}" stroke="#6366f1" stroke-width="2.5" marker-end="url(#arrow-indigo)"/>',
-        f'<rect x="{((tx+mx)/2)-45}" y="{((ty+my)/2)-14}" width="75" height="18" fill="#1e1b4b" rx="4" stroke="#4f46e5" stroke-width="1"/>',
-        f'<text x="{((tx+mx)/2)-7}" y="{((ty+my)/2)}" fill="#c7d2fe" font-family="system-ui, sans-serif" font-size="10" font-weight="600" text-anchor="middle">{p_a_str}</text>',
+  <!-- Panel A: Mediation Path Diagram -->
+  <rect x="30" y="60" width="410" height="270" rx="8" fill="#1e293b" fill-opacity="0.6" stroke="#334155" stroke-width="1"/>
+  <text x="45" y="85" fill="#e2e8f0" font-size="13" font-weight="600">Panel A: Causal Mediation Flow (T → M → Y)</text>
 
-        # Path b (M -> Y)
-        f'<line x1="{mx+25}" y1="{my+20}" x2="{yx}" y2="{yy-25}" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>',
-        f'<rect x="{((mx+yx)/2)-30}" y="{((my+yy)/2)-14}" width="75" height="18" fill="#064e3b" rx="4" stroke="#059669" stroke-width="1"/>',
-        f'<text x="{((mx+yx)/2)+8}" y="{((my+yy)/2)}" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="600" text-anchor="middle">{p_b_str}</text>',
+  <!-- Node T -->
+  <rect x="60" y="200" width="80" height="40" rx="8" fill="#0369a1" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="100" y="225" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Treatment (T)</text>
 
-        # Direct path c' (T -> Y)
-        f'<line x1="{tx+45}" y1="{ty}" x2="{yx-45}" y2="{yy}" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrow-slate)"/>',
-        f'<rect x="{((tx+yx)/2)-35}" y="{ty+12}" width="70" height="18" fill="#1e293b" rx="4" stroke="#475569" stroke-width="1"/>',
-        f'<text x="{((tx+yx)/2)}" y="{ty+25}" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="10" font-weight="600" text-anchor="middle">{p_c_str}</text>',
+  <!-- Node M -->
+  <rect x="195" y="110" width="85" height="40" rx="8" fill="#4338ca" stroke="#818cf8" stroke-width="1.5"/>
+  <text x="237" y="135" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Mediator (M)</text>
 
-        # Omitted Confounder Arc between e_M and e_Y
-        f'<path d="M {mx+30},{my-5} C {mx+110},{my-20} {yx+30},{yy-80} {yx+25},{yy-25}" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="5,4"/>',
-        f'<rect x="{mx+100}" y="{my+10}" width="95" height="20" fill="#4c0519" rx="4" stroke="#e11d48" stroke-width="1"/>',
-        f'<text x="{mx+147}" y="{my+24}" fill="#fda4af" font-family="system-ui, sans-serif" font-size="9.5" font-weight="700" text-anchor="middle">ρ = Corr(e_M, e_Y)</text>',
+  <!-- Node Y -->
+  <rect x="330" y="200" width="80" height="40" rx="8" fill="#047857" stroke="#34d399" stroke-width="1.5"/>
+  <text x="370" y="225" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Outcome (Y)</text>
 
-        # Nodes
-        # Node T
-        f'<rect x="{tx-50}" y="{ty-20}" width="100" height="40" fill="#1e1e38" rx="8" stroke="#6366f1" stroke-width="2"/>',
-        f'<text x="{tx}" y="{ty-3}" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">Can Thiệp (T)</text>',
-        f'<text x="{tx}" y="{ty+12}" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">{treatment_name[:12]}</text>',
+  <!-- Arrow T -> M (path a) -->
+  <line x1="125" y1="200" x2="195" y2="140" stroke="#38bdf8" stroke-width="2"/>
+  <text x="145" y="160" fill="#38bdf8" font-size="11" font-weight="700">a = {path_a:+.2f}</text>
 
-        # Node M
-        f'<rect x="{mx-50}" y="{my-20}" width="100" height="40" fill="#063529" rx="8" stroke="#10b981" stroke-width="2"/>',
-        f'<text x="{mx}" y="{my-3}" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">Trung Gian (M)</text>',
-        f'<text x="{mx}" y="{my+12}" fill="#6ee7b7" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">{mediator_name[:12]}</text>',
+  <!-- Arrow M -> Y (path b) -->
+  <line x1="280" y1="140" x2="345" y2="200" stroke="#818cf8" stroke-width="2"/>
+  <text x="325" y="160" fill="#818cf8" font-size="11" font-weight="700">b = {path_b:+.2f}</text>
 
-        # Node Y
-        f'<rect x="{yx-50}" y="{yy-20}" width="100" height="40" fill="#1e293b" rx="8" stroke="#38bdf8" stroke-width="2"/>',
-        f'<text x="{yx}" y="{yy-3}" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">Kết Quả (Y)</text>',
-        f'<text x="{yx}" y="{yy+12}" fill="#7dd3fc" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">{outcome_name[:12]}</text>',
+  <!-- Arrow T -> Y (direct c') -->
+  <line x1="140" y1="220" x2="330" y2="220" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="235" y="240" fill="#f59e0b" font-size="11" font-weight="700" text-anchor="middle">c' (ADE) = {path_c_prime:+.2f}</text>
 
-        # ACME Summary Badge in Panel A
-        f'<rect x="40" y="305" width="340" height="44" fill="#0f172a" rx="6" stroke="#334155" stroke-width="1"/>',
-        f'<text x="50" y="322" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">Hiệu ứng gián tiếp chuẩn (ρ = 0):</text>',
-        f'<text x="50" y="339" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12" font-weight="700">ACME δ = {acme_baseline:.4f}</text>',
-        f'<text x="210" y="322" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">Ngưỡng triệt tiêu nhiễu:</text>',
-        f'<text x="210" y="339" fill="#f43f5e" font-family="system-ui, sans-serif" font-size="12" font-weight="700">ρ* = {rho_tilde:.4f}</text>',
+  <!-- Mediation Metrics Box -->
+  <rect x="50" y="260" width="370" height="55" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="65" y="280" fill="#94a3b8" font-size="11">ACME (Indirect): <tspan fill="#34d399" font-weight="700">{acme:+.3f}</tspan> | Total Effect: <tspan fill="#ffffff" font-weight="700">{total:+.3f}</tspan></text>
+  <text x="65" y="300" fill="#94a3b8" font-size="11">Proportion Mediated: <tspan fill="#818cf8" font-weight="700">{prop_med:.1f}%</tspan></text>
 
-        # Panel B: Graph Background & Grid
-        f'<rect x="{bx0}" y="{by0}" width="{b_width}" height="{b_height}" fill="#0c1322" rx="6" stroke="#1e293b" stroke-width="1"/>',
+  <!-- Panel B: Sensitivity Curve -->
+  <rect x="460" y="60" width="370" height="270" rx="8" fill="#1e293b" fill-opacity="0.6" stroke="#334155" stroke-width="1"/>
+  <text x="475" y="85" fill="#e2e8f0" font-size="13" font-weight="600">Panel B: Sensitivity Analysis ACME(&rho;) vs &rho;</text>
 
-        # Zero ACME horizontal line
-        f'<line x1="{bx0}" y1="{y_zero}" x2="{bx1}" y2="{y_zero}" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3"/>',
-        f'<text x="{bx1-5}" y="{y_zero-4}" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="9" text-anchor="end">δ = 0 (Vô hiệu)</text>',
+  <!-- Zero Horizontal Line -->
+  <line x1="490" y1="{y_zero:.1f}" x2="800" y2="{y_zero:.1f}" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="805" y="{y_zero + 4:.1f}" fill="#64748b" font-size="10">0.0</text>
 
-        # Zero Rho vertical line
-        f'<line x1="{x_zero_rho}" y1="{by0}" x2="{x_zero_rho}" y2="{by1}" stroke="#475569" stroke-width="1" stroke-dasharray="2,2"/>',
-        f'<text x="{x_zero_rho}" y="{by1+14}" fill="#64748b" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">ρ = 0</text>',
+  <!-- Axes B -->
+  <line x1="490" y1="290" x2="800" y2="290" stroke="#475569" stroke-width="1.5"/>
+  <line x1="490" y1="290" x2="490" y2="100" stroke="#475569" stroke-width="1.5"/>
+  <text x="645" y="315" fill="#94a3b8" font-size="11" text-anchor="middle">Confounder Correlation (&rho;)</text>
+  <text x="475" y="195" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90 475 195)">ACME(&rho;)</text>
 
-        # 95% Confidence Ribbon
-        f'<polygon points="{ribbon_points}" fill="#6366f1" fill-opacity="0.18"/>',
+  <!-- Confidence Band -->
+  <path d="{poly_band}" fill="#818cf8" fill-opacity="0.2"/>
 
-        # Point estimate curve
-        f'<polyline points="{curve_points}" fill="none" stroke="#6366f1" stroke-width="2.5"/>',
+  <!-- Sensitivity Curve Line -->
+  <path d="{path_curve}" fill="none" stroke="#818cf8" stroke-width="2.5"/>
 
-        # Baseline ACME dot at rho = 0
-        f'<circle cx="{x_zero_rho}" cy="{scale_y(acme_baseline)}" r="5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5"/>',
-
-        # Threshold rho line & marker
-        f'<line x1="{x_threshold}" y1="{by0}" x2="{x_threshold}" y2="{by1}" stroke="#f43f5e" stroke-width="2" stroke-dasharray="3,3"/>',
-        f'<circle cx="{x_threshold}" cy="{y_zero}" r="6" fill="#f43f5e" stroke="#ffffff" stroke-width="1.5"/>',
-        f'<text x="{x_threshold}" y="{by0+16}" fill="#fda4af" font-family="system-ui, sans-serif" font-size="10" font-weight="700" text-anchor="middle">ρ* = {rho_tilde:.3f}</text>',
-
-        # X-axis ticks and labels
-        f'<text x="{scale_x(-0.8)}" y="{by1+14}" fill="#64748b" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">-0.8</text>',
-        f'<text x="{scale_x(-0.4)}" y="{by1+14}" fill="#64748b" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">-0.4</text>',
-        f'<text x="{scale_x(0.4)}" y="{by1+14}" fill="#64748b" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">+0.4</text>',
-        f'<text x="{scale_x(0.8)}" y="{by1+14}" fill="#64748b" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">+0.8</text>',
-        f'<text x="{(bx0+bx1)/2}" y="{by1+28}" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">Tham số Độ nhạy Tương quan Nhiễu (ρ)</text>',
-
-        # Y-axis label
-        f'<text x="{bx0+10}" y="{by0+18}" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="10" font-weight="600">ACME δ(ρ)</text>',
-
-        # Marker definitions
-        '<defs>',
-        '<marker id="arrow-indigo" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">',
-        '<path d="M 0 1 L 8 5 L 0 9 z" fill="#6366f1" />',
-        '</marker>',
-        '<marker id="arrow-emerald" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">',
-        '<path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981" />',
-        '</marker>',
-        '<marker id="arrow-slate" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">',
-        '<path d="M 0 1 L 8 5 L 0 9 z" fill="#94a3b8" />',
-        '</marker>',
-        '</defs>',
-
-        '</svg>'
-    ]
-
-    return "".join(svg_elements)
+  <!-- Vertical line for critical rho_zero -->
+  <line x1="{x_rho_crit:.1f}" y1="100" x2="{x_rho_crit:.1f}" y2="290" stroke="#ef4444" stroke-width="2" stroke-dasharray="3,3"/>
+  <circle cx="{x_rho_crit:.1f}" cy="{y_zero:.1f}" r="5" fill="#ef4444"/>
+  <text x="{x_rho_crit:.1f}" y="115" fill="#ef4444" font-size="10" font-weight="700" text-anchor="middle">&rho;₀ = {exact_rho_zero:+.2f}</text>
+</svg>"""
+    return svg

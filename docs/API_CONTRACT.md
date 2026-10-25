@@ -6023,3 +6023,40 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `CausalSurvivalRMSTRequest` (`time_question_id`, `event_question_id`, `treatment_question_id`, `covariate_question_ids`, `tau_horizon`, `alpha_level`, `scope`).
   - **Response:** `CausalSurvivalRMSTOut` (`status`, `sample_size`, `n_treated`, `n_control`, `tau_horizon`, `rmst_treated`, `rmst_control`, `causal_rmst_difference`, `rmst_ratio`, `rmtl_metrics`, `milestone_survival_tau`, `curve_points`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_SURVIVAL_RMST_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 151. Nonparametric Causal Mediation Analysis with Unobserved Confounder Sensitivity Bounds (Imai, Keele, & Yamamoto 2010 JASA; VanderWeele 2015; Tchetgen Tchetgen 2013)
+- **Mục tiêu:** Phân rã Tổng hiệu ứng nhân quả (Total Causal Effect) của can thiệp khảo sát thành Hiệu ứng Can thiệp Gián tiếp Trung bình (Average Causal Mediation Effect - ACME / Natural Indirect Effect) truyền dẫn qua biến trung gian (Mediator M, ví dụ: Mức độ thỏa mãn công việc, Niềm tin thương hiệu, Trạng thái tâm lý) và Hiệu ứng Trực tiếp Trung bình (Average Direct Effect - ADE / Natural Direct Effect). Đặc biệt, động cơ tích hợp phương pháp phân tích độ nhạy nổi tiếng của Imai, Keele, & Yamamoto (2010 JASA; 2010 Statistical Science) nhằm kiểm định tính vững chắc của kết luận trung gian trước nguy cơ vi phạm giả định Ignorability Tuần tự (Sequential Ignorability: giả định không có nhiễu tiềm ẩn chưa đo lường giữa biến trung gian và biến kết quả).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định Nghĩa Hiệu Ứng Tiềm Năng (Potential Outcomes Mediation Framework):**
+     - M(t): Mức độ biến trung gian tiềm năng dưới can thiệp t in {0, 1}.
+     - Y(t, m): Biến kết quả tiềm năng dưới can thiệp t và mức trung gian m.
+     - **Hiệu Ứng Trung Gian Nhân Quả (ACME delta):**
+       delta(t) = E[Y(t, M(1)) - Y(t, M(0))]
+     - **Hiệu Ứng Trực Tiếp (ADE zeta):**
+       zeta(t) = E[Y(1, M(t)) - Y(0, M(t))]
+     - **Tổng Hiệu Ứng (Total Effect tau):**
+       tau = delta(t) + zeta(1-t) = E[Y(1, M(1)) - Y(0, M(0))]
+     - **Tỷ Lệ Truyền Dẫn Qua Trung Gian (Proportion Mediated %):**
+       PM = (delta(t) / tau) * 100%
+  2. **Thuật Toán Mô Phỏng Quasi-Bayesian Monte Carlo (King et al. 2000; Imai et al. 2010):**
+     - Ước lượng phân phối hậu nghiệm tiệm cận của vector tham số mô hình Mediator (M ~ T + X) và Outcome (Y ~ T + M + X).
+     - Rút mẫu ngẫu nhiên S = 400 lần từ phân phối chuẩn đa biến N(beta_hat, Sigma_hat), tính toán phân phối thực nghiệm của ACME, ADE, Total Effect và khoảng tin cậy Quasi-Bayesian 95%.
+  3. **Kiểm Định Độ Nhạy Imai-Keele Trước Nhiễu Tiềm Ẩn (Confounder Sensitivity Analysis):**
+     - Tham số hóa mức độ tương quan sai số ngẫu nhiên giữa mô hình Mediator và Outcome:
+       rho = Corr(e_i, epsilon_i)
+     - Khi rho != 0 (tồn tại yếu tố chưa đo lường tác động đồng thời lên cả M và Y):
+       ACME(rho) = beta_m * [beta_y - (rho * sigma_y) / (sigma_m * sqrt(1 - rho^2))]
+     - **Ngưỡng Tương Quan Tới Hạn (rho_0 Bound):** Giá trị rho chính xác tại đó ACME(rho) = 0:
+       rho_0 = sign(beta_y) * sqrt[(beta_y^2 * sigma_m^2) / (sigma_y^2 + beta_y^2 * sigma_m^2)]
+     - Đánh giá phân loại độ bền vững:
+       - |rho_0| >= 0.40: Bền vững cao (Cực kỳ kiên cường trước nhiễu tiềm ẩn).
+       - 0.20 <= |rho_0| < 0.40: Bền vững trung bình.
+       - |rho_0| < 0.20: Dễ bị tổn thương (Chỉ cần nhiễu tiềm ẩn nhỏ sẽ triệt tiêu hiệu ứng).
+  4. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Sơ đồ luồng nhân quả trung gian (T -> M -> Y và T -> Y) với các hệ số đường dẫn a, b, c', tỷ lệ % trung gian và ý nghĩa thống kê.
+     - Panel B: Đồ thị đường cong độ nhạy ACME(rho) kèm dải ruy băng tin cậy 95% qua miền rho in [-0.8, +0.8] và vạch định vị màu đỏ thể hiện chính xác ngưỡng tới hạn rho_0.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/causal-mediation-sensitivity`
+  - **Payload:** `CausalMediationSensitivityRequest` (`treatment_question_id`, `mediator_question_id`, `outcome_question_id`, `covariate_question_ids`, `target_treatment_val`, `scope`).
+  - **Response:** `CausalMediationSensitivityOut` (`status`, `treatment_field`, `mediator_field`, `outcome_field`, `covariate_fields`, `sample_diagnostics`, `path_estimates`, `baseline_effects`, `sensitivity_analysis`, `svg_chart`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_MEDIATION_SENSITIVITY_EVALUATED` vào chuỗi sổ cái SHA-256.
