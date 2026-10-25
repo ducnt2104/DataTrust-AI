@@ -6457,3 +6457,34 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `EntropyBalancingRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `moment_orders`, `tolerance`, `max_iterations`, `scope`).
   - **Response:** `EntropyBalancingOut` (`status`, `sample_size`, `treated_count`, `control_count`, `treatment_effect`, `covariate_balance`, `diagnostics`, `sample_weights`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `ENTROPY_BALANCING_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 165. Covariate Balancing Propensity Score & Generalized Method of Moments Engine (CBPS; Imai & Ratkovic 2014 JRSS-B; Fong et al. 2018 Ann. Appl. Stat.)
+- **Mục tiêu:** Ước lượng điểm xu hướng (propensity score) tối ưu cho việc cân bằng phân phối đặc trưng giữa nhóm can thiệp và đối chứng bằng cách lồng ghép trực tiếp các phương trình điều kiện cân bằng moment vào hệ thống Phương Pháp Moment Tổng Quát (GMM), khắc phục triệt để nhược điểm của hồi quy logistic chuẩn (MLE) vốn chỉ tối đa hóa khả năng dự báo gán can thiệp mà không kiểm soát sự mất cân bằng biến đồng biến hữu hạn mẫu.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hệ Thống Moment GMM Tích Hợp (Overidentified GMM Moment System):**
+     - Mô hình liên kết đồng thời điều kiện đạo hàm hàm hợp lý MLE $S_{\text{MLE}}(\beta)$ và điều kiện cân bằng đặc trưng $S_{\text{Bal}}(\beta)$:
+       $$g_i(\beta) = \begin{bmatrix} (T_i - \pi_\beta(X_i)) X_i \\ \frac{T_i - \pi_\beta(X_i)}{\pi_\beta(X_i)(1 - \pi_\beta(X_i))} X_i \end{bmatrix}$$
+       trong đó $\pi_\beta(X_i) = \text{logit}^{-1}(X_i'\beta) = \frac{1}{1 + \exp(-X_i'\beta)}$.
+  2. **Thuật Toán GMM Hai Bước & Ma Trận Trọng Số Tối Ưu (Two-Step Optimal GMM):**
+     - Bước 1: Cực tiểu hóa hàm mục tiêu GMM với ma trận đơn vị: $\min_\beta \bar{g}(\beta)' \bar{g}(\beta)$.
+     - Bước 2: Tính ma trận trọng số tối ưu $\mathbf{W} = \frac{1}{N} \sum_{i=1}^N g_i(\hat{\beta}_1) g_i(\hat{\beta}_1)'$ và giải nghiệm chính xác:
+       $$\hat{\beta}_{\text{GMM}} = \arg\min_\beta \bar{g}(\beta)' \mathbf{W}^{-1} \bar{g}(\beta)$$
+  3. **Kiểm Định Giới Hạn Quá Xác Định Hansen J (Hansen's J Overidentification Test):**
+     - Đánh giá tính đúng đắn và tương thích của cấu trúc mô hình điểm xu hướng:
+       $$J = N \bar{g}(\hat{\beta})' \mathbf{W}^{-1} \bar{g}(\hat{\beta}) \sim \chi^2(\text{df})$$
+       với $\text{df} = \dim(g) - \dim(\beta) = K$. Giả thuyết vô hiệu $H_0$: Các điều kiện moment cân bằng và gán can thiệp hoàn toàn tương thích (không bị sai lệch chỉ định).
+  4. **Ước Lượng Hiệu Ứng Nhân Quả Đa Mục Tiêu (ATE & ATT Horvitz-Thompson / Hajek Weighting):**
+     - ATE: $w_i = \frac{T_i}{\hat{\pi}_i} + \frac{1 - T_i}{1 - \hat{\pi}_i}$.
+     - ATT: $w_i = T_i + (1 - T_i) \frac{\hat{\pi}_i}{1 - \hat{\pi}_i}$.
+     - Sai số chuẩn vững Huber-White Sandwich SE và khoảng tin cậy 95% CI.
+  5. **Bộ Chỉ Số Chẩn Đoán & Biểu Đồ Vector Kép SVG:**
+     - Đánh giá vùng trùng khớp điểm xu hướng (Common Support Overlap Bounds).
+     - Standardized Mean Differences (SMD) trước vs sau tái lập trọng số.
+     - Dung lượng mẫu hiệu dụng ESS cho cả nhóm can thiệp và đối chứng.
+     - Panel A: Biểu đồ mật độ xác suất điểm xu hướng $\hat{\pi}(X)$ giữa nhóm can thiệp vs đối chứng kèm vùng chồng lấn.
+     - Panel B: Love Plot đối chiếu sai lệch chuẩn hóa trước vs sau cân bằng CBPS.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/cbps`
+  - **Payload:** `CBPSRequest` (`treatment_question_id`, `outcome_question_id`, `covariate_question_ids`, `method`, `estimand`, `max_iterations`, `tolerance`, `scope`).
+  - **Response:** `CBPSOut` (`status`, `sample_size`, `treated_count`, `control_count`, `estimand`, `causal_effect`, `covariate_balance`, `diagnostics`, `overlap_metrics`, `sample_points`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CBPS_EVALUATED` vào chuỗi sổ cái SHA-256.

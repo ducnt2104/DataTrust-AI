@@ -9989,3 +9989,83 @@ export interface EntropyBalancingResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+
+// --- Covariate Balancing Propensity Score (CBPS; Imai & Ratkovic 2014) Interfaces ---
+export interface CBPSCovariateBalance {
+  covariate_id: string;
+  covariate_name: string;
+  mean_treated_raw: number;
+  mean_control_raw: number;
+  mean_treated_weighted: number;
+  mean_control_weighted: number;
+  smd_raw: number;
+  smd_weighted: number;
+  var_ratio_raw: number;
+  var_ratio_weighted: number;
+}
+
+export interface CBPSEffect {
+  effect: number;
+  se: number;
+  t_stat: number;
+  p_value: number;
+  ci_lower: number;
+  ci_upper: number;
+}
+
+export interface CBPSDiagnostics {
+  converged: boolean;
+  iterations: number;
+  method: string;
+  estimand: string;
+  hansen_j_stat: number;
+  hansen_j_df: number;
+  hansen_j_p_value: number;
+  specification_valid: boolean;
+}
+
+export interface CBPSOverlapMetrics {
+  min_propensity_treated: number;
+  max_propensity_treated: number;
+  min_propensity_control: number;
+  max_propensity_control: number;
+  common_support_overlap: boolean;
+  effective_sample_size_treated: number;
+  effective_sample_size_control: number;
+  max_smd_post: number;
+}
+
+export interface CBPSPropensityPoint {
+  unit_index: number;
+  treatment: number;
+  outcome: number;
+  propensity_score: number;
+  cbps_weight: number;
+}
+
+export interface CBPSRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  method?: 'overidentified' | 'just_identified';
+  estimand?: 'ATE' | 'ATT';
+  max_iterations?: number;
+  tolerance?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface CBPSResult {
+  status: string;
+  sample_size: number;
+  treated_count: number;
+  control_count: number;
+  estimand: string;
+  causal_effect: CBPSEffect;
+  covariate_balance: CBPSCovariateBalance[];
+  diagnostics: CBPSDiagnostics;
+  overlap_metrics: CBPSOverlapMetrics;
+  sample_points: CBPSPropensityPoint[];
+  svg_visualization: string;
+  apa_narrative: string;
+}

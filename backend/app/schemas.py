@@ -22267,3 +22267,392 @@ class IVQuantileRegressionOut(BaseModel):
     quantile_estimates: Optional[List[Dict[str, Any]]] = None
     svg_chart: Optional[str] = None
     apa_narrative: Optional[str] = None
+
+
+# --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+class ExtremeBoundsAnalysisRequest(BaseModel):
+    focus_question_id: str
+    outcome_question_id: str
+    candidate_question_ids: List[str]
+    free_question_ids: Optional[List[str]] = None
+    max_controls_per_model: int = 4
+    scope: str = "all"
+
+
+class ExtremeBoundsAnalysisOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    specifications_sample: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Spatial Econometrics & Moran's I Models (Anselin 1988, LeSage & Pace 2009) Schemas ---
+class SpatialEconometricsRequest(BaseModel):
+    outcome_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    lat_field: str = "latitude"
+    lon_field: str = "longitude"
+    weights_type: str = "inverse_distance"
+    knn_k: int = 5
+    distance_power: float = 1.0
+    scope: str = "all"
+
+
+class SpatialEconometricsOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    morans_i: Optional[Dict[str, Any]] = None
+    lm_diagnostics: Optional[Dict[str, Any]] = None
+    baseline_ols: Optional[Dict[str, Any]] = None
+    spatial_lag_model: Optional[Dict[str, Any]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005) Schemas ---
+class IVQuantileRegressionRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    instrument_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    quantiles: Optional[List[float]] = [0.10, 0.25, 0.50, 0.75, 0.90]
+    grid_points: int = 80
+    scope: str = "all"
+
+
+class IVQuantileRegressionOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    quantile_estimates: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Covariate Balancing Propensity Score (CBPS; Imai & Ratkovic 2014) Schemas ---
+class CBPSRequest(BaseModel):
+    treatment_question_id: str
+    outcome_question_id: str
+    covariate_question_ids: List[str]
+    method: Optional[str] = "overidentified"
+    estimand: Optional[str] = "ATE"
+    max_iterations: Optional[int] = 500
+    tolerance: Optional[float] = 1e-5
+    scope: Optional[str] = "all"
+
+
+class CBPSCovariateBalance(BaseModel):
+    covariate_id: str
+    covariate_name: str
+    mean_treated_raw: float
+    mean_control_raw: float
+    mean_treated_weighted: float
+    mean_control_weighted: float
+    smd_raw: float
+    smd_weighted: float
+    var_ratio_raw: float
+    var_ratio_weighted: float
+
+
+class CBPSEffect(BaseModel):
+    effect: float
+    se: float
+    t_stat: float
+    p_value: float
+    ci_lower: float
+    ci_upper: float
+
+
+class CBPSDiagnostics(BaseModel):
+    converged: bool
+    iterations: int
+    method: str
+    estimand: str
+    hansen_j_stat: float
+    hansen_j_df: int
+    hansen_j_p_value: float
+    specification_valid: bool
+
+
+class CBPSOverlapMetrics(BaseModel):
+    min_propensity_treated: float
+    max_propensity_treated: float
+    min_propensity_control: float
+    max_propensity_control: float
+    common_support_overlap: bool
+    effective_sample_size_treated: float
+    effective_sample_size_control: float
+    max_smd_post: float
+
+
+class CBPSPropensityPoint(BaseModel):
+    unit_index: int
+    treatment: int
+    outcome: float
+    propensity_score: float
+    cbps_weight: float
+
+
+class CBPSOut(BaseModel):
+    status: str
+    sample_size: int
+    treated_count: int
+    control_count: int
+    estimand: str
+    causal_effect: CBPSEffect
+    covariate_balance: List[CBPSCovariateBalance]
+    diagnostics: CBPSDiagnostics
+    overlap_metrics: CBPSOverlapMetrics
+    sample_points: List[CBPSPropensityPoint]
+    svg_visualization: str
+    apa_narrative: str
+
+
+# --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+class ExtremeBoundsAnalysisRequest(BaseModel):
+    focus_question_id: str
+    outcome_question_id: str
+    candidate_question_ids: List[str]
+    free_question_ids: Optional[List[str]] = None
+    max_controls_per_model: int = 4
+    scope: str = "all"
+
+
+class ExtremeBoundsAnalysisOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    specifications_sample: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Spatial Econometrics & Moran's I Models (Anselin 1988, LeSage & Pace 2009) Schemas ---
+class SpatialEconometricsRequest(BaseModel):
+    outcome_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    lat_field: str = "latitude"
+    lon_field: str = "longitude"
+    weights_type: str = "inverse_distance"
+    knn_k: int = 5
+    distance_power: float = 1.0
+    scope: str = "all"
+
+
+class SpatialEconometricsOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    morans_i: Optional[Dict[str, Any]] = None
+    lm_diagnostics: Optional[Dict[str, Any]] = None
+    baseline_ols: Optional[Dict[str, Any]] = None
+    spatial_lag_model: Optional[Dict[str, Any]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005) Schemas ---
+class IVQuantileRegressionRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    instrument_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    quantiles: Optional[List[float]] = [0.10, 0.25, 0.50, 0.75, 0.90]
+    grid_points: int = 80
+    scope: str = "all"
+
+
+class IVQuantileRegressionOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    quantile_estimates: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+class ExtremeBoundsAnalysisRequest(BaseModel):
+    focus_question_id: str
+    outcome_question_id: str
+    candidate_question_ids: List[str]
+    free_question_ids: Optional[List[str]] = None
+    max_controls_per_model: int = 4
+    scope: str = "all"
+
+
+class ExtremeBoundsAnalysisOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    specifications_sample: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Spatial Econometrics & Moran's I Models (Anselin 1988, LeSage & Pace 2009) Schemas ---
+class SpatialEconometricsRequest(BaseModel):
+    outcome_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    lat_field: str = "latitude"
+    lon_field: str = "longitude"
+    weights_type: str = "inverse_distance"
+    knn_k: int = 5
+    distance_power: float = 1.0
+    scope: str = "all"
+
+
+class SpatialEconometricsOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    morans_i: Optional[Dict[str, Any]] = None
+    lm_diagnostics: Optional[Dict[str, Any]] = None
+    baseline_ols: Optional[Dict[str, Any]] = None
+    spatial_lag_model: Optional[Dict[str, Any]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005) Schemas ---
+class IVQuantileRegressionRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    instrument_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    quantiles: Optional[List[float]] = [0.10, 0.25, 0.50, 0.75, 0.90]
+    grid_points: int = 80
+    scope: str = "all"
+
+
+class IVQuantileRegressionOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    quantile_estimates: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+class ExtremeBoundsAnalysisRequest(BaseModel):
+    focus_question_id: str
+    outcome_question_id: str
+    candidate_question_ids: List[str]
+    free_question_ids: Optional[List[str]] = None
+    max_controls_per_model: int = 4
+    scope: str = "all"
+
+
+class ExtremeBoundsAnalysisOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    specifications_sample: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Spatial Econometrics & Moran's I Models (Anselin 1988, LeSage & Pace 2009) Schemas ---
+class SpatialEconometricsRequest(BaseModel):
+    outcome_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    lat_field: str = "latitude"
+    lon_field: str = "longitude"
+    weights_type: str = "inverse_distance"
+    knn_k: int = 5
+    distance_power: float = 1.0
+    scope: str = "all"
+
+
+class SpatialEconometricsOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    morans_i: Optional[Dict[str, Any]] = None
+    lm_diagnostics: Optional[Dict[str, Any]] = None
+    baseline_ols: Optional[Dict[str, Any]] = None
+    spatial_lag_model: Optional[Dict[str, Any]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005) Schemas ---
+class IVQuantileRegressionRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    instrument_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    quantiles: Optional[List[float]] = [0.10, 0.25, 0.50, 0.75, 0.90]
+    grid_points: int = 80
+    scope: str = "all"
+
+
+class IVQuantileRegressionOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    quantile_estimates: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+class ExtremeBoundsAnalysisRequest(BaseModel):
+    focus_question_id: str
+    outcome_question_id: str
+    candidate_question_ids: List[str]
+    free_question_ids: Optional[List[str]] = None
+    max_controls_per_model: int = 4
+    scope: str = "all"
+
+
+class ExtremeBoundsAnalysisOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    specifications_sample: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Spatial Econometrics & Moran's I Models (Anselin 1988, LeSage & Pace 2009) Schemas ---
+class SpatialEconometricsRequest(BaseModel):
+    outcome_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    lat_field: str = "latitude"
+    lon_field: str = "longitude"
+    weights_type: str = "inverse_distance"
+    knn_k: int = 5
+    distance_power: float = 1.0
+    scope: str = "all"
+
+
+class SpatialEconometricsOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    morans_i: Optional[Dict[str, Any]] = None
+    lm_diagnostics: Optional[Dict[str, Any]] = None
+    baseline_ols: Optional[Dict[str, Any]] = None
+    spatial_lag_model: Optional[Dict[str, Any]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005) Schemas ---
+class IVQuantileRegressionRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    instrument_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    quantiles: Optional[List[float]] = [0.10, 0.25, 0.50, 0.75, 0.90]
+    grid_points: int = 80
+    scope: str = "all"
+
+
+class IVQuantileRegressionOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    quantile_estimates: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None

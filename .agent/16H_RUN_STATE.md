@@ -3041,3 +3041,36 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 ## 51. Planned Next Iteration: Iteration 184
 - **Feature**: Covariate Balancing Propensity Score & Generalized Method of Moments Engine (CBPS; Imai & Ratkovic 2014 JRSS-B; Fong, Hazlett, & Imai 2018 Ann. Appl. Stat.).
 - **Scope**: Implements parametric and nonparametric GMM / empirical likelihood CBPS, simultaneously maximizing treatment assignment likelihood and minimizing covariate imbalance score equations for both binary and continuous treatments.
+
+
+## 51. Iteration 184: Covariate Balancing Propensity Score & Generalized Method of Moments Engine (CBPS; Imai & Ratkovic 2014 JRSS-B; Fong et al. 2018)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T17:10:00+07:00
+- **Scientific Foundation**:
+  - Overcomes Classical MLE Propensity Score Failure: Standard logistic regression maximizes treatment assignment likelihood without guaranteeing finite-sample covariate balance, frequently yielding severe post-weighting discrepancies.
+  - Overidentified GMM Formulation: Jointly solves treatment assignment score equations S_MLE(beta) and covariate balance moment equations S_Bal(beta) = 0 via two-step optimal GMM: min_beta g_bar(beta)' W^-1 g_bar(beta), where W is the optimal GMM covariance weighting matrix.
+  - Hansen's J Specification Test: Computes J = N * g_bar' * W^-1 * g_bar ~ Chi^2(df) to formally test whether the propensity score model specification is compatible with the balancing moment conditions.
+  - Dual Causal Estimands: Supports both ATE (Horvitz-Thompson / Hajek stabilized weighting) and ATT (standardized treated weighting) with Huber-White sandwich robust standard errors and 95% confidence intervals.
+  - Overlap & Diagnostic Metrics: Standardized Mean Differences (SMD), Variance Ratios, Common Support bounds, and Effective Sample Sizes for both treated and control units.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays propensity score density curves for treated vs control units with shaded common support zone; Panel B displays Love Plot comparing Raw SMD vs CBPS Weighted SMD against the 0.10 threshold.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/cbps_engine.py (450 lines).
+  - Schemas: CBPSRequest, CBPSCovariateBalance, CBPSEffect, CBPSDiagnostics, CBPSOverlapMetrics, CBPSPropensityPoint, CBPSOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/cbps with CBPS_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_cbps_engine.py (3/3 passed in 0.43s).
+  - Route Tests: backend/tests/test_cbps_routes.py (1/1 passed in 1.58s).
+- **Frontend Components**:
+  - TypeScript Types: CBPSCovariateBalance, CBPSEffect, CBPSDiagnostics, CBPSOverlapMetrics, CBPSPropensityPoint, CBPSRequest, CBPSResult in frontend/src/types/survey.ts.
+  - API Client Method: runCBPS in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/CBPSCard.tsx (510 lines) with Treatment, Outcome, and Covariates selectors, Estimand selector (ATE vs ATT), Method selector (Overidentified vs Just-Identified), 5 KPI cards (Effect with 95% CI & p-value, Hansen's J test with df & p-value, Max |SMD|, ESS Treated/Control, Common support overlap), dual-panel SVG visualizer, tabs for Covariate Balance table, Sample Points table, GMM & Hansen J Theory, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (49/49 cumulative passed across Iterations 171-184 in 28.59s).
+  - Frontend Production Build: 2,149 modules transformed, 0 errors in 2.50s.
+  - Contract Documentation: Section 165 appended to docs/API_CONTRACT.md.
+
+---
+
+## 52. Planned Next Iteration: Iteration 185
+- **Feature**: Robust E-Values & Multi-Bias Causal Sensitivity Decomposition Engine (VanderWeele & Ding 2017 Annals of Internal Medicine; Mathur & VanderWeele 2020 Biometrics).
+- **Scope**: Implements exact E-value calculations for point estimates and 95% confidence interval bounds across risk ratios, odds ratios, hazard ratios, and standardized mean differences (Cohen's d), decomposing unmeasured confounding, selection bias, and differential misclassification with interactive bias contour surfaces.

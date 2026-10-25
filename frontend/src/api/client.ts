@@ -279,7 +279,9 @@ import {
   SpatialDIDRequest,
   SpatialDIDResult,
   EntropyBalancingRequest,
-  EntropyBalancingResult
+  EntropyBalancingResult,
+  CBPSRequest,
+  CBPSResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2889,5 +2891,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<EntropyBalancingResult>(res);
+  },
+
+  async runCBPS(
+    surveyId: string,
+    payload: CBPSRequest
+  ): Promise<CBPSResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/cbps`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<CBPSResult>(res);
   }
 };
