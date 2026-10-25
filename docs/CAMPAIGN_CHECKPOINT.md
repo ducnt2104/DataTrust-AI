@@ -1,4 +1,4 @@
-# DATATRUST AI — CAMPAIGN CHECKPOINT REPORT (UPDATED)
+# DATATRUST — CAMPAIGN CHECKPOINT REPORT (UPDATED)
 **Campaign ID:** `DATATRUST-AI-UPGRADE-16H-V2`  
 **Checkpoint Date:** 2026-10-23  
 **Target Architecture:** Python FastAPI (SQLite 3 WAL) + OpenCV Computer Vision + React 19, TypeScript, Vite, Tailwind CSS  
@@ -8,7 +8,7 @@
 
 ## 1. TỔNG QUAN CHIẾN DỊCH & BẢN CHẤT SẢN PHẨM
 
-DataTrust AI đã được mở rộng và hoàn thiện toàn diện theo đúng tôn chỉ sản phẩm và hồ sơ dự án (`Thuyet_Minh_Du_An_DataTrust_AI_Hoan_Chinh.docx`):
+DataTrust đã được mở rộng và hoàn thiện toàn diện theo đúng tôn chỉ sản phẩm và hồ sơ dự án (`Thuyet_Minh_Du_An_DataTrust_AI_Hoan_Chinh.docx`):
 > **Digital Survey Platform + Real Response Collection + Field Survey Digitization (OMR) + 7-Layer Fraud Screening Engine + Human Review Center + Verifiable Data Export**
 
 ### Hai luồng năng lực tích hợp xuyên suốt:

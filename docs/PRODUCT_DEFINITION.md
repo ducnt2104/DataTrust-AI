@@ -1,8 +1,8 @@
-# DataTrust AI — Product Definition & Functional Specification
+# DataTrust — Product Definition & Functional Specification
 
 ## 1. Định Vị Sản Phẩm
 
-**DataTrust AI** là nền tảng trực tuyến toàn diện kết hợp 3 trụ cột:
+**DataTrust** là nền tảng trực tuyến toàn diện kết hợp 3 trụ cột:
 1. **Survey Builder (Bộ tạo khảo sát chuyên nghiệp):** Hỗ trợ đầy đủ các loại câu hỏi (đóng, mở, thang đo, ma trận, xếp hạng), thiết lập logic rẽ nhánh, ràng buộc hợp lệ và xuất bản thành đường liên kết công khai (Public Survey Link).
 2. **Real Response Collection (Thu thập phản hồi thực địa & trực tuyến):** Giao diện điền biểu mẫu tối ưu đa thiết bị (Desktop, Mobile, Tablet), kiểm soát tiến độ, xác thực dữ liệu 2 lớp (Client & Server), ghi nhận thời gian làm bài và lưu trữ chính xác vào cơ sở dữ liệu quan hệ.
 3. **Data Quality Assurance & Fraud Screening Engine (Hệ thống phân tích chất lượng dữ liệu & sàng lọc bất thường):** Phát hiện trùng lặp/gần trùng lặp (Hamming distance vector), mẫu đáp án bất thường (Straightlining, Shannon Entropy thấp, lặp ma trận), vi phạm logic chéo (Logic Rule Violation Engine), tốc độ nộp bất thường (Speeding/Spamming), và tính toán điểm rủi ro tổng hợp có giải thích (Composite Explainable Risk Score: 0 - 100).

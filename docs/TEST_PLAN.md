@@ -1,4 +1,4 @@
-# DataTrust AI — Test Plan (TEST-01 to TEST-12)
+# DataTrust — Test Plan (TEST-01 to TEST-12)
 
 Kế hoạch kiểm thử bao phủ toàn bộ 12 ca kiểm thử theo yêu cầu nghiệm thu:
 

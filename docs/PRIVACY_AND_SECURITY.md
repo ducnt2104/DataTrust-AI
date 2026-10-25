@@ -1,15 +1,15 @@
-# DataTrust AI — Chính Sách Quyền Riêng Tư & An Toàn Dữ Liệu
+# DataTrust — Chính Sách Quyền Riêng Tư & An Toàn Dữ Liệu
 ## Tuân Thủ Nghị Định 356/2025/NĐ-CP & Luật Bảo Vệ Dữ Liệu Cá Nhân
 
 **Tài liệu mã số:** `DT-SEC-2026-V1`  
 **Cập nhật lần cuối:** 2026-10-23  
-**Phạm vi áp dụng:** Nền tảng DataTrust AI (Khảo sát số hoá trực tuyến, Số hoá phiếu giấy OMR và Động cơ Kiểm định Chất lượng Dữ liệu).
+**Phạm vi áp dụng:** Nền tảng DataTrust (Khảo sát số hoá trực tuyến, Số hoá phiếu giấy OMR và Động cơ Kiểm định Chất lượng Dữ liệu).
 
 ---
 
 ## 1. Giới Thiệu & Căn Cứ Pháp Lý
 
-DataTrust AI được thiết kế tuân thủ nghiêm ngặt các tiêu chuẩn an toàn thông tin và quyền riêng tư theo pháp luật Việt Nam và các hướng dẫn học thuật quốc tế:
+DataTrust được thiết kế tuân thủ nghiêm ngặt các tiêu chuẩn an toàn thông tin và quyền riêng tư theo pháp luật Việt Nam và các hướng dẫn học thuật quốc tế:
 1. **Nghị định 356/2025/NĐ-CP** quy định chi tiết một số điều của Luật Bảo vệ dữ liệu cá nhân.
 2. **Luật Bảo vệ Dữ liệu Cá nhân 2025** (Personal Data Protection Law).
 3. **Quy chế Nghiên cứu Khoa học & Đạo đức Dữ liệu** trong khảo sát xã hội học và giáo dục.
@@ -53,7 +53,7 @@ Mục tiêu cốt lõi: Bảo vệ quyền riêng tư của người tham gia kh
 
 ## 3. Không Chia Sẻ Dữ Liệu Thô Với Bên Thứ Ba (Zero Third-Party Raw PII Transmission)
 
-- Phân hệ Hỗ trợ AI (`AIAssistant`) của DataTrust AI được thiết kế với cơ chế ưu tiên:
+- Phân hệ Hỗ trợ AI (`AIAssistant`) của DataTrust được thiết kế với cơ chế ưu tiên:
   1. Sử dụng **Deterministic Local NLP Engine** chạy trực tiếp trên máy chủ nội bộ để phân tích ngữ nghĩa, thống kê từ khóa và phát hiện văn bản lặp lại mà không gửi bất kỳ dữ liệu nào ra bên ngoài internet.
   2. Trong trường hợp kích hoạt mô hình ngôn ngữ lớn (LLM API) thông qua Gemini/OpenAI, hệ thống chủ động lọc bỏ mọi chuỗi ký tự có định dạng email, số điện thoại hoặc tên riêng trước khi gửi yêu cầu phân tích.
 

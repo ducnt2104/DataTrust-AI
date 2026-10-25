@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { DashboardPage } from './pages/DashboardPage';
@@ -12,6 +13,7 @@ import { ResponseComparePage } from './pages/ResponseComparePage';
 import { ExportImportPage } from './pages/ExportImportPage';
 import { PaperSurveyPage } from './pages/PaperSurveyPage';
 import { EnumeratorAnalyticsPage } from './pages/EnumeratorAnalyticsPage';
+import { PublicCertificateVerifyPage } from './pages/PublicCertificateVerifyPage';
 
 export function App() {
   const [currentPath, setCurrentPath] = useState<string>(window.location.pathname || '/');
@@ -36,7 +38,22 @@ export function App() {
 
   if (publicSlugMatch || publicSurveyMatch) {
     const slug = (publicSlugMatch ? publicSlugMatch[1] : publicSurveyMatch![1]);
-    return <PublicSurveyPage slug={slug} onNavigate={navigate} />;
+    return (
+      <ErrorBoundary>
+        <PublicSurveyPage slug={slug} onNavigate={navigate} />
+      </ErrorBoundary>
+    );
+  }
+
+  // Check if current route is Public Certificate Verification: /verify or /verify/:certId
+  const verifyMatch = currentPath.match(/^\/verify(?:\/([^/]+))?$/);
+  if (verifyMatch) {
+    const certQuery = verifyMatch[1] ? decodeURIComponent(verifyMatch[1]) : '';
+    return (
+      <ErrorBoundary>
+        <PublicCertificateVerifyPage initialQuery={certQuery} onNavigate={navigate} />
+      </ErrorBoundary>
+    );
   }
 
   // Admin Workspace Router
@@ -99,7 +116,9 @@ export function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/60 font-sans text-slate-900 antialiased selection:bg-indigo-500 selection:text-white">
       <Navbar currentPath={currentPath} onNavigate={navigate} />
-      <main className="flex-1">{content}</main>
+      <main className="flex-1">
+        <ErrorBoundary>{content}</ErrorBoundary>
+      </main>
       <Footer />
     </div>
   );

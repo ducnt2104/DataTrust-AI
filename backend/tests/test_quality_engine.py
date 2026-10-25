@@ -140,3 +140,53 @@ def test_clean_response_low_risk(sample_questions):
     assert result["composite_score"] < 40.0
     assert result["risk_level"] == "low"
     assert len(result["flags"]) == 0
+
+def test_geofence_compliance_and_breach(sample_questions):
+    """
+    Kiểm thử cơ chế kiểm định ranh giới địa lý thực địa (Geofencing Compliance):
+    1. Tọa độ nằm trong bán kính quy định (< 2 km): Không gắn cờ, rủi ro thấp.
+    2. Tọa độ nằm ngoài bán kính (cách > 15 km): Gắn cờ FLAG_GEOFENCE_BREACH, điểm rủi ro cao.
+    3. Kiểm tra tính chính xác của công thức trắc địa Haversine.
+    """
+    # 1. Kiểm tra công thức Haversine giữa Hồ Hoàn Kiếm (21.0285, 105.8542) và Đại học Quốc Gia HN Cầu Giấy (21.0378, 105.7820)
+    dist = QualityEngine.haversine_distance_km(21.0285, 105.8542, 21.0378, 105.7820)
+    assert 7.0 <= dist <= 8.0  # Thực tế khoảng ~7.5 km
+
+    geofence_settings = {
+        "geofence": {
+            "enabled": True,
+            "target_lat": 21.0285,
+            "target_lon": 105.8542,
+            "max_radius_km": 2.0,
+            "location_name": "Khu vực Trung tâm Hoàn Kiếm"
+        }
+    }
+    clean_answers = {"q1": "male", "q2": "yes", "q3": "2", "q4": "4", "q5": "3", "q6": "5", "q7": "Ý kiến hợp lệ"}
+
+    # 2. Phản hồi hợp lệ trong bán kính (~100m)
+    inside_res = QualityEngine.analyze_response(
+        new_answers=clean_answers,
+        duration_seconds=45.0,
+        questions=sample_questions,
+        prior_responses=[],
+        quality_settings=geofence_settings,
+        client_metadata={"latitude": 21.0290, "longitude": 105.8548}
+    )
+    assert inside_res["score_geofence"] == 0.0
+    assert not any(f["code"] == "FLAG_GEOFENCE_BREACH" for f in inside_res["flags"])
+
+    # 3. Phản hồi vi phạm ranh giới địa lý (cách ~7.5 km trong khi bán kính là 2.0 km)
+    breach_res = QualityEngine.analyze_response(
+        new_answers=clean_answers,
+        duration_seconds=45.0,
+        questions=sample_questions,
+        prior_responses=[],
+        quality_settings=geofence_settings,
+        client_metadata={"latitude": 21.0378, "longitude": 105.7820}
+    )
+    assert breach_res["score_geofence"] >= 60.0
+    assert breach_res["composite_score"] >= 60.0
+    assert any(f["code"] == "FLAG_GEOFENCE_BREACH" for f in breach_res["flags"])
+    breach_flag = next(f for f in breach_res["flags"] if f["code"] == "FLAG_GEOFENCE_BREACH")
+    assert "vượt quá bán kính quy định" in breach_flag["message"]
+

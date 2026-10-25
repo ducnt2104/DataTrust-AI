@@ -1,8 +1,8 @@
 # BẢNG MA TRẬN TRUY XUẤT YÊU CẦU DỰ ÁN (REQUIREMENT TRACEABILITY MATRIX)
-## DỰ ÁN: DATATRUST AI — SỐ HÓA & KIỂM ĐỊNH CHẤT LƯỢNG KHẢO SÁT THỰC ĐỊA BẰNG AI
+## DỰ ÁN: DATATRUST — SỐ HÓA & KIỂM ĐỊNH CHẤT LƯỢNG KHẢO SÁT THỰC ĐỊA BẰNG AI
 **Tài liệu quy chiếu:** `Thuyet_Minh_Du_An_DataTrust_AI_Hoan_Chinh.docx`  
 **Ngày cập nhật:** 2026-10-23  
-**Phiên bản hệ thống:** DataTrust AI v2.0  
+**Phiên bản hệ thống:** DataTrust v2.0  
 
 ---
 

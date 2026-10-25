@@ -1,4 +1,4 @@
-# DataTrust AI — Đặc Tả Kiến Trúc Kỹ Thuật (Technical Architecture Specification)
+# DataTrust — Đặc Tả Kiến Trúc Kỹ Thuật (Technical Architecture Specification)
 ## Phiên Bản Hoàn Thiện: Kiến Trúc Hai Luồng (Dual-Stream Architecture) & Động Cơ Kiểm Định Đa Tầng
 
 **Mã tài liệu:** `DT-ARCH-2026-V2`  
@@ -8,7 +8,7 @@
 
 ## 1. Tổng Quan Kiến Trúc Hệ Thống (System Overview)
 
-DataTrust AI được xây dựng theo nguyên tắc kiến trúc sạch (**Clean Architecture** & **Modular Monolith**), phân tách ranh giới rõ ràng giữa các tầng trình diễn, dịch vụ nghiệp vụ, xử lý ảnh thị giác máy tính và lưu trữ dữ liệu bền vững.
+DataTrust được xây dựng theo nguyên tắc kiến trúc sạch (**Clean Architecture** & **Modular Monolith**), phân tách ranh giới rõ ràng giữa các tầng trình diễn, dịch vụ nghiệp vụ, xử lý ảnh thị giác máy tính và lưu trữ dữ liệu bền vững.
 
 Hệ thống tích hợp hai luồng thu thập dữ liệu song song (Dual-Stream), cùng đưa dữ liệu về một cấu trúc phản hồi chuẩn hóa và được phân tích bởi cùng một Động cơ Kiểm định Chất lượng Dữ liệu (**Quality Engine**).
 

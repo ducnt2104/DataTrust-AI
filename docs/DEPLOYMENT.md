@@ -1,4 +1,4 @@
-# DataTrust AI — Hướng Dẫn Triển Khai Môi Trường Sản Xuất (Production Deployment Guide)
+# DataTrust — Hướng Dẫn Triển Khai Môi Trường Sản Xuất (Production Deployment Guide)
 ## Triển Khai Trên Máy Chủ Linux / Windows Với Nginx, Systemd & SQLite WAL Backup
 
 **Tài liệu mã số:** `DT-DEP-2026-V2`  
@@ -22,7 +22,7 @@
 ```bash
 # Clone dự án vào thư mục chuẩn
 cd /var/www
-git clone https://github.com/your-org/DataTrust-AI.git datatrust
+git clone https://github.com/your-org/DataTrust.git datatrust
 cd /var/www/datatrust/backend
 
 # Tạo Python Virtual Environment
@@ -70,7 +70,7 @@ chmod 700 /var/www/datatrust/backend/data
 Tạo file dịch vụ `/etc/systemd/system/datatrust-api.service`:
 ```ini
 [Unit]
-Description=DataTrust AI Backend API Service
+Description=DataTrust Backend API Service
 After=network.target
 
 [Service]

@@ -1,4 +1,4 @@
-# DataTrust AI — Implementation Backlog (Updated)
+# DataTrust — Implementation Backlog (Updated)
 
 Trạng thái:
 - [x] **P0-1:** Khởi tạo cấu trúc dự án Frontend & Backend & Git & Tài liệu kiến trúc.
@@ -56,3 +56,24 @@ Trạng thái:
   - Tuyến API `POST /api/surveys/{survey_id}/paper/batch-scan` bóc tách đồng thời nhiều ảnh phiếu giấy chụp từ điện thoại thực địa.
   - Tuyến API `POST /api/surveys/{survey_id}/responses/re-analyze` tái tính toán toàn bộ cờ cảnh báo và điểm rủi ro.
   - Nút "Tái phân tích chất lượng" trên giao diện `SurveyAnalyticsPage.tsx`.
+- [x] **P0-25:** Đại tu Toàn diện Bảo mật Secret & Header-Based Auth:
+  - Loại bỏ hoàn toàn API key khỏi URL query string (`?key=...`).
+  - Chuyển sang sử dụng header bảo mật `x-goog-api-key` trong HTTPS client.
+  - Khởi tạo `.env.example` với placeholder an toàn, đảm bảo `.env` được bỏ qua trong Git.
+- [x] **P0-26:** Kiến trúc Cơ sở Dữ liệu Lưu vết AI (Persistence & Traceability):
+  - Bổ sung bảng `ai_generation_sessions` và `ai_audit_logs` cùng các chỉ mục tối ưu truy vấn trong SQLite WAL.
+  - Tuyến API `GET /api/ai/sessions` và `GET /api/ai/sessions/{id}` phục vụ kiểm toán và giám sát.
+- [x] **P0-27:** Tái cấu trúc Động cơ AI Khoa học (`ai_service.py`):
+  - Xây dựng lớp `RequirementParser` khử khuẩn tiêm lệnh (Prompt Injection) và nhận diện ý định.
+  - Tích hợp phương pháp luận Don Dillman và chuẩn AAPOR hỗ trợ đầy đủ 12 loại câu hỏi (đặc biệt là Matrix tiêu chí và Ranking thứ tự).
+  - Thuật toán `validate_survey_draft` tính toán điểm Coverage, Adherence và Objectivity score.
+  - Cơ chế Bounded Self-Repair (tối đa 2 lần) tự động sửa chữa câu hỏi dẫn dắt hoặc thiếu phương án.
+  - Động cơ hình mẫu cục bộ (Deterministic Archetype Engine) với 6 mô hình nghiên cứu độc lập.
+- [x] **P0-28:** Nâng cấp Nền tảng Web Động & Trải nghiệm Người dùng:
+  - Nâng cấp Modal AI Survey Assistant trên `SurveyBuilderPage.tsx`: chọn số lượng câu hỏi, mục tiêu nghiên cứu, dạng câu hỏi ưu tiên và xem trước (Preview) trước khi áp dụng.
+  - Cung cấp nút tự động sửa một chạm ("✓ Tự động sửa") trong Khay Kiểm định Câu hỏi (AI Audit Drawer).
+  - Bổ sung thẻ Phân tích Định tính AI (`AIQualitativeInsightsCard.tsx`) trên trang phân tích kết quả.
+- [x] **P0-29:** Bộ Kiểm chuẩn AI Benchmark Suite & Hồ sơ Tài liệu Kiểm toán:
+  - Bộ kiểm chuẩn tự động 10 ca kiểm thử (`ai_benchmark.py`): Đạt 100% tuân thủ dạng câu hỏi, 100% kháng tiêm lệnh, độ trễ 8.1ms.
+  - Toàn bộ 36 ca kiểm thử tự động backend vượt qua thành công (100% pass rate).
+  - Bộ hồ sơ tài liệu chuyên sâu: `docs/TECHNICAL_AUDIT.md`, `docs/SECURITY_ASSESSMENT.md`, `docs/DATABASE_DESIGN.md`, `docs/AI_ARCHITECTURE.md`, `docs/AI_EVALUATION.md`, `docs/SETUP_GUIDE.md`.

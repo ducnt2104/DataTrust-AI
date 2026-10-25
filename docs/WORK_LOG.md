@@ -1,4 +1,4 @@
-# DataTrust AI — Engineering Work Log & Progress Checkpoints
+# DataTrust — Engineering Work Log & Progress Checkpoints
 
 ## Checkpoint 1: Khởi động & Khám phá Workspace (Giai đoạn A)
 - **Thời gian:** 2026-10-22 13:16 - 13:20
@@ -190,3 +190,28 @@
      - Tạo mới `backend/tests/test_quality_advanced_patterns.py` với 5 ca kiểm thử chuyên sâu.
      - Toàn bộ **30/30 tests** trên 15 test suites đạt **100% PASSED** trong 7.24s.
      - Biên dịch production Frontend `npm run build`: 1,981 modules transformed không lỗi trong 611ms.
+
+## [2026-10-23 17:15] — Milestone 8: Đại tu Toàn diện Năng lực AI & Bảo mật Hệ thống (DataTrust Master Overhaul)
+- **Kích hoạt Master Skill:** Thực thi `universal-skill-orchestrator` ở chế độ `MAXIMUM_COVERAGE` mode (87 skills áp dụng qua quy trình 10 pha).
+- **Khắc phục An toàn Thông tin & Quản lý Secret:**
+  - Xóa triệt để API Key khỏi URL query parameter (`?key=...`); chuyển sang sử dụng header `x-goog-api-key` chuẩn HTTPS.
+  - Kiểm tra và đảm bảo 0 khóa cứng trong Git (`git grep -i "AIzaSy"` = 0 leaks).
+  - Bổ sung bộ lọc tiêm lệnh độc hại `RequirementParser.sanitize_text` ngăn chặn tấn công Prompt Injection.
+- **Mở rộng Cơ sở Dữ liệu & Lưu vết Phiên:**
+  - Bổ sung 2 bảng thực thể mới `ai_generation_sessions` và `ai_audit_logs` cùng 3 chỉ mục tối ưu vào SQLite 3 WAL.
+  - Tuyến API `/api/ai/sessions` và `/api/ai/sessions/{id}` phục vụ giám sát và kiểm toán bất biến.
+- **Tái thiết Động cơ AI Khoa học (`ai_service.py`):**
+  - Trích xuất yêu cầu có cấu trúc từ ngôn ngữ tự nhiên (`SurveyRequirementSpec`).
+  - Hỗ trợ đầy đủ 12 loại câu hỏi khoa học theo phương pháp luận Don Dillman và AAPOR (đặc biệt là Matrix đa tiêu chí và Ranking thứ tự).
+  - Thuật toán `validate_survey_draft` tính toán điểm định lượng Coverage, Adherence và Objectivity score.
+  - Cơ chế Bounded Self-Repair (tối đa 2 lần) tự động sửa chữa câu hỏi dẫn dắt hoặc thiếu phương án.
+  - Động cơ hình mẫu khoa học cục bộ (Deterministic Archetype Engine với 6 mô hình nghiên cứu độc lập).
+- **Nâng cấp Nền tảng Web Động (React 19 + TypeScript):**
+  - Modal AI Survey Assistant trên `SurveyBuilderPage.tsx`: chọn số lượng câu hỏi, mục tiêu nghiên cứu, dạng câu hỏi ưu tiên và xem trước (Preview) trước khi áp dụng.
+  - Cung cấp nút tự động sửa một chạm ("✓ Tự động sửa") trong Khay Kiểm định Câu hỏi (AI Audit Drawer).
+  - Bổ sung thẻ Phân tích Định tính AI (`AIQualitativeInsightsCard.tsx`) trên trang phân tích kết quả.
+- **Bộ Kiểm chuẩn AI Benchmark & Tài liệu:**
+  - Thực thi bộ kiểm chuẩn tự động 10 ca kiểm thử (`ai_benchmark.py`): Đạt 100% tuân thủ dạng câu hỏi, 100% kháng tiêm lệnh, độ trễ 8.1ms.
+  - Toàn bộ 36 ca kiểm thử tự động backend vượt qua thành công (100% pass rate).
+  - Biên dịch Frontend thành công với 0 lỗi TypeScript strict (0 errors).
+  - Hoàn thiện 6 bộ tài liệu kỹ thuật: `TECHNICAL_AUDIT.md`, `SECURITY_ASSESSMENT.md`, `DATABASE_DESIGN.md`, `AI_ARCHITECTURE.md`, `AI_EVALUATION.md`, `SETUP_GUIDE.md`.

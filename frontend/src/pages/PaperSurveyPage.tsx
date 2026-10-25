@@ -13,7 +13,13 @@ import {
   ShieldCheck,
   ChevronLeft,
   ArrowRight,
-  Info
+  Info,
+  Download,
+  RotateCw,
+  Layers,
+  Grid,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { api } from '../api/client';
 import { Survey, PaperTemplateLayout, PaperScanResult } from '../types/survey';
@@ -31,10 +37,23 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
   const [error, setError] = useState<string | null>(null);
 
   // Scan state
+  const [scanMode, setScanMode] = useState<'single' | 'batch'>('single');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [scanning, setScanning] = useState<boolean>(false);
   const [scanResult, setScanResult] = useState<PaperScanResult | null>(null);
+
+  // Batch scan state
+  const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [batchScanning, setBatchScanning] = useState<boolean>(false);
+  const [batchResults, setBatchResults] = useState<any | null>(null);
+
+  // Pre-processing & Alignment Reticle state
+  const [brightness, setBrightness] = useState<number>(0);
+  const [contrast, setContrast] = useState<number>(0);
+  const [rotation, setRotation] = useState<number>(0);
+  const [showAlignmentGrid, setShowAlignmentGrid] = useState<boolean>(true);
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Manual correction state
   const [correctedAnswers, setCorrectedAnswers] = useState<Record<string, any>>({});
@@ -83,6 +102,147 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
     }
   }, [template, enumeratorId, surveyId, activeTab]);
 
+  // Canvas redraw loop for pre-processing & corner alignment guides
+  useEffect(() => {
+    if (!imagePreviewUrl || !previewCanvasRef.current) return;
+    const canvas = previewCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imagePreviewUrl;
+    img.onload = () => {
+      const isRotated90or270 = rotation % 180 !== 0;
+      const targetWidth = isRotated90or270 ? img.height : img.width;
+      const targetHeight = isRotated90or270 ? img.width : img.height;
+      
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      ctx.save();
+      ctx.clearRect(0, 0, targetWidth, targetHeight);
+      ctx.translate(targetWidth / 2, targetHeight / 2);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      ctx.restore();
+
+      // Áp dụng điều chỉnh Brightness & Contrast
+      if (brightness !== 0 || contrast !== 0) {
+        const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+        const d = imgData.data;
+        const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+        for (let i = 0; i < d.length; i += 4) {
+          let r = d[i] + brightness;
+          let g = d[i + 1] + brightness;
+          let b = d[i + 2] + brightness;
+          d[i] = Math.min(255, Math.max(0, contrastFactor * (r - 128) + 128));
+          d[i + 1] = Math.min(255, Math.max(0, contrastFactor * (g - 128) + 128));
+          d[i + 2] = Math.min(255, Math.max(0, contrastFactor * (b - 128) + 128));
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      // Vẽ 4 góc căn chỉnh mốc định vị OMR (Fiducial Alignment Reticles)
+      if (showAlignmentGrid) {
+        ctx.save();
+        ctx.strokeStyle = '#ef4444'; // Đỏ cam tương phản cao
+        ctx.lineWidth = Math.max(4, Math.round(targetWidth / 180));
+        const cornerSize = Math.max(35, Math.round(targetWidth / 14));
+        const pad = Math.max(20, Math.round(targetWidth / 28));
+
+        // Top-Left [
+        ctx.beginPath();
+        ctx.moveTo(pad, pad + cornerSize);
+        ctx.lineTo(pad, pad);
+        ctx.lineTo(pad + cornerSize, pad);
+        ctx.stroke();
+
+        // Top-Right ]
+        ctx.beginPath();
+        ctx.moveTo(targetWidth - pad - cornerSize, pad);
+        ctx.lineTo(targetWidth - pad, pad);
+        ctx.lineTo(targetWidth - pad, pad + cornerSize);
+        ctx.stroke();
+
+        // Bottom-Left [
+        ctx.beginPath();
+        ctx.moveTo(pad, targetHeight - pad - cornerSize);
+        ctx.lineTo(pad, targetHeight - pad);
+        ctx.lineTo(pad + cornerSize, targetHeight - pad);
+        ctx.stroke();
+
+        // Bottom-Right ]
+        ctx.beginPath();
+        ctx.moveTo(targetWidth - pad - cornerSize, targetHeight - pad);
+        ctx.lineTo(targetWidth - pad, targetHeight - pad);
+        ctx.lineTo(targetWidth - pad, targetHeight - pad - cornerSize);
+        ctx.stroke();
+
+        // Tâm ngắm trung tâm (Center Crosshair)
+        const cx = targetWidth / 2;
+        const cy = targetHeight / 2;
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(cx - 30, cy); ctx.lineTo(cx + 30, cy);
+        ctx.moveTo(cx, cy - 30); ctx.lineTo(cx, cy + 30);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    };
+  }, [imagePreviewUrl, brightness, contrast, rotation, showAlignmentGrid]);
+
+  const getCalibratedFile = async (): Promise<File> => {
+    if (!selectedFile || (brightness === 0 && contrast === 0 && rotation === 0)) {
+      return selectedFile!;
+    }
+    return new Promise((resolve) => {
+      const offCanvas = document.createElement('canvas');
+      const ctx = offCanvas.getContext('2d');
+      if (!ctx) return resolve(selectedFile!);
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = imagePreviewUrl!;
+      img.onload = () => {
+        const isRotated90or270 = rotation % 180 !== 0;
+        offCanvas.width = isRotated90or270 ? img.height : img.width;
+        offCanvas.height = isRotated90or270 ? img.width : img.height;
+        ctx.save();
+        ctx.translate(offCanvas.width / 2, offCanvas.height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+        ctx.restore();
+
+        if (brightness !== 0 || contrast !== 0) {
+          const imgData = ctx.getImageData(0, 0, offCanvas.width, offCanvas.height);
+          const d = imgData.data;
+          const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+          for (let i = 0; i < d.length; i += 4) {
+            let r = d[i] + brightness;
+            let g = d[i + 1] + brightness;
+            let b = d[i + 2] + brightness;
+            d[i] = Math.min(255, Math.max(0, contrastFactor * (r - 128) + 128));
+            d[i + 1] = Math.min(255, Math.max(0, contrastFactor * (g - 128) + 128));
+            d[i + 2] = Math.min(255, Math.max(0, contrastFactor * (b - 128) + 128));
+          }
+          ctx.putImageData(imgData, 0, 0);
+        }
+
+        offCanvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], selectedFile!.name, { type: 'image/jpeg' }));
+          } else {
+            resolve(selectedFile!);
+          }
+        }, 'image/jpeg', 0.95);
+      };
+    });
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -90,6 +250,18 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
       setImagePreviewUrl(URL.createObjectURL(file));
       setScanResult(null);
       setIngestSuccess(null);
+      // Reset adjustment values
+      setBrightness(0);
+      setContrast(0);
+      setRotation(0);
+    }
+  };
+
+  const handleBatchFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setBatchFiles(Array.from(e.target.files));
+      setBatchResults(null);
+      setError(null);
     }
   };
 
@@ -98,7 +270,8 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
     setScanning(true);
     setError(null);
     try {
-      const result: PaperScanResult = await api.scanPaperImage(surveyId, selectedFile);
+      const fileToScan = await getCalibratedFile();
+      const result: PaperScanResult = await api.scanPaperImage(surveyId, fileToScan);
       setScanResult(result);
       setCorrectedAnswers(result.detected_answers || {});
       if (result.enumerator_id) {
@@ -109,6 +282,20 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
       setError(err.message || 'Lỗi trong quá trình quét và xử lý ảnh phiếu.');
     } finally {
       setScanning(false);
+    }
+  };
+
+  const handleBatchScanSubmit = async () => {
+    if (batchFiles.length === 0) return;
+    setBatchScanning(true);
+    setError(null);
+    try {
+      const res = await api.batchScanPaperImages(surveyId, batchFiles);
+      setBatchResults(res);
+    } catch (err: any) {
+      setError(err.message || 'Lỗi trong quá trình xử lý hàng loạt.');
+    } finally {
+      setBatchScanning(false);
     }
   };
 
@@ -225,38 +412,50 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl self-start md:self-auto border border-slate-200">
-          <button
-            onClick={() => setActiveTab('template')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'template'
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+        {/* Actions & Tab Switcher */}
+        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+          <a
+            href={`/api/surveys/${surveyId}/paper/export-audit`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300/80 rounded-xl transition-all shadow-2xs"
+            title="Tải báo cáo hậu kiểm và độ tin cậy OMR toàn bộ phiếu giấy đã số hóa"
           >
-            <FileText className="w-4 h-4" /> Mẫu Phiếu Chuẩn
-          </button>
-          <button
-            onClick={() => setActiveTab('scan')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'scan'
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Camera className="w-4 h-4" /> Quét & Tải Ảnh
-          </button>
-          <button
-            onClick={() => setActiveTab('verify')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'verify'
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Sliders className="w-4 h-4" /> Xác Nhận OMR
-          </button>
+            <Download className="w-3.5 h-3.5" /> Xuất Báo Cáo OMR (CSV)
+          </a>
+
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setActiveTab('template')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'template'
+                  ? 'bg-white text-indigo-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileText className="w-4 h-4" /> Mẫu Phiếu Chuẩn
+            </button>
+            <button
+              onClick={() => setActiveTab('scan')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'scan'
+                  ? 'bg-white text-indigo-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Camera className="w-4 h-4" /> Quét & Tải Ảnh
+            </button>
+            <button
+              onClick={() => setActiveTab('verify')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'verify'
+                  ? 'bg-white text-indigo-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Sliders className="w-4 h-4" /> Xác Nhận OMR
+            </button>
+          </div>
         </div>
       </div>
 
@@ -309,12 +508,23 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
                 placeholder="VD: DTV-01"
               />
             </div>
-            <button
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-semibold shadow-sm transition-all"
-            >
-              <Printer className="w-4 h-4" /> In Phiếu Chuẩn (A4)
-            </button>
+            <div className="flex items-center gap-2">
+              <a
+                href={`/api/surveys/${surveyId}/paper/printable-html?enumerator_id=${encodeURIComponent(enumeratorId)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold transition-all border border-slate-300"
+                title="Mở bản in độc lập trong tab mới kèm QR code nhúng"
+              >
+                <ExternalLink className="w-4 h-4" /> Mở Bản In Độc Lập
+              </a>
+              <button
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-semibold shadow-sm transition-all"
+              >
+                <Printer className="w-4 h-4" /> In Phiếu Chuẩn (A4)
+              </button>
+            </div>
           </div>
 
           {/* A4 Sheet Container */}
@@ -332,7 +542,7 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
             <div className="flex justify-between items-start pt-6 px-6 pb-4 border-b-2 border-slate-800">
               <div className="max-w-[70%]">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  DATATRUST AI — PHIẾU KHẢO SÁT THỰC ĐỊA CHUẨN HÓA
+                  DATATRUST — PHIẾU KHẢO SÁT THỰC ĐỊA CHUẨN HÓA
                 </div>
                 <h2 className="text-2xl font-black text-slate-900 mt-1 uppercase tracking-tight">
                   {survey?.title}
@@ -384,7 +594,7 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
 
             {/* Footer */}
             <div className="px-6 pt-4 text-center text-[10px] text-slate-400 border-t border-slate-200 absolute bottom-6 left-0 right-0">
-              DataTrust AI Paper Digitization Architecture • Form Version {template?.template_version || 1} • Không gấp hoặc làm rách 4 góc căn chỉnh
+              DataTrust Paper Digitization Architecture • Form Version {template?.template_version || 1} • Không gấp hoặc làm rách 4 góc căn chỉnh
             </div>
           </div>
         </div>
@@ -392,71 +602,323 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
 
       {/* --- TAB 2: QUÉT & TẢI ẢNH PHIẾU --- */}
       {activeTab === 'scan' && (
-        <div className="mt-8 max-w-3xl mx-auto">
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">
-              Tải lên hoặc Chụp ảnh phiếu khảo sát
-            </h3>
-            <p className="text-sm text-slate-600 mb-6">
-              Hệ thống sẽ tự động tìm 4 mốc góc, nắn phẳng phối cảnh 2D, đo độ nét Laplacian và đọc tỷ lệ pixel tô đen của từng ô tích.
-            </p>
+        <div className="mt-8 max-w-4xl mx-auto space-y-6">
+          {/* Sub-mode switcher: Single vs Batch */}
+          <div className="flex items-center justify-between bg-white border border-slate-200 p-2 rounded-2xl shadow-xs">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setScanMode('single')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  scanMode === 'single'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <Camera className="w-4 h-4" /> Quét Đơn Lẻ & Căn Chỉnh Góc (Single OMR)
+              </button>
+              <button
+                type="button"
+                onClick={() => setScanMode('batch')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  scanMode === 'batch'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <Layers className="w-4 h-4" /> Quét Hàng Loạt (Batch Multi-Scan)
+              </button>
+            </div>
+            <span className="text-[11px] font-mono text-slate-600 hidden sm:inline px-3">
+              Mô-đun OpenCV 4.10 + Homography Matrix
+            </span>
+          </div>
 
-            {/* Dropzone */}
-            <label className="border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-indigo-50/20 transition-all">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/jpg"
-                capture="environment"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <Upload className="w-12 h-12 text-slate-400 mb-3" />
-              <span className="text-sm font-semibold text-slate-800">
-                Chọn ảnh chụp phiếu hoặc kéo thả vào đây
-              </span>
-              <span className="text-xs text-slate-500 mt-1">
-                Hỗ trợ định dạng JPG, PNG từ camera điện thoại hoặc máy quét
-              </span>
-            </label>
+          {/* SINGLE MODE */}
+          {scanMode === 'single' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Chụp hoặc Tải ảnh phiếu khảo sát
+                  </h3>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Hệ thống tích hợp Canvas hỗ trợ xoay chiều, tăng tương phản và căn mốc 4 góc trước khi chuyển cho mô-đun OpenCV OMR.
+                  </p>
+                </div>
+              </div>
 
-            {/* Preview & Action */}
-            {imagePreviewUrl && (
-              <div className="mt-6 border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row items-center gap-6">
-                <img
-                  src={imagePreviewUrl}
-                  alt="Ảnh phiếu đã chọn"
-                  className="w-36 h-48 object-cover rounded-lg border border-slate-300 shadow-sm"
+              {/* Dropzone */}
+              <label className="border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-indigo-50/20 transition-all">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg"
+                  capture="environment"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
-                <div className="flex-1 text-center sm:text-left">
-                  <h4 className="font-semibold text-sm text-slate-900">
-                    {selectedFile?.name || 'Ảnh phiếu khảo sát'}
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Kích thước: {(selectedFile!.size / 1024).toFixed(1)} KB
-                  </p>
-                  <p className="text-xs text-emerald-600 font-medium mt-2 flex items-center gap-1 justify-center sm:justify-start">
-                    <CheckCircle className="w-3.5 h-3.5" /> Sẵn sàng chạy mô-đun thị giác máy tính OpenCV
-                  </p>
+                <Upload className="w-10 h-10 text-slate-400 mb-2" />
+                <span className="text-sm font-semibold text-slate-800">
+                  {selectedFile ? 'Thay đổi ảnh phiếu khác' : 'Chọn ảnh chụp phiếu hoặc kéo thả vào đây'}
+                </span>
+                <span className="text-xs text-slate-500 mt-1">
+                  Hỗ trợ định dạng JPG, PNG từ camera điện thoại hoặc máy scan
+                </span>
+              </label>
 
+              {/* Interactive Canvas & Calibration Panel */}
+              {imagePreviewUrl && (
+                <div className="mt-6 border border-slate-200 rounded-2xl p-5 bg-slate-50/80">
+                  <div className="flex flex-col lg:flex-row gap-6 items-start">
+                    {/* Left: Canvas preview with corner alignment guides */}
+                    <div className="w-full lg:w-1/2 flex flex-col items-center">
+                      <div className="relative border-2 border-slate-300 rounded-xl overflow-hidden shadow-inner bg-slate-900 max-h-[380px] w-full flex items-center justify-center">
+                        <canvas
+                          ref={previewCanvasRef}
+                          className="max-h-[380px] max-w-full object-contain"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500">
+                        <span className="flex items-center gap-1 text-red-600 font-semibold">
+                          <Grid className="w-3.5 h-3.5" /> 4 góc đỏ: Vị trí mốc góc chuẩn
+                        </span>
+                        <span>•</span>
+                        <span>{selectedFile?.name} ({(selectedFile!.size / 1024).toFixed(1)} KB)</span>
+                      </div>
+                    </div>
+
+                    {/* Right: Calibration Controls */}
+                    <div className="w-full lg:w-1/2 space-y-4">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <Sliders className="w-4 h-4 text-indigo-600" /> Tiền xử lý ảnh thực địa
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBrightness(10);
+                            setContrast(30);
+                          }}
+                          className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" /> Tự động cân bằng OMR
+                        </button>
+                      </div>
+
+                      {/* Rotation button */}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-700 font-medium">Góc xoay ảnh:</span>
+                        <div className="flex items-center gap-1.5">
+                          {[0, 90, 180, 270].map((deg) => (
+                            <button
+                              key={deg}
+                              type="button"
+                              onClick={() => setRotation(deg)}
+                              className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold border ${
+                                rotation === deg
+                                  ? 'bg-indigo-600 text-white border-indigo-600'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {deg}°
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Brightness Slider */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-slate-700">
+                          <span>Độ sáng (Brightness):</span>
+                          <span className="font-mono font-semibold">{brightness > 0 ? `+${brightness}` : brightness}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-50"
+                          max="50"
+                          value={brightness}
+                          onChange={(e) => setBrightness(Number(e.target.value))}
+                          className="w-full accent-indigo-600"
+                        />
+                      </div>
+
+                      {/* Contrast Slider */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-slate-700">
+                          <span>Độ tương phản (Contrast):</span>
+                          <span className="font-mono font-semibold">{contrast > 0 ? `+${contrast}` : contrast}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-50"
+                          max="50"
+                          value={contrast}
+                          onChange={(e) => setContrast(Number(e.target.value))}
+                          className="w-full accent-indigo-600"
+                        />
+                      </div>
+
+                      {/* Alignment Grid Toggle */}
+                      <label className="flex items-center gap-2 cursor-pointer pt-1 text-xs text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={showAlignmentGrid}
+                          onChange={(e) => setShowAlignmentGrid(e.target.checked)}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>Hiển thị tiêu cự ngắm 4 góc mốc OMR</span>
+                      </label>
+
+                      {/* Action Button */}
+                      <div className="pt-3 border-t border-slate-200">
+                        <button
+                          onClick={handleScanSubmit}
+                          disabled={scanning}
+                          className="w-full px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl text-sm font-bold inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                        >
+                          {scanning ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" /> Đang căn chỉnh phối cảnh & đọc OMR...
+                            </>
+                          ) : (
+                            <>
+                              <ShieldCheck className="w-4 h-4" /> Quét & Nhận Diện Phiếu Này
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* BATCH MODE */}
+          {scanMode === 'batch' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Quét Hàng Loạt Phiếu Giấy (Batch Processing)
+                </h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  Chọn đồng thời nhiều ảnh chụp phiếu (tối đa 50 tệp). Hệ thống sẽ tự động phân giải QR, nắn phẳng và phân tích OMR tuần tự.
+                </p>
+              </div>
+
+              {/* Multi-file Dropzone */}
+              <label className="border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-indigo-50/20 transition-all">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg"
+                  multiple
+                  onChange={handleBatchFileChange}
+                  className="hidden"
+                />
+                <Layers className="w-12 h-12 text-slate-400 mb-3" />
+                <span className="text-sm font-semibold text-slate-800">
+                  {batchFiles.length > 0 ? `Đã chọn ${batchFiles.length} tệp ảnh` : 'Chọn nhiều ảnh chụp phiếu cùng lúc'}
+                </span>
+                <span className="text-xs text-slate-500 mt-1">
+                  Giữ phím Ctrl/Cmd hoặc kéo thả nhiều tệp ảnh JPG, PNG vào đây
+                </span>
+              </label>
+
+              {batchFiles.length > 0 && (
+                <div className="flex items-center justify-between p-4 bg-indigo-50/70 border border-indigo-200 rounded-xl">
+                  <div className="text-xs text-indigo-950 font-medium">
+                    Sẵn sàng xử lý <strong className="font-bold">{batchFiles.length}</strong> tệp ảnh khảo sát.
+                  </div>
                   <button
-                    onClick={handleScanSubmit}
-                    disabled={scanning}
-                    className="mt-4 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg text-sm font-semibold inline-flex items-center gap-2 shadow-sm transition-all"
+                    onClick={handleBatchScanSubmit}
+                    disabled={batchScanning}
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg text-xs font-bold inline-flex items-center gap-2 shadow-xs"
                   >
-                    {scanning ? (
+                    {batchScanning ? (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" /> Đang căn chỉnh phối cảnh & đọc OMR...
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Đang chạy xử lý hàng loạt...
                       </>
                     ) : (
                       <>
-                        <ShieldCheck className="w-4 h-4" /> Quét & Nhận diện OMR
+                        <ShieldCheck className="w-3.5 h-3.5" /> Bắt Đầu Quét Hàng Loạt
                       </>
                     )}
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+
+              {/* Batch Scan Results Summary */}
+              {batchResults && (
+                <div className="space-y-4 pt-4 border-t border-slate-200">
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                      <span className="text-xs text-slate-500">Tổng số tệp</span>
+                      <p className="text-lg font-bold text-slate-900 mt-0.5">{batchResults.total_files}</p>
+                    </div>
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <span className="text-xs text-emerald-700">Thành công</span>
+                      <p className="text-lg font-bold text-emerald-700 mt-0.5">{batchResults.success_count}</p>
+                    </div>
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                      <span className="text-xs text-red-700">Thất bại / Lỗi</span>
+                      <p className="text-lg font-bold text-red-700 mt-0.5">{batchResults.failure_count}</p>
+                    </div>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[350px] overflow-y-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100 text-slate-700 border-b border-slate-200">
+                        <tr>
+                          <th className="p-3 font-semibold">Tên tệp</th>
+                          <th className="p-3 font-semibold">Trạng thái</th>
+                          <th className="p-3 font-semibold">Mã phiếu (Form ID)</th>
+                          <th className="p-3 font-semibold">Độ tin cậy OMR</th>
+                          <th className="p-3 font-semibold">Hành động</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {batchResults.results.map((r: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="p-3 font-mono text-slate-800 max-w-[150px] truncate">{r.filename}</td>
+                            <td className="p-3">
+                              {r.success ? (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                  HỢP LỆ
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-bold">
+                                  LỖI
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 font-mono text-slate-700">{r.form_id || '—'}</td>
+                            <td className="p-3 font-mono font-semibold">
+                              {r.confidence_score ? `${(r.confidence_score * 100).toFixed(0)}%` : '—'}
+                            </td>
+                            <td className="p-3">
+                              {r.success && (
+                                <button
+                                  onClick={() => {
+                                    setScanResult(r);
+                                    setCorrectedAnswers(r.detected_answers || {});
+                                    if (r.enumerator_id) setEnumeratorId(r.enumerator_id);
+                                    setActiveTab('verify');
+                                  }}
+                                  className="text-indigo-600 hover:text-indigo-800 font-semibold"
+                                >
+                                  Kiểm duyệt &gt;
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -502,6 +964,12 @@ export function PaperSurveyPage({ surveyId, onNavigate }: PaperSurveyPageProps) 
                       {scanResult.image_quality.mean_brightness} / {scanResult.image_quality.contrast_std}
                     </strong>
                   </div>
+                  {Boolean(scanResult.orientation_corrected) && (
+                    <div className="col-span-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 flex items-center justify-between text-xs font-semibold">
+                      <span>📐 Tự động xoay chuẩn hóa chiều phiếu:</span>
+                      <span className="font-mono font-bold text-emerald-700">+{scanResult.orientation_corrected}° (Portrait)</span>
+                    </div>
+                  )}
                 </div>
 
                 {scanResult.overlay_image_base64 && (

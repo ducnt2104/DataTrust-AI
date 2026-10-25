@@ -1,6 +1,6 @@
-# DataTrust AI — Quality Engine & Fraud Screening Algorithms
+# DataTrust — Quality Engine & Fraud Screening Algorithms
 
-Hệ thống phân tích chất lượng của DataTrust AI phân biệt rõ ràng giữa **Phản hồi thực tế**, **Đặc trưng tính toán bằng thuật toán tất định (Deterministic Algorithms)**, **Điểm rủi ro gợi ý (Heuristic Risk Score)** và **Quyết định xác minh của con người (Human Decision)**. Điểm rủi ro cao **không được coi là bằng chứng tuyệt đối về gian lận**, mà là tín hiệu để ưu tiên rà soát.
+Hệ thống phân tích chất lượng của DataTrust phân biệt rõ ràng giữa **Phản hồi thực tế**, **Đặc trưng tính toán bằng thuật toán tất định (Deterministic Algorithms)**, **Điểm rủi ro gợi ý (Heuristic Risk Score)** và **Quyết định xác minh của con người (Human Decision)**. Điểm rủi ro cao **không được coi là bằng chứng tuyệt đối về gian lận**, mà là tín hiệu để ưu tiên rà soát.
 
 ---
 

@@ -18,3 +18,7 @@ backend/data/*.db*
 # Environment
 .env
 .env.local
+
+# Temporary & scratch scripts
+scratch/
+scripts/

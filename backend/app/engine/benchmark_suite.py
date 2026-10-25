@@ -5,7 +5,7 @@ from app.engine.quality_engine import QualityEngine
 
 class ControlledBenchmarkSuite:
     """
-    DataTrust AI Controlled Benchmark Evaluation Suite.
+    DataTrust Controlled Benchmark Evaluation Suite.
     Thực hiện kiểm thử thực nghiệm có kiểm soát theo đúng chuẩn mực khoa học
     được quy định tại Mục II.1 trong Bản Thuyết Minh Dự Án:
     - Kịch bản 1: Phiếu điền thật hợp lệ (Nhóm đối chứng - N = 105)
@@ -336,7 +336,7 @@ class ControlledBenchmarkSuite:
         """Định dạng bảng kết quả đúng theo mẫu yêu cầu tại Mục II.1 trong Hồ sơ Word"""
         sc = results["scenarios"]
         
-        md = f"""# BÁO CÁO KẾT QUẢ THỰC NGHIỆM ĐÁNH GIÁ HỆ THỐNG DATATRUST AI
+        md = f"""# BÁO CÁO KẾT QUẢ THỰC NGHIỆM ĐÁNH GIÁ HỆ THỐNG DATATRUST
 **Phương pháp:** Controlled Benchmark Dataset (N = {results['total_samples']} phiếu)  
 **Tỷ lệ:** 70% Phiếu đối chứng trung thực ({sc['valid_clean']['n']} phiếu) & 30% Phiếu giả lập gian lận ({results['total_samples'] - sc['valid_clean']['n']} phiếu)  
 **Thời gian xử lý trung bình:** {results['avg_latency_ms']} ms/phiếu  

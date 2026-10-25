@@ -71,3 +71,92 @@ def test_create_and_update_survey():
     close_res = client.post(f"/api/surveys/{survey_id}/close")
     assert close_res.status_code == 200
     assert close_res.json()["status"] == "closed"
+
+    # 5. Mở lại khảo sát (Reopen)
+    reopen_res = client.post(f"/api/surveys/{survey_id}/reopen")
+    assert reopen_res.status_code == 200
+    assert reopen_res.json()["status"] == "published"
+
+    # 6. Nhân bản khảo sát (Duplicate)
+    dup_res = client.post(f"/api/surveys/{survey_id}/duplicate")
+    assert dup_res.status_code == 201
+    dup_data = dup_res.json()
+    assert dup_data["status"] == "draft"
+    assert "Bản sao của" in dup_data["title"]
+    assert len(dup_data["questions"]) == 2
+
+    # 7. Danh sách khảo sát (List Surveys with Filter)
+    list_res = client.get("/api/surveys?status=published")
+    assert list_res.status_code == 200
+    pub_list = list_res.json()
+    assert any(s["id"] == survey_id for s in pub_list)
+
+    # 8. Xóa khảo sát (Delete Survey & Verify Audit Log)
+    del_res = client.delete(f"/api/surveys/{survey_id}")
+    assert del_res.status_code == 204
+
+    # Khảo sát không còn tồn tại
+    assert client.get(f"/api/surveys/{survey_id}").status_code == 404
+
+def test_survey_versioning_and_schema_history():
+    # 1. Tạo khảo sát
+    res = client.post("/api/surveys", json={
+        "title": "Nghiên cứu hành vi người tiêu dùng",
+        "description": "Phiên bản khởi tạo v1"
+    })
+    s_id = res.json()["id"]
+
+    # 2. Thêm 1 câu hỏi đầu tiên (v1 -> v2)
+    client.put(f"/api/surveys/{s_id}", json={
+        "questions": [
+            {
+                "order_index": 0,
+                "question_type": "single_choice",
+                "title": "Bạn có hay mua sắm online không?",
+                "is_required": True,
+                "options": [{"id": "yes", "label": "Có"}, {"id": "no", "label": "Không"}]
+            }
+        ]
+    })
+
+    # 3. Cập nhật thêm câu hỏi thứ hai (v2 -> v3)
+    client.put(f"/api/surveys/{s_id}", json={
+        "questions": [
+            {
+                "order_index": 0,
+                "question_type": "single_choice",
+                "title": "Bạn có hay mua sắm online không?",
+                "is_required": True,
+                "options": [{"id": "yes", "label": "Có"}, {"id": "no", "label": "Không"}]
+            },
+            {
+                "order_index": 1,
+                "question_type": "rating",
+                "title": "Đánh giá mức độ hài lòng về sàn thương mại điện tử:",
+                "is_required": True,
+                "options": []
+            }
+        ]
+    })
+
+    # 4. Kiểm tra danh sách phiên bản lịch sử
+    ver_list_res = client.get(f"/api/surveys/{s_id}/versions")
+    assert ver_list_res.status_code == 200
+    versions = ver_list_res.json()
+    assert len(versions) >= 2
+
+    # 5. Kiểm tra chi tiết phiên bản v2 (chỉ có 1 câu hỏi)
+    v2_res = client.get(f"/api/surveys/{s_id}/versions/2")
+    assert v2_res.status_code == 200
+    v2_data = v2_res.json()
+    assert v2_data["version"] == 2
+    assert v2_data["questions_count"] == 1
+    assert v2_data["questions"][0]["title"] == "Bạn có hay mua sắm online không?"
+
+    # 6. Kiểm tra chi tiết phiên bản v3 (có 2 câu hỏi)
+    v3_res = client.get(f"/api/surveys/{s_id}/versions/3")
+    assert v3_res.status_code == 200
+    v3_data = v3_res.json()
+    assert v3_data["version"] == 3
+    assert v3_data["questions_count"] == 2
+

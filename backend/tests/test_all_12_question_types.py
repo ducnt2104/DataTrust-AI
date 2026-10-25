@@ -57,7 +57,7 @@ def test_all_12_question_types_survey_lifecycle():
     """Tạo khảo sát chứa đầy đủ 12 loại câu hỏi, xuất bản, gửi phản hồi và phân tích analytics."""
     # 1. Tạo khảo sát mới
     res = client.post("/api/surveys", json={
-        "title": "Khảo sát Tổng hợp 12 Dạng Câu Hỏi DataTrust AI",
+        "title": "Khảo sát Tổng hợp 12 Dạng Câu Hỏi DataTrust",
         "description": "Kiểm thử toàn diện 12 question types trong hệ thống"
     })
     assert res.status_code == 201
@@ -132,7 +132,7 @@ def test_all_12_question_types_survey_lifecycle():
         {
             "id": "q10_likert",
             "question_type": "likert",
-            "title": "DataTrust AI trực quan và dễ sử dụng",
+            "title": "DataTrust trực quan và dễ sử dụng",
             "is_required": True,
             "options": [
                 {"id": "1", "label": "1 - Hoàn toàn không đồng ý"},

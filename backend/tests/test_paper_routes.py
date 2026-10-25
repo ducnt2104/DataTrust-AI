@@ -109,3 +109,46 @@ def test_paper_survey_full_flow(client):
     assert detail["enumerator_id"] == "DTV-HA-NOI-01"
     assert detail["answers"][q1_id] == "opt2"
     assert str(detail["answers"][q2_id]) == "5"
+
+def test_printable_paper_html_endpoint(client):
+    """Kiểm tra API xuất mẫu in HTML A4 độc lập kèm 4 mốc căn góc và mã QR nhúng"""
+    s_res = client.post("/api/surveys", json={
+        "title": "Khảo sát ý kiến cư dân đô thị",
+        "description": "Bản in thực địa OMR A4"
+    })
+    survey_id = s_res.json()["id"]
+
+    client.put(f"/api/surveys/{survey_id}", json={
+        "questions": [
+            {
+                "question_type": "single_choice",
+                "title": "Khu vực sinh sống?",
+                "is_required": True,
+                "options": [{"id": "noithanh", "text": "Nội thành"}, {"id": "ngoaithanh", "text": "Ngoại thành"}]
+            },
+            {
+                "question_type": "rating",
+                "title": "Chất lượng không khí?",
+                "is_required": True,
+                "options": []
+            }
+        ]
+    })
+
+    html_res = client.get(f"/api/surveys/{survey_id}/paper/printable-html?enumerator_id=DTV_TEST_99")
+    assert html_res.status_code == 200
+    assert "text/html" in html_res.headers["content-type"]
+    text = html_res.text
+
+    assert "DATATRUST — BẢN IN PHIẾU KHẢO SÁT CHUẨN OMR (A4)" in text
+    assert "fiducial fiducial-tl" in text
+    assert "fiducial fiducial-tr" in text
+    assert "fiducial fiducial-bl" in text
+    assert "fiducial fiducial-br" in text
+    assert "data:image/png;base64," in text
+    assert "DTV_TEST_99" in text
+    assert "Khu vực sinh sống?" in text
+    assert "Chất lượng không khí?" in text
+    assert "@media print" in text
+    assert "window.print()" in text
+

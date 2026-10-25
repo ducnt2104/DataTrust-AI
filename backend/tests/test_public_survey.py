@@ -94,3 +94,90 @@ def test_public_survey_lifecycle():
         "answers": {"q_device": "phone"}
     })
     assert submit_after_close.status_code == 400
+
+def test_public_survey_offline_batch_sync():
+    # 1. Tạo và xuất bản khảo sát
+    create_res = client.post("/api/surveys", json={
+        "title": "Khảo sát thực địa nông thôn Offline Sync Test",
+        "description": "Thử nghiệm đồng bộ hàng loạt",
+        "instructions": "Vui lòng trả lời"
+    })
+    s_data = create_res.json()
+    survey_id = s_data["id"]
+    slug = s_data["public_slug"]
+
+    client.put(f"/api/surveys/{survey_id}", json={
+        "questions": [
+            {
+                "id": "q_field_loc",
+                "question_type": "single_choice",
+                "title": "Địa bàn khảo sát:",
+                "is_required": True,
+                "options": [{"id": "r1", "label": "Khu vực 1"}, {"id": "r2", "label": "Khu vực 2"}]
+            },
+            {
+                "id": "q_satisfaction",
+                "question_type": "rating",
+                "title": "Mức độ hài lòng (1-5 sao):",
+                "is_required": True,
+                "options": []
+            }
+        ]
+    })
+    client.post(f"/api/surveys/{survey_id}/publish")
+
+    now = datetime.now(timezone.utc)
+    uuid_item_1 = "offline-client-uuid-1111"
+    uuid_item_2 = "offline-client-uuid-2222"
+    uuid_item_3 = "offline-client-uuid-3333"
+
+    batch_payload = {
+        "responses": [
+            {
+                "client_uuid": uuid_item_1,
+                "started_at": (now - timedelta(seconds=60)).isoformat(),
+                "submitted_at": (now - timedelta(seconds=10)).isoformat(),
+                "client_metadata": {"device": "Android Field Tablet", "client_uuid": uuid_item_1},
+                "answers": {"q_field_loc": "r1", "q_satisfaction": 4},
+                "source": "offline_sync",
+                "enumerator_id": "ENUM_AN_GIANG_01"
+            },
+            {
+                "client_uuid": uuid_item_2,
+                "started_at": (now - timedelta(seconds=45)).isoformat(),
+                "submitted_at": (now - timedelta(seconds=5)).isoformat(),
+                "client_metadata": {"device": "Android Field Tablet", "client_uuid": uuid_item_2},
+                "answers": {"q_field_loc": "r2", "q_satisfaction": 5},
+                "source": "offline_sync",
+                "enumerator_id": "ENUM_AN_GIANG_01"
+            },
+            {
+                "client_uuid": uuid_item_3,
+                "started_at": (now - timedelta(seconds=30)).isoformat(),
+                "submitted_at": now.isoformat(),
+                "client_metadata": {"device": "Android Field Tablet", "client_uuid": uuid_item_3},
+                "answers": {},  # Thiếu câu hỏi bắt buộc -> Báo lỗi từng phần
+                "source": "offline_sync",
+                "enumerator_id": "ENUM_AN_GIANG_01"
+            }
+        ]
+    }
+
+    # 2. Gửi đồng bộ mẻ đầu tiên
+    sync_res = client.post(f"/api/public/surveys/{slug}/batch-sync", json=batch_payload)
+    assert sync_res.status_code == 200
+    res_json = sync_res.json()
+    assert res_json["success"] is True
+    assert res_json["total_received"] == 3
+    assert res_json["synced_count"] == 2
+    assert res_json["error_count"] == 1
+    assert res_json["duplicates_skipped"] == 0
+
+    # 3. Gửi lại cùng mẻ để kiểm tra tính toàn vẹn Idempotency (Trùng lặp client_uuid)
+    resync_res = client.post(f"/api/public/surveys/{slug}/batch-sync", json=batch_payload)
+    assert resync_res.status_code == 200
+    resync_json = resync_res.json()
+    assert resync_json["synced_count"] == 0  # Không chèn thêm bản ghi nào
+    assert resync_json["duplicates_skipped"] == 2  # 2 bản ghi trước được bỏ qua an toàn
+    assert resync_json["error_count"] == 1  # Bản ghi lỗi vẫn báo lỗi
+

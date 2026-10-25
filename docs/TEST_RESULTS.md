@@ -1,4 +1,4 @@
-# DataTrust AI — Báo Cáo Kết Quả Kiểm Thử Toàn Diện (Comprehensive Test Report)
+# DataTrust — Báo Cáo Kết Quả Kiểm Thử Toàn Diện (Comprehensive Test Report)
 ## Xác Thực 30 Ca Kiểm Thử Tự Động (100% Passed)
 
 **Thời điểm kiểm định:** 2026-10-23  

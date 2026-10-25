@@ -1,17 +1,20 @@
+import csv
 import io
 import json
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import cv2
 import numpy as np
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
-from app.database import get_db
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends, Response, Query
+from app.database import get_db, record_audit_log
 from app.schemas import (
     PaperTemplateLayout, PaperScanResult, PaperIngestPayload
 )
 from app.engine.omr_engine import OMREngine
 from app.engine.quality_engine import QualityEngine
+from app.routes.export_import import sanitize_csv_cell
 
 router = APIRouter(prefix="/api/surveys/{survey_id}/paper", tags=["Paper Survey & OMR"])
 
@@ -73,6 +76,47 @@ def get_or_create_paper_template(survey_id: str):
             "layout": layout
         }
 
+@router.get("/printable-html", response_class=Response)
+def get_printable_paper_html(
+    survey_id: str,
+    form_id: Optional[str] = Query(None, description="Mã phiếu cụ thể (hoặc tự động sinh)"),
+    enumerator_id: Optional[str] = Query("DTV-01", description="Mã điều tra viên mặc định")
+):
+    """
+    Xuất trang HTML chuẩn A4 in ấn độ nét cao của phiếu khảo sát thực địa:
+    - Chứa 4 mốc căn góc màu đen (Fiducial markers) phục vụ OpenCV Perspective Warp.
+    - Chứa mã QR nhúng dạng base64 PNG định danh khảo sát và biểu mẫu.
+    - Lưới ô tích tròn (OMR bubbles) và các khối câu hỏi định dạng tối ưu in ấn khổ A4.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT * FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute("""
+            SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC
+        """, (survey_id,)).fetchall()
+
+        questions = []
+        for q in q_rows:
+            questions.append({
+                "id": q["id"],
+                "question_type": q["question_type"],
+                "title": q["title"],
+                "order_index": q["order_index"],
+                "options": json.loads(q["options_json"] or "[]")
+            })
+
+    survey_dict = dict(s_row)
+    html_content = OMREngine.generate_printable_html(
+        survey=survey_dict,
+        questions=questions,
+        form_id=form_id or "",
+        enumerator_id=enumerator_id or "DTV-01"
+    )
+    return Response(content=html_content, media_type="text/html; charset=utf-8")
+
+
 @router.post("/scan", response_model=PaperScanResult)
 async def scan_paper_image(
     survey_id: str,
@@ -117,8 +161,9 @@ async def scan_paper_image(
         else:
             layout = json.loads(t_row["layout_config_json"])
 
-    # 3. Chuẩn hóa phối cảnh (Perspective Warp)
+    # 3. Chuẩn hóa phối cảnh (Perspective Warp) & Tự động xoay đúng chiều (Auto-Orient)
     warped = OMREngine.normalize_perspective(image)
+    warped, rot_angle = OMREngine.auto_orient_page(warped)
 
     # 4. Đọc mã QR
     qr_data, qr_status = OMREngine.decode_qr(warped)
@@ -148,7 +193,8 @@ async def scan_paper_image(
         detected_answers=detected_answers,
         question_confidences={k: round(v, 2) for k, v in confidences.items()},
         overlay_image_base64=overlay_b64,
-        warnings=warnings
+        warnings=warnings,
+        orientation_corrected=rot_angle
     )
 
 @router.post("/batch-scan")
@@ -206,6 +252,7 @@ async def batch_scan_paper_images(
 
             quality = OMREngine.assess_image_quality(image)
             warped = OMREngine.normalize_perspective(image)
+            warped, rot_angle = OMREngine.auto_orient_page(warped)
             qr_data, qr_status = OMREngine.decode_qr(warped)
             form_id = f"FORM-{uuid.uuid4().hex[:8].upper()}"
             enumerator_id = ""
@@ -224,7 +271,8 @@ async def batch_scan_paper_images(
                 "confidence_score": round(avg_conf, 2),
                 "detected_answers": detected_answers,
                 "warnings": warnings,
-                "image_quality": quality
+                "image_quality": quality,
+                "orientation_corrected": rot_angle
             })
             success_count += 1
         except Exception as e:
@@ -293,20 +341,16 @@ def ingest_paper_response(
                 VALUES (?, ?, ?, ?, ?)
             """, (ans_id, response_id, qid, ans_str, submitted_at_iso))
 
-        # Ghi nhật ký Audit Log nếu có sửa đổi thủ công
+        # Ghi nhật ký Audit Log nếu có sửa đổi thủ công vào chuỗi băm bất biến
         if payload.manual_corrections:
-            audit_id = str(uuid.uuid4())
-            conn.execute("""
-                INSERT INTO audit_logs (id, entity_type, entity_id, action, details_json, created_at)
-                VALUES (?, 'response', ?, 'MANUAL_CORRECTION_FIELD_OMR', ?, ?)
-            """, (
-                audit_id, response_id,
-                json.dumps({
+            record_audit_log(
+                conn, 'response', response_id, 'MANUAL_CORRECTION_FIELD_OMR',
+                {
                     "form_id": payload.form_id,
                     "corrections": payload.manual_corrections
-                }, ensure_ascii=False),
+                },
                 submitted_at_iso
-            ))
+            )
 
         # Lấy danh sách câu hỏi và phản hồi trước để đưa vào Quality Engine
         q_rows = conn.execute("SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC", (survey_id,)).fetchall()
@@ -380,3 +424,80 @@ def ingest_paper_response(
             "risk_level": analysis["risk_level"],
             "flags": analysis["flags"]
         }
+
+@router.get("/export-audit")
+def export_paper_omr_audit_csv(survey_id: str):
+    """
+    Xuất báo cáo kiểm định và hậu kiểm toàn bộ phiếu giấy OMR đã số hóa vào hệ thống (CSV UTF-8 BOM).
+    Bao gồm mã phiếu, mã ĐTV, độ tin cậy OMR, số lượng câu chỉnh sửa thủ công, điểm rủi ro, cờ vi phạm chất lượng.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT title, public_slug FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+        slug = s_row["public_slug"] or survey_id
+
+        rows = conn.execute("""
+            SELECT 
+                r.id, r.paper_form_id, r.enumerator_id, r.submitted_at, r.duration_seconds,
+                r.omr_confidence, r.risk_score, r.risk_level, r.review_status, r.review_notes,
+                r.client_metadata_json,
+                qa.flags_json, qa.composite_score
+            FROM responses r
+            LEFT JOIN quality_assessments qa ON qa.response_id = r.id
+            WHERE r.survey_id = ? AND r.source = 'paper_scan'
+            ORDER BY r.submitted_at DESC
+        """, (survey_id,)).fetchall()
+
+    output = io.StringIO()
+    fieldnames = [
+        "Mã Phiếu Giấy (Form ID)",
+        "Mã Điều tra viên",
+        "Thời gian số hóa",
+        "Độ tin cậy OMR (%)",
+        "Số câu sửa thủ công",
+        "Điểm rủi ro",
+        "Phân loại rủi ro",
+        "Trạng thái hậu kiểm",
+        "Ghi chú hậu kiểm",
+        "Cờ cảnh báo chất lượng"
+    ]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for r in rows:
+        meta = {}
+        try:
+            meta = json.loads(r["client_metadata_json"] or "{}")
+        except Exception:
+            pass
+        
+        flags = []
+        try:
+            flags = json.loads(r["flags_json"] or "[]")
+        except Exception:
+            pass
+
+        flags_text = "; ".join([f"{f.get('code', '')}: {f.get('message', '')}" for f in flags]) if flags else "Đạt chuẩn"
+        conf_pct = round((r["omr_confidence"] or 1.0) * 100, 1)
+
+        writer.writerow({
+            "Mã Phiếu Giấy (Form ID)": sanitize_csv_cell(r["paper_form_id"] or r["id"]),
+            "Mã Điều tra viên": sanitize_csv_cell(r["enumerator_id"] or "—"),
+            "Thời gian số hóa": sanitize_csv_cell(r["submitted_at"]),
+            "Độ tin cậy OMR (%)": f"{conf_pct}%",
+            "Số câu sửa thủ công": meta.get("manual_corrections_count", 0),
+            "Điểm rủi ro": r["risk_score"] or 0.0,
+            "Phân loại rủi ro": (r["risk_level"] or "low").upper(),
+            "Trạng thái hậu kiểm": sanitize_csv_cell(r["review_status"] or "unverified"),
+            "Ghi chú hậu kiểm": sanitize_csv_cell(r["review_notes"] or ""),
+            "Cờ cảnh báo chất lượng": sanitize_csv_cell(flags_text)
+        })
+
+    csv_bytes = "\ufeff" + output.getvalue()
+    safe_slug = re.sub(r"[^a-zA-Z0-9_\-]", "_", slug)
+    return Response(
+        content=csv_bytes.encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="datatrust_paper_omr_audit_{safe_slug}.csv"'}
+    )

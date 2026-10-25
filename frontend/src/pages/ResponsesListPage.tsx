@@ -10,11 +10,18 @@ import {
   GitCompare,
   Download,
   FileText,
-  Globe
+  Globe,
+  Sparkles,
+  FlaskConical,
+  Network,
+  ShieldAlert,
+  RotateCcw
 } from 'lucide-react';
 import { api } from '../api/client';
 import { ResponseListItem } from '../types/survey';
 import { RiskBadge } from '../components/RiskBadge';
+import { DataCleansingModal } from '../components/DataCleansingModal';
+import { PairwiseSimilarityCard } from '../components/PairwiseSimilarityCard';
 
 interface Props {
   surveyId: string;
@@ -27,7 +34,14 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
   const [riskFilter, setRiskFilter] = useState<string>('all');
   const [reviewFilter, setReviewFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
-  const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [batchActing, setBatchActing] = useState<boolean>(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isCleansingOpen, setIsCleansingOpen] = useState<boolean>(false);
+  const [seeding, setSeeding] = useState<boolean>(false);
+  const [showSimilarityMatrix, setShowSimilarityMatrix] = useState<boolean>(false);
+  const [quarantining, setQuarantining] = useState<boolean>(false);
+  const [restoring, setRestoring] = useState<boolean>(false);
 
   useEffect(() => {
     fetchResponses();
@@ -48,21 +62,118 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
     }
   };
 
-  const toggleSelectForCompare = (id: string) => {
-    if (selectedForCompare.includes(id)) {
-      setSelectedForCompare(selectedForCompare.filter((x) => x !== id));
+  const handleSeedResponses = async () => {
+    try {
+      setSeeding(true);
+      const res = await api.seedSurveyResponses(surveyId, 15);
+      await fetchResponses();
+      setToastMsg(`🧪 ${res.message}`);
+      setTimeout(() => setToastMsg(null), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi nạp phản hồi mẫu');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((x) => x !== id));
     } else {
-      if (selectedForCompare.length >= 2) {
-        setSelectedForCompare([selectedForCompare[1], id]);
-      } else {
-        setSelectedForCompare([...selectedForCompare, id]);
-      }
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleSelectAllFiltered = () => {
+    const filtered = responses.filter((r) => {
+      if (sourceFilter === 'all') return true;
+      return (r.source || 'online_form') === sourceFilter;
+    });
+    if (selectedIds.length === filtered.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map((r) => r.id));
+    }
+  };
+
+  const handleSelectAllClean = () => {
+    const clean = responses.filter((r) => {
+      const matchSource = sourceFilter === 'all' || (r.source || 'online_form') === sourceFilter;
+      return matchSource && r.risk_level === 'low';
+    });
+    setSelectedIds(clean.map((r) => r.id));
+  };
+
+  const handleBatchDecision = async (status: string, label: string) => {
+    if (selectedIds.length === 0) return;
+    try {
+      setBatchActing(true);
+      const res = await api.batchUpdateReviewDecision(
+        surveyId,
+        selectedIds,
+        status,
+        `Thẩm định hàng loạt (${label}) lúc ${new Date().toLocaleTimeString('vi-VN')}`
+      );
+      setToastMsg(res.message);
+      setTimeout(() => setToastMsg(null), 4000);
+      setSelectedIds([]);
+      await fetchResponses();
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi cập nhật trạng thái hàng loạt');
+    } finally {
+      setBatchActing(false);
     }
   };
 
   const handleRunCompare = () => {
-    if (selectedForCompare.length === 2) {
-      onNavigate(`/surveys/${surveyId}/compare?resp1=${selectedForCompare[0]}&resp2=${selectedForCompare[1]}`);
+    if (selectedIds.length === 2) {
+      onNavigate(`/surveys/${surveyId}/compare?resp1=${selectedIds[0]}&resp2=${selectedIds[1]}`);
+    }
+  };
+
+  const fraudCount = responses.filter(r => r.review_status === 'verified_fraud').length;
+
+  const handleBatchQuarantine = async () => {
+    if (!window.confirm('Kích hoạt quy trình cách ly gian lận tự động (Collusion Rings, Coffee-Shop GPS, Speeders)? Tất cả phản hồi bất thường sẽ được chuyển sang trạng thái Bị Loại (verified_fraud) và ghi nhận vào chuỗi băm kiểm toán SHA-256.')) {
+      return;
+    }
+    try {
+      setQuarantining(true);
+      const res = await api.batchQuarantineAnomalies(surveyId, {
+        quarantine_syndicates: true,
+        quarantine_coffee_shop: true,
+        quarantine_impossible_velocity: true,
+        quarantine_speeders: true,
+        quarantine_straightlining: true,
+        min_risk_score: 75.0,
+        action: 'verified_fraud',
+        dry_run: false
+      });
+      setToastMsg(`Đã cách ly thành công ${res.quarantined_count} phiếu bất thường trên tổng số ${res.total_evaluated} phiếu!`);
+      fetchResponses();
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi cách ly gian lận');
+    } finally {
+      setQuarantining(false);
+    }
+  };
+
+  const handleBatchRestore = async () => {
+    if (!window.confirm('Khôi phục toàn bộ phiếu đã bị cách ly/bị loại về trạng thái Chưa duyệt (unverified)? Hành động này sẽ được ghi nhận vào nhật ký kiểm toán bất biến.')) {
+      return;
+    }
+    try {
+      setRestoring(true);
+      const res = await api.batchRestoreQuarantined(surveyId, {
+        restore_to_status: 'unverified',
+        reason: 'Khôi phục hàng loạt bởi kiểm toán viên'
+      });
+      setToastMsg(`Đã khôi phục thành công ${res.restored_count} phiếu về trạng thái Chưa duyệt!`);
+      fetchResponses();
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi khôi phục');
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -88,7 +199,7 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
         </div>
 
         <div className="flex items-center gap-2">
-          {selectedForCompare.length === 2 && (
+          {selectedIds.length === 2 && (
             <button
               onClick={handleRunCompare}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all animate-bounce"
@@ -98,6 +209,54 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
             </button>
           )}
           <button
+            onClick={handleSeedResponses}
+            disabled={seeding}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition-all disabled:opacity-50"
+            title="Nạp 15 phản hồi mẫu thực tế vào khảo sát này để thử nghiệm đối soát và kiểm định"
+          >
+            <FlaskConical className="w-4 h-4 text-teal-600" />
+            <span>{seeding ? 'Đang nạp...' : 'Nạp 15 mẫu (Seed)'}</span>
+          </button>
+          <button
+            onClick={handleBatchQuarantine}
+            disabled={quarantining}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 transition-all disabled:opacity-50"
+            title="Quét và cách ly tự động toàn bộ mạng lưới thông đồng, cụm quán cà phê, và phản hồi siêu tốc"
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-600" />
+            <span>{quarantining ? 'Đang cách ly...' : 'Cách ly gian lận (AI)'}</span>
+          </button>
+          {fraudCount > 0 && (
+            <button
+              onClick={handleBatchRestore}
+              disabled={restoring}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-all disabled:opacity-50"
+              title="Khôi phục các phiếu đã bị loại về trạng thái Chưa duyệt"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+              <span>{restoring ? 'Đang khôi phục...' : `Khôi phục (${fraudCount})`}</span>
+            </button>
+          )}
+          <button
+            onClick={() => setIsCleansingOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-200" />
+            <span>Làm sạch dữ liệu tự động</span>
+          </button>
+          <button
+            onClick={() => setShowSimilarityMatrix(!showSimilarityMatrix)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+              showSimilarityMatrix
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+            }`}
+            title="Quét ma trận tương đồng cặp và phát hiện mạng lưới thông đồng (bot farm, chung thiết bị/IP)"
+          >
+            <Network className="w-4 h-4" />
+            <span>{showSimilarityMatrix ? 'Đóng Ma Trận Tương Đồng' : 'Ma Trận & Bot Rings'}</span>
+          </button>
+          <button
             onClick={() => onNavigate(`/surveys/${surveyId}/export`)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
           >
@@ -106,6 +265,74 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
           </button>
         </div>
       </div>
+
+      {/* Expandable Pairwise Similarity Matrix & Collusion Syndicate Engine */}
+      {showSimilarityMatrix && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+          <PairwiseSimilarityCard surveyId={surveyId} />
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* Batch Review Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="bg-slate-900 text-white p-3.5 px-5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg border border-slate-800 animate-in slide-in-from-top duration-200">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-bold">
+              Đã chọn <span className="text-emerald-300 font-mono text-sm">{selectedIds.length}</span> phản hồi:
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => handleBatchDecision('verified_valid', 'Duyệt hợp lệ')}
+              disabled={batchActing}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{batchActing ? 'Đang cập nhật...' : `Duyệt Hợp Lệ (${selectedIds.length})`}</span>
+            </button>
+            <button
+              onClick={() => handleBatchDecision('verified_fraud', 'Đánh dấu loại bỏ')}
+              disabled={batchActing}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Đánh Dấu Bị Loại</span>
+            </button>
+            <button
+              onClick={() => handleBatchDecision('under_review', 'Chuyển xem xét')}
+              disabled={batchActing}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50"
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Cần Xem Xét Lại</span>
+            </button>
+            {selectedIds.length === 2 && (
+              <button
+                onClick={handleRunCompare}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all"
+              >
+                <GitCompare className="w-3.5 h-3.5" />
+                <span>Đối Chiếu Cạnh Nhau</span>
+              </button>
+            )}
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+            >
+              Bỏ chọn
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
@@ -175,6 +402,30 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
         </div>
       </div>
 
+      {/* Quick Select Bar */}
+      <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 px-1 gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSelectAllFiltered}
+            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all"
+          >
+            {selectedIds.length > 0 && selectedIds.length === responses.filter(r => sourceFilter === 'all' || (r.source || 'online_form') === sourceFilter).length
+              ? 'Bỏ chọn tất cả'
+              : `Chọn tất cả (${responses.filter(r => sourceFilter === 'all' || (r.source || 'online_form') === sourceFilter).length})`}
+          </button>
+          <button
+            onClick={handleSelectAllClean}
+            className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold border border-emerald-200 transition-all flex items-center gap-1.5"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Chọn nhanh phản hồi an toàn (Low Risk)</span>
+          </button>
+        </div>
+        <div>
+          <span>Tổng số: <strong className="text-slate-800">{responses.length}</strong> phản hồi</span>
+        </div>
+      </div>
+
       {/* Responses Table */}
       {loading ? (
         <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500">
@@ -191,7 +442,18 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
                 <tr>
-                  <th className="py-3.5 px-4 w-10">Chọn</th>
+                  <th className="py-3.5 px-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={
+                        responses.length > 0 &&
+                        selectedIds.length === responses.filter(r => sourceFilter === 'all' || (r.source || 'online_form') === sourceFilter).length
+                      }
+                      onChange={handleSelectAllFiltered}
+                      className="w-4 h-4 text-indigo-600 rounded-sm border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                      title="Chọn / Bỏ chọn tất cả"
+                    />
+                  </th>
                   <th className="py-3.5 px-4">Mã phản hồi</th>
                   <th className="py-3.5 px-4">Nguồn</th>
                   <th className="py-3.5 px-4">Thời điểm gửi</th>
@@ -209,7 +471,7 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
                     return (r.source || 'online_form') === sourceFilter;
                   })
                   .map((resp) => {
-                  const isChecked = selectedForCompare.includes(resp.id);
+                  const isChecked = selectedIds.includes(resp.id);
                   return (
                     <tr
                       key={resp.id}
@@ -221,7 +483,7 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => toggleSelectForCompare(resp.id)}
+                          onChange={() => toggleSelect(resp.id)}
                           className="w-4 h-4 text-indigo-600 rounded-sm border-slate-300 focus:ring-indigo-500"
                         />
                       </td>
@@ -309,6 +571,18 @@ export const ResponsesListPage: React.FC<Props> = ({ surveyId, onNavigate }) => 
           </div>
         </div>
       )}
+
+      {/* Modal Làm sạch Dữ liệu Tự động */}
+      <DataCleansingModal
+        surveyId={surveyId}
+        isOpen={isCleansingOpen}
+        onClose={() => setIsCleansingOpen(false)}
+        onSuccess={() => {
+          fetchResponses();
+          setToastMsg('Quy trình làm sạch dữ liệu tự động đã được áp dụng và lưu vết kiểm toán thành công!');
+          setTimeout(() => setToastMsg(null), 6000);
+        }}
+      />
     </div>
   );
 };

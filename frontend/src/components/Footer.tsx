@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-indigo-600" />
-          <span className="font-semibold text-slate-800">DataTrust AI Platform</span>
+          <span className="font-semibold text-slate-800">DataTrust Platform</span>
           <span>•</span>
           <span>Hệ thống tạo khảo sát và sàng lọc dữ liệu bất thường</span>
         </div>

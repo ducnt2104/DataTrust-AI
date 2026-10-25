@@ -103,6 +103,7 @@ def test_survey_benford_and_codebook_endpoints(client: TestClient):
     assert cb_data["variables"][1]["variable_name"] == "VAR002"
     assert cb_data["variables"][1]["measurement_level"] == "Scale"
     assert "VARIABLE LABELS" in cb_data["spss_syntax"]
+    assert "var_labels <- c" in cb_data["r_script"]
 
     # 4. Kiểm tra API Codebook tải cú pháp SPSS
     spss_res = client.get(f"/api/surveys/{survey_id}/codebook?format=spss")
@@ -110,3 +111,18 @@ def test_survey_benford_and_codebook_endpoints(client: TestClient):
     assert "text/plain" in spss_res.headers["content-type"]
     assert "VARIABLE LABELS" in spss_res.text
     assert "MISSING VALUES ALL (999)." in spss_res.text
+
+    # 5. Kiểm tra API Codebook tải cú pháp R
+    r_res = client.get(f"/api/surveys/{survey_id}/codebook?format=r")
+    assert r_res.status_code == 200
+    assert "text/plain" in r_res.headers["content-type"]
+    assert "var_labels <- c" in r_res.text
+    assert "factor(" in r_res.text
+
+    # 6. Kiểm tra API Codebook tải cú pháp Stata (.do)
+    stata_res = client.get(f"/api/surveys/{survey_id}/codebook?format=stata")
+    assert stata_res.status_code == 200
+    assert "text/plain" in stata_res.headers["content-type"]
+    assert "capture label variable" in stata_res.text
+    assert "capture label define" in stata_res.text
+    assert "describe" in stata_res.text

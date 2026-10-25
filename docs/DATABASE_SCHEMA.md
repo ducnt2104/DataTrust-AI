@@ -1,4 +1,4 @@
-# DataTrust AI — Database Schema Specification
+# DataTrust — Database Schema Specification
 
 ## 1. Cơ Chế Lưu Trữ (Storage Engine)
 - Hệ quản trị: SQLite 3 / PostgreSQL Compatible.

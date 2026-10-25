@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { 
   ArrowLeft, Download, Upload, FileText, CheckCircle2, ShieldCheck, 
-  Database, Globe, Layers, AlertCircle, Info, FileSpreadsheet, Code2
+  Database, Globe, Layers, AlertCircle, Info, FileSpreadsheet, Code2, FileCode,
+  Archive, PackageCheck, Check, Printer, BookOpen, Sparkles
 } from 'lucide-react';
+import { CodebookModal } from '../components/CodebookModal';
+import { AcademicManuscriptModal } from '../components/AcademicManuscriptModal';
 
 interface Props {
   surveyId: string;
@@ -15,6 +18,8 @@ export const ExportImportPage: React.FC<Props> = ({ surveyId, onNavigate }) => {
   const [format, setFormat] = useState<'csv' | 'json'>('csv');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
+  const [showCodebookModal, setShowCodebookModal] = useState(false);
+  const [showManuscriptModal, setShowManuscriptModal] = useState(false);
 
   const handleDownload = () => {
     let url = `/api/surveys/${surveyId}/export?scope=${scope}&format=${format}`;
@@ -231,7 +236,7 @@ export const ExportImportPage: React.FC<Props> = ({ surveyId, onNavigate }) => {
           </div>
         </div>
 
-        <div className="pt-2">
+        <div className="pt-2 flex flex-wrap items-center gap-3">
           <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-dashed border-indigo-400 bg-indigo-50/40 hover:bg-indigo-50 text-indigo-700 text-xs font-semibold cursor-pointer transition-all">
             <Upload className="w-4 h-4" />
             <span>{importing ? 'Đang đọc và phân tích tệp...' : 'Chọn tệp CSV để nhập'}</span>
@@ -243,6 +248,15 @@ export const ExportImportPage: React.FC<Props> = ({ surveyId, onNavigate }) => {
               className="hidden"
             />
           </label>
+
+          <button
+            type="button"
+            onClick={() => window.open(`/api/surveys/${surveyId}/import/template`, '_blank')}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all shadow-2xs"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>Tải Tệp Mẫu CSV (.csv)</span>
+          </button>
         </div>
 
         {importResult && (
@@ -253,12 +267,139 @@ export const ExportImportPage: React.FC<Props> = ({ surveyId, onNavigate }) => {
         )}
       </div>
 
-      {/* Academic Codebook & Data Dictionary Section */}
+      {/* Complete Academic Research Dossier (.ZIP) Section */}
+      <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-950 p-6 sm:p-8 rounded-2xl border border-indigo-700/50 shadow-md text-white space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-indigo-800/60 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-indigo-600/30 border border-indigo-500/40 text-indigo-300">
+              <PackageCheck className="w-6 h-6 text-indigo-400" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold tracking-wider uppercase mb-1">
+                <Check className="w-3 h-3" /> Chuẩn Don Dillman & AAPOR
+              </div>
+              <h2 className="font-bold text-white text-lg tracking-tight">
+                Trọn Bộ Hồ Sơ Nghiên Cứu Khoa Học (Academic Research Dossier)
+              </h2>
+            </div>
+          </div>
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/export/academic-dossier?scope=${scope}`, '_blank')}
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs shadow-lg shadow-indigo-500/25 transition-all shrink-0 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Archive className="w-4 h-4" />
+            <span>Tải Trọn Gói Dossier (.ZIP)</span>
+          </button>
+        </div>
+
+        <p className="text-xs text-indigo-200/90 leading-relaxed">
+          Gói lưu trữ nén chuẩn mực phục vụ bảo vệ luận văn, đề tài nghiên cứu khoa học (KHKT, ISEF, ViSEF), nộp hội đồng đạo đức nghiên cứu hoặc công bố bài báo quốc tế. Đã tích hợp sẵn bộ mã hóa biến số, cú pháp phần mềm và chứng chỉ xác thực chữ ký số SHA-256 bất biến.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> 2 Tập Dữ Liệu CSV
+            </span>
+            <p className="text-[11px] text-slate-300">
+              <code>dataset_clean.csv</code> (mã hóa biến VAR001...) và <code>dataset_labeled.csv</code> (tiêu đề đầy đủ), có UTF-8 BOM.
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+              <Code2 className="w-4 h-4 text-blue-400" /> IBM SPSS & Script R
+            </span>
+            <p className="text-[11px] text-slate-300">
+              <code>spss_syntax.sps</code> nạp biến/nhãn tự động và <code>run_analysis.R</code> tính hệ số độ tin cậy Cronbach's Alpha.
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+              <FileCode className="w-4 h-4 text-amber-400" /> Phân Tích Python
+            </span>
+            <p className="text-[11px] text-slate-300">
+              <code>analyze_data.py</code> tự động tạo thống kê mô tả, phân tích tần số và ma trận tương quan bằng Pandas/NumPy.
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" /> Chứng Chỉ Băm SHA-256
+            </span>
+            <p className="text-[11px] text-slate-300">
+              <code>INTEGRITY_CERTIFICATE_SHA256.json</code> chứa vân tay số đối soát bảo vệ tính toàn vẹn toán học chống giả mạo.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Academic Research Manuscript Section */}
+      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 sm:p-8 rounded-2xl border border-indigo-700/50 shadow-md text-white space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-indigo-800/60 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-violet-600/30 border border-violet-500/40 text-violet-300">
+              <FileText className="w-6 h-6 text-violet-400" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-[10px] font-bold tracking-wider uppercase mb-1">
+                <Sparkles className="w-3 h-3" /> Chuẩn Bài Báo Khoa Học (Peer-Review Manuscript)
+              </div>
+              <h2 className="font-bold text-white text-lg tracking-tight">
+                Bản Thảo Nghiên Cứu Khoa Học Tự Động (Scientific Manuscript)
+              </h2>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowManuscriptModal(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-md transition-all shrink-0 hover:scale-[1.02]"
+              title="Mở studio tương tác xem trước A4, in ấn, xem Markdown và LaTeX Overleaf"
+            >
+              <BookOpen className="w-4 h-4 text-violet-200" />
+              <span>Academic Manuscript Studio</span>
+            </button>
+            <button
+              onClick={() => window.open(`/api/surveys/${surveyId}/export/manuscript?format=html&scope=${scope}`, '_blank')}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-500/80 hover:bg-indigo-400 text-white font-bold text-xs shadow-md transition-all shrink-0 hover:scale-[1.02]"
+              title="Xem và in ấn bản thảo theo định dạng khổ A4 trong tab mới"
+            >
+              <Printer className="w-4 h-4" />
+              <span>In Nhanh (A4)</span>
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-indigo-200/90 leading-relaxed">
+          Tự động biên soạn hoàn chỉnh toàn bộ bài báo nghiên cứu thực nghiệm bao gồm Tóm tắt (Abstract), Phương pháp luận Don Dillman, Bảng từ điển biến số, Kiểm định chất lượng 7 tầng, Hệ số tin cậy thang đo Cronbach's Alpha, Phễu rơi rụng nhận thức, Phân tích chéo Chi-Square, Phân tích cảm xúc định tính và Chứng chỉ băm bất biến SHA-256.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/export/manuscript?format=markdown&scope=${scope}`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20"
+          >
+            <Download className="w-4 h-4 text-emerald-400" />
+            <span>Tải Bản Thảo Markdown (.md)</span>
+          </button>
+
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/export/manuscript?format=latex&scope=${scope}`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20"
+          >
+            <Download className="w-4 h-4 text-indigo-400" />
+            <span>Tải Mã Nguồn LaTeX / Overleaf (.tex)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Individual Academic Codebook & Data Dictionary Section */}
       <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
           <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
           <h2 className="font-bold text-slate-900 text-base">
-            Từ điển Dữ liệu & Cú pháp SPSS / R (Academic Codebook)
+            Tải riêng lẻ Cú pháp SPSS / R / Codebook JSON
           </h2>
         </div>
 
@@ -268,11 +409,53 @@ export const ExportImportPage: React.FC<Props> = ({ surveyId, onNavigate }) => {
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
           <button
+            onClick={() => setShowCodebookModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Mở Từ Điển Dữ Liệu & Cú Pháp Trực Tuyến</span>
+          </button>
+
+          <button
             onClick={() => window.open(`/api/surveys/${surveyId}/codebook?format=spss`, '_blank')}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all border border-indigo-200/80"
           >
             <Code2 className="w-4 h-4" />
-            <span>Tải Cú pháp SPSS (.sps Syntax)</span>
+            <span>Tải Cú pháp SPSS (.sps)</span>
+          </button>
+
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/codebook?format=stata`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-all border border-emerald-300/80"
+          >
+            <Code2 className="w-4 h-4" />
+            <span>Tải Do-File Stata (.do)</span>
+          </button>
+
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/codebook?format=r`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all border border-blue-200/80"
+          >
+            <FileCode className="w-4 h-4" />
+            <span>Tải Script R (.R Syntax)</span>
+          </button>
+
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/paper/printable-html`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold transition-all border border-amber-300/80"
+            title="Mở mẫu in phiếu khảo sát giấy chuẩn A4 kèm QR code và mốc căn góc OMR"
+          >
+            <Printer className="w-4 h-4 text-amber-700" />
+            <span>Mẫu Phiếu Giấy OMR A4 (In / PDF)</span>
+          </button>
+
+          <button
+            onClick={() => window.open(`/api/surveys/${surveyId}/audit-report/printable-certificate`, '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold transition-all border border-purple-300/80 shadow-2xs"
+            title="Mở chứng thư thẩm định độ tin cậy và toàn vẹn dữ liệu chuẩn A4 có dấu số để kẹp hồ sơ đề tài"
+          >
+            <ShieldCheck className="w-4 h-4 text-purple-700" />
+            <span>Chứng Thư Kiểm Định A4 (In / PDF)</span>
           </button>
 
           <button
@@ -284,6 +467,20 @@ export const ExportImportPage: React.FC<Props> = ({ surveyId, onNavigate }) => {
           </button>
         </div>
       </div>
+
+      <CodebookModal
+        isOpen={showCodebookModal}
+        onClose={() => setShowCodebookModal(false)}
+        surveyId={surveyId}
+        surveyTitle="Khảo sát Nghiên cứu"
+      />
+
+      <AcademicManuscriptModal
+        isOpen={showManuscriptModal}
+        onClose={() => setShowManuscriptModal(false)}
+        surveyId={surveyId}
+        surveyTitle="Khảo sát Nghiên cứu"
+      />
     </div>
   );
 };
