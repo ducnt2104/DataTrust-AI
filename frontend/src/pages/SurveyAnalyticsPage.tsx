@@ -129,6 +129,7 @@ import { ConformalCounterfactualCard } from '../components/ConformalCounterfactu
 import { CausalSensitivityBiasCard } from '../components/CausalSensitivityBiasCard';
 import { BCFCard } from '../components/BCFCard';
 import { ShiftShareIVCard } from '../components/ShiftShareIVCard';
+import { QuantileSyntheticControlCard } from '../components/QuantileSyntheticControlCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1472,6 +1473,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Shift-Share / Bartik Instrumental Variables & Rotemberg Decomposition (Goldsmith-Pinkham et al. 2020) */}
       <ShiftShareIVCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Quantile Synthetic Control & Distributional Counterfactuals (Gunsilius 2023 Econometrica) */}
+      <QuantileSyntheticControlCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.quantile_synthetic_control_engine import estimate_quantile_synthetic_control
 from app.engine.shift_share_iv_engine import estimate_shift_share_iv
 from app.engine.bcf_engine import estimate_bayesian_causal_forest
 from app.engine.causal_sensitivity_bias_engine import estimate_causal_sensitivity_bias
@@ -104,6 +105,8 @@ from app.schemas import (
     BCFOut,
     ShiftShareIVRequest,
     ShiftShareIVOut,
+    QuantileSyntheticControlRequest,
+    QuantileSyntheticControlOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15148,6 +15151,117 @@ def run_shift_share_iv_analysis(
                 "beta_2sls": res.get("overall_summary", {}).get("beta_2sls"),
                 "first_stage_f": res.get("overall_summary", {}).get("first_stage_f_statistic"),
                 "rotemberg_hhi": res.get("overall_summary", {}).get("rotemberg_hhi"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/quantile-synthetic-control", response_model=QuantileSyntheticControlOut)
+def run_quantile_synthetic_control_analysis(
+    survey_id: str,
+    payload: QuantileSyntheticControlRequest
+):
+    """
+    Quantile Synthetic Control & Distributional Counterfactuals.
+    Gunsilius, F. F. (2023 Econometrica); Chernozhukov, Kasahara, & Schrimpf (2020).
+    Extends synthetic controls to full quantile functions and distributions using Wasserstein distance minimization,
+    calculating post-treatment Quantile Treatment Effects (QTE), counterfactual CDFs, and Gini inequality impact.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        # Parse treatment_time
+        try:
+            treatment_time_val = float(payload.treatment_time)
+        except (ValueError, TypeError):
+            treatment_time_val = str(payload.treatment_time)
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if (payload.outcome_question_id in answers and
+                payload.unit_question_id in answers and
+                payload.time_question_id in answers):
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                u_val = str(answers[payload.unit_question_id]).strip()
+
+                raw_t = answers[payload.time_question_id]
+                try:
+                    t_val = float(raw_t)
+                except (ValueError, TypeError):
+                    t_val = str(raw_t).strip()
+
+                df_records.append({
+                    payload.outcome_question_id: y_val,
+                    payload.unit_question_id: u_val,
+                    payload.time_question_id: t_val
+                })
+
+        if len(df_records) < 10:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 10 phản hồi đầy đủ để ước lượng Quantile Synthetic Control (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_quantile_synthetic_control(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                unit_col=payload.unit_question_id,
+                time_col=payload.time_question_id,
+                treated_unit_id=str(payload.treated_unit_id).strip(),
+                treatment_time=treatment_time_val,
+                quantiles=payload.quantiles or [0.10, 0.25, 0.50, 0.75, 0.90],
+                regularization_lambda=payload.regularization_lambda
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Quantile Synthetic Control: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="QUANTILE_SYNTHETIC_CONTROL_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "unit_qid": payload.unit_question_id,
+                "treated_unit": str(payload.treated_unit_id),
+                "treatment_time": str(payload.treatment_time),
+                "median_qte": res.get("overall_summary", {}).get("median_qte_effect"),
+                "gini_impact": res.get("overall_summary", {}).get("gini_impact"),
                 "status": res.get("status")
             }
         )

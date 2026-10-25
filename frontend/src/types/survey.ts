@@ -8090,3 +8090,61 @@ export interface ShiftShareIVRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Quantile Synthetic Control & Distributional Counterfactuals (Gunsilius 2023) Types ---
+export interface QuantileEffectItem {
+  quantile: number;
+  quantile_label: string;
+  treated_observed: number;
+  synthetic_counterfactual: number;
+  treatment_effect_qte: number;
+  interpretation: string;
+}
+
+export interface DonorWeightItem {
+  donor_unit: string;
+  weight: number;
+  weight_pct: number;
+}
+
+export interface QuantileSyntheticControlSummary {
+  treated_unit: string;
+  treatment_time: string;
+  n_valid_donors: number;
+  pre_treatment_periods: number;
+  post_treatment_periods: number;
+  pre_treatment_wasserstein_dist: number;
+  mean_qte_effect: number;
+  median_qte_effect: number;
+  gini_observed: number;
+  gini_counterfactual: number;
+  gini_impact: number;
+  iqr_observed: number;
+  iqr_counterfactual: number;
+  iqr_impact: number;
+  p90_p10_ratio_observed?: number;
+  p90_p10_ratio_counterfactual?: number;
+}
+
+export interface QuantileSyntheticControlResult {
+  status: string;
+  message?: string;
+  overall_summary?: QuantileSyntheticControlSummary;
+  donor_weights?: DonorWeightItem[];
+  quantile_treatment_effects?: QuantileEffectItem[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface QuantileSyntheticControlRequest {
+  outcome_question_id: string;
+  unit_question_id: string;
+  time_question_id: string;
+  treated_unit_id: string;
+  treatment_time: any;
+  quantiles?: number[];
+  regularization_lambda?: number;
+  scope?: 'all' | 'verified_clean';
+}
+

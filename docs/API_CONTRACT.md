@@ -5468,3 +5468,30 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `ShiftShareIVRequest` (`outcome_question_id`, `treatment_question_id`, `share_question_ids`, `shocks`, `covariate_question_ids`, `alpha_level`, `scope`).
   - **Response:** `ShiftShareIVOut` (`status`, `overall_summary`, `rotemberg_decomposition`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `SHIFT_SHARE_IV_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 132. Quantile Synthetic Control & Distributional Counterfactuals Engine (Gunsilius 2023 Econometrica; Chernozhukov, Kasahara, & Schrimpf 2020; Abadie et al. 2010)
+- **Mục tiêu:** Mở rộng phương pháp kiểm soát nhân tạo (Synthetic Control) cổ điển của Abadie et al. (2010)—vốn chỉ giới hạn ở việc so khớp trung bình vô hướng $E[Y]$—lên toàn bộ hàm phân vị thực nghiệm $Q(u)$ và phân phối xác suất counterfactual thông qua tối ưu hóa khoảng cách Wasserstein-2 (Wasserstein Barycenter). Động cơ cho phép đo lường chính xác hiệu ứng can thiệp không đồng nhất dọc theo phân phối (Quantile Treatment Effects $\tau(u) = Q_1(u) - \sum w_j Q_j(u)$), đánh giá tác động tái phân phối, đo lường sự dịch chuyển hệ số bất bình đẳng Gini ($\Delta \text{Gini}$), độ nén/giãn dải phân vị Interquartile Range ($\Delta \text{IQR}$) và tỷ lệ $P90/P10$.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Tối ưu hóa Trọng số Barycenter Wasserstein (Gunsilius 2023 Econometrica):**
+     - Đặt $Q_1^{\text{pre}}(u)$ là hàm phân vị tiền can thiệp của đơn vị được can thiệp, và $Q_j^{\text{pre}}(u)$ là hàm phân vị của đơn vị đối chứng $j \in \{1, \dots, J\}$.
+     - Trọng số tối ưu $w^* = (w_1^*, \dots, w_J^*)$ giải bài toán quy hoạch toàn phương với ràng buộc lồi:
+       $$\min_{w \ge 0, \sum w_j = 1} \int_0^1 \left( Q_1^{\text{pre}}(u) - \sum_{j=1}^J w_j Q_j^{\text{pre}}(u) \right)^2 du + \lambda \|w\|_2^2$$
+     - Đo lường khoảng cách tiền can thiệp $W_2(\text{Observed}, \text{Synthetic})$ để thẩm định chất lượng kiểm soát nền.
+  2. **Ước lượng Phân vị Phản thực tế & Hiệu ứng Phân vị Hậu Can thiệp (QTE):**
+     - Hàm phân vị phản thực tế hậu can thiệp:
+       $$Q^*(u) = \sum_{j=1}^J w_j^* Q_j^{\text{post}}(u)$$
+     - Hiệu ứng can thiệp phân vị (Quantile Treatment Effect):
+       $$\tau(u) = Q_1^{\text{post}}(u) - Q^*(u), \quad u \in \{0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95\}$$
+  3. **Đo lường Hình dạng Phân phối & Biến thiên Bất bình đẳng (Distributional Inequality Shifts):**
+     - Hệ số Gini thực nghiệm: $G = \frac{2 \sum_{i=1}^n i y_{(i)} - (n + 1) \sum y_{(i)}}{n \sum y_{(i)}}$.
+     - Độ dịch chuyển bất bình đẳng do can thiệp: $\Delta G = G_{\text{obs}} - G_{\text{synth}}$.
+     - Độ nén giãn khoảng phân vị: $\Delta \text{IQR} = \text{IQR}_{\text{obs}} - \text{IQR}_{\text{synth}}$.
+  4. **Trực quan hóa Song song SVG (Dual-Panel Distributional Canvas):**
+     - Panel 1: Đồ thị đường phân vị thực nghiệm so sánh Quan sát thực tế $Q_{\text{obs}}(u)$ vs Kiểm soát nhân tạo $Q^*(u)$.
+     - Panel 2: Đường cong hiệu ứng phân vị $\tau(u)$ kèm chỉ báo phân giải bất bình đẳng (Inequality Compressed vs Dispersion Expanded).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/quantile-synthetic-control`
+  - **Payload:** `QuantileSyntheticControlRequest` (`outcome_question_id`, `unit_question_id`, `time_question_id`, `treated_unit_id`, `treatment_time`, `quantiles`, `regularization_lambda`, `scope`).
+  - **Response:** `QuantileSyntheticControlOut` (`status`, `overall_summary`, `donor_weights`, `quantile_treatment_effects`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `QUANTILE_SYNTHETIC_CONTROL_EVALUATED` vào chuỗi sổ cái SHA-256.
+

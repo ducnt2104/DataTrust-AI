@@ -2083,6 +2083,32 @@ eq 0\}$
 
 ---
 
-## 18. Planned Next Iteration: Iteration 151
-- **Feature**: Quantile Synthetic Control & Distributional Counterfactuals Engine (Gunsilius 2023 Econometrica; Chernozhukov, Kasahara, & Schrimpf 2020).
-- **Scope**: Extends classic synthetic control from scalar mean $E[Y]$ matching to the full empirical quantile function and distribution of outcomes across donor units via Wasserstein distance minimization, estimating counterfactual CDFs, quantiles, and Gini inequality impacts.
+## 18. Iteration 151: Quantile Synthetic Control & Distributional Counterfactuals Engine (Gunsilius 2023 Econometrica; Chernozhukov, Kasahara, & Schrimpf 2020)
+- **Timestamp**: 2026-10-25T12:32:00+07:00
+- **Scientific Foundation**:
+  - Extends classic Synthetic Control methods (Abadie et al. 2010) from scalar mean $E[Y]$ matching to the full empirical quantile function and probability distributions via Wasserstein-2 metric minimization.
+  - Wasserstein Barycenter Optimization: Computes optimal donor weights $w^* = (w_1^*, \dots, w_J^*)$ minimizing pre-intervention distance $\int_0^1 (Q_1^{\text{pre}}(u) - \sum w_j Q_j^{\text{pre}}(u))^2 du + \lambda \|w\|_2^2$ with non-negativity and unit simplex constraints.
+  - Distributional Counterfactuals: Generates full counterfactual quantile curves $Q^*(u) = \sum w_j^* Q_j^{\text{post}}(u)$ and Quantile Treatment Effects $\tau(u) = Q_1^{\text{post}}(u) - Q^*(u)$ across percentiles ($P10, P25, P50, P75, P90$).
+  - Inequality Impact Diagnostics: Computes exact post-treatment empirical Gini coefficients, measuring inequality impact $\Delta \text{Gini} = \text{Gini}_{\text{obs}} - \text{Gini}_{\text{synth}}$, Interquartile Range compression $\Delta \text{IQR}$, and $P90/P10$ ratios.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/quantile_synthetic_control_engine.py` (451 lines).
+  - Pydantic Schemas: `QuantileSyntheticControlRequest` and `QuantileSyntheticControlOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/quantile-synthetic-control` with `QUANTILE_SYNTHETIC_CONTROL_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_quantile_synthetic_control_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_quantile_synthetic_control_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `QuantileEffectItem`, `DonorWeightItem`, `QuantileSyntheticControlSummary`, `QuantileSyntheticControlResult`, `QuantileSyntheticControlRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runQuantileSyntheticControl` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/QuantileSyntheticControlCard.tsx` (498 lines) with outcome variable, unit identifier, time wave, treated unit ID, intervention threshold, quantiles picker, KPI stat cards (Median QTE $\tau(0.50)$, $\Delta \text{Gini}$, Pre-W2 distance, $\Delta \text{IQR}$, Donor count), dual-panel SVG visualizer (Quantile barycenters & QTE response curve), optimal donor weights table, quantile treatment effects table, and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 2.13s**.
+  - Frontend Production Build: **2,117 modules transformed, 0 errors in 1.51s**.
+  - Contract Documentation: Section 132 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 19. Planned Next Iteration: Iteration 152
+- **Feature**: Staggered Synthetic Difference-in-Differences with Unit & Time Weight Shrinkage (SDID; Arkhangelsky et al. 2021 AER; Clarke et al. 2023).
+- **Scope**: Implements Synthetic DiD combining unit fixed effects, time fixed effects, L2-penalized unit weights $\hat{\omega}$, and time weights $\hat{\lambda}$ to achieve double-robust identification under staggered policy rollouts and irregular longitudinal survey panels.
+

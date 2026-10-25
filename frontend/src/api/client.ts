@@ -215,7 +215,9 @@ import {
   BCFRequest,
   BCFResult,
   ShiftShareIVRequest,
-  ShiftShareIVResult
+  ShiftShareIVResult,
+  QuantileSyntheticControlRequest,
+  QuantileSyntheticControlResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2468,5 +2470,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ShiftShareIVResult>(res);
+  },
+  async runQuantileSyntheticControl(
+    surveyId: string,
+    payload: QuantileSyntheticControlRequest
+  ): Promise<QuantileSyntheticControlResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/quantile-synthetic-control`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<QuantileSyntheticControlResult>(res);
   }
 };
