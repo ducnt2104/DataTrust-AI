@@ -8355,3 +8355,51 @@ export interface NestedLogitRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Automatic Debiased Machine Learning via Riesz Learning (Chernozhukov et al. 2022) Types ---
+export interface AutoDMLRieszSummary {
+  sample_size: number;
+  n_covariates: number;
+  basis_dimension_p: number;
+  cross_fitting_splits_K: number;
+  functional_type: string;
+  functional_label: string;
+  theta_autodml: number;
+  se_autodml: number;
+  t_statistic: number;
+  p_value: number;
+  ci_95: [number, number];
+  theta_naive_plugin: number;
+  se_naive_plugin: number;
+  debiasing_correction_magnitude: number;
+  beta_ols_benchmark: number;
+  se_ols_benchmark: number;
+  mean_outcome_r2: number;
+  mean_riesz_loss: number;
+  riesz_weight_mean: number;
+  riesz_weight_sd: number;
+  riesz_weight_min: number;
+  riesz_weight_max: number;
+  weight_stability_verdict: string;
+}
+
+export interface AutoDMLRieszResult {
+  status: string;
+  message?: string;
+  overall_summary?: AutoDMLRieszSummary;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface AutoDMLRieszRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids: string[];
+  functional_type?: 'ate' | 'policy_shift' | 'marginal_derivative';
+  shift_delta?: number;
+  n_splits?: number;
+  ridge_lambda?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

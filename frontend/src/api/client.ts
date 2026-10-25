@@ -223,7 +223,9 @@ import {
   FactorIVRequest,
   FactorIVResult,
   NestedLogitRequest,
-  NestedLogitResult
+  NestedLogitResult,
+  AutoDMLRieszRequest,
+  AutoDMLRieszResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2520,5 +2522,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<NestedLogitResult>(res);
+  },
+  async runAutoDMLRiesz(
+    surveyId: string,
+    payload: AutoDMLRieszRequest
+  ): Promise<AutoDMLRieszResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/auto-dml-riesz`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<AutoDMLRieszResult>(res);
   }
 };

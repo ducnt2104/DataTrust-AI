@@ -133,6 +133,7 @@ import { QuantileSyntheticControlCard } from '../components/QuantileSyntheticCon
 import { TWFEDecompositionCard } from '../components/TWFEDecompositionCard';
 import { FactorIVCard } from '../components/FactorIVCard';
 import { NestedLogitCard } from '../components/NestedLogitCard';
+import { AutoDMLRieszCard } from '../components/AutoDMLRieszCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1523,6 +1524,17 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           question_type: q.question_type
         }))}
       />
+
+      {/* Automatic Debiased Machine Learning via Riesz Representer Learning (Chernozhukov, Newey, & Singh 2022) */}
+      <AutoDMLRieszCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
 
 
 

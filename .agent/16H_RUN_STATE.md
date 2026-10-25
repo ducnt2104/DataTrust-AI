@@ -2192,3 +2192,35 @@ eq 0\}$
 
 
 
+
+
+---
+
+## 22. Iteration 155: Automatic Debiased Machine Learning via Riesz Representer Learning Engine (Auto-DML; Chernozhukov, Newey, & Singh 2022 Econometrica; Hirshberg & Wager 2021)
+- **Timestamp**: 2026-10-25T13:07:00+07:00
+- **Scientific Foundation**:
+  - Automatically learns the Neyman-orthogonal Riesz representer $\alpha_0(W)$ directly from data by minimizing empirical Riesz loss $\mathcal{L}(\alpha) = \mathbb{E}[0.5 \alpha(W)^2 - m(W, \alpha)]$, bypassing manual influence function derivation and avoiding unstable inverse propensity denominators.
+  - Multi-functional Causal Target Support: Binary Average Treatment Effect (ATE), continuous policy dosage shifts ($D \to D + \delta$), and average marginal derivatives with polynomial basis dictionary $\Phi(W) = \Phi(D, X)$.
+  - K-Fold Cross-Fitting: Trains outcome regression $\hat{\gamma}_{-k}$ and Riesz representer $\hat{\alpha}_{-k}$ on out-of-fold partitions, generating doubly robust Neyman-orthogonal score $\psi_i = m(W_i, \hat{\gamma}) + \hat{\alpha}(W_i)(Y_i - \hat{\gamma}(W_i))$ to eliminate ML regularization bias.
+  - Weight Stability Diagnostics: Monitors Riesz weight dispersion ($\sigma_\alpha$, $\max \alpha$, stability ratio) to ensure robust overlap and bounded asymptotic variance.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/auto_dml_riesz_engine.py` (415 lines).
+  - Pydantic Schemas: `AutoDMLRieszRequest` and `AutoDMLRieszOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/auto-dml-riesz` with `AUTO_DML_RIESZ_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_auto_dml_riesz_engine.py` (4/4 passed).
+  - Route Tests: `backend/tests/test_auto_dml_riesz_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `AutoDMLRieszSummary`, `AutoDMLRieszResult`, `AutoDMLRieszRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runAutoDMLRiesz` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/AutoDMLRieszCard.tsx` (510 lines) with functional type toggle (ATE, Continuous Policy Shift $D+\delta$, Marginal Derivative), dosage shift $\delta$ input, cross-fitting folds selector, covariates checklist, KPI stat cards (Auto-DML $\hat{\theta}$, Bias Removed, Benchmark OLS, Riesz Weight Stability), dual-panel SVG visualizer (Riesz weight histogram & estimator forest plot), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **5/5 passed in 1.78s**.
+  - Frontend Production Build: **2,121 modules transformed, 0 errors in 1.53s**.
+  - Contract Documentation: Section 136 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 23. Planned Next Iteration: Iteration 156
+- **Feature**: Local Instrumental Variables & Marginal Treatment Effects Engine (LIV / MTE; Heckman & Vytlacil 2005 Econometrica; Mogstad, Santos, & Torgovitsky 2018 Econometrica).
+- **Scope**: Estimates policy-invariant Marginal Treatment Effects (MTE) over the distribution of unobserved resistance to treatment $U_D$, recovers Policy-Relevant Treatment Effects (PRTE), Average Treatment Effect on the Treated (ATT), and Local Average Treatment Effects (LATE) via integrating MTE with policy weight functions.

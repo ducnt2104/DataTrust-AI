@@ -5577,3 +5577,35 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
 
 
 
+
+
+### 136. Automatic Debiased Machine Learning via Riesz Representer Learning Engine (Auto-DML; Chernozhukov, Newey, & Singh 2022 Econometrica; Hirshberg & Wager 2021)
+- **Mục tiêu:** Tự động ước lượng hiệu ứng can thiệp nhân quả và các tham số hàm cấu trúc (structural functionals) trong dữ liệu khảo sát nhiều chiều mà không yêu cầu nhà nghiên cứu phải tự tay tìm hàm ảnh hưởng trực giao (Neyman-orthogonal influence function) hay ước lượng xác suất thiên hướng (propensity score) vốn dễ bất ổn định khi mẫu số tiến gần 0. Động cơ thực hiện định lý biểu diễn Riesz (Riesz Representation Theorem) trong không gian Hilbert, giải bài toán tối ưu hóa tổn thất Riesz thực nghiệm $\min_\rho \left\{ \frac{1}{2} \rho^T \Sigma \rho - M^T \rho + \frac{\lambda}{2} \|\rho\|^2 \right\}$ để học trực tiếp trọng số khử thiên lệch $\alpha_0(W)$. Hỗ trợ đa dạng tham số mục tiêu: Hiệu ứng Can thiệp Trung bình (ATE), Dịch chuyển Chính sách Liều lượng Liên tục ($D \to D + \delta$), và Đạo hàm Biên Trung bình (Average Marginal Derivative) kết hợp kỹ thuật phân vùng chéo $K$-Fold Cross-Fitting.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định lý Biểu diễn Riesz & Hàm Mục tiêu Tuyến tính (Riesz Representation):**
+     - Với bất kỳ phiếm hàm tuyến tính liên tục $m(\cdot, \gamma)$ trên không gian Hilbert các hàm hồi quy $L^2(P)$, tồn tại duy nhất một hàm $\alpha_0 \in L^2(P)$ sao cho:
+       $$\mathbb{E}[m(W, \gamma)] = \mathbb{E}[\alpha_0(W) \gamma(W)], \quad \forall \gamma \in L^2(P)$$
+     - Với ATE nhị phân: $\alpha_0(W) = \frac{D}{e(X)} - \frac{1-D}{1-e(X)}$.
+     - Với dịch chuyển chính sách liều lượng $D \to D + \delta$: $\alpha_0(W) = \frac{f(D-\delta \mid X) - f(D \mid X)}{f(D \mid X)}$.
+     - Với đạo hàm biên liên tục: $\alpha_0(W) = - \frac{\partial \ln f(D \mid X)}{\partial D}$ (điểm số mật độ có điều kiện).
+  2. **Tối ưu hóa Hàm Tổn thất Riesz Thực nghiệm (Empirical Riesz Loss):**
+     - Thay vì ước lượng hàm mật độ hay xác suất có điều kiện ở mẫu số, Auto-DML tối thiểu hóa trực tiếp hàm tổn thất bậc hai:
+       $$\mathcal{L}(\alpha) = \mathbb{E}\left[ \frac{1}{2} \alpha(W)^2 - m(W, \alpha) \right]$$
+     - Xây dựng từ điển cơ sở mở rộng $\Phi(W) = \Phi(D, X)$. Trọng số Riesz có dạng $\alpha(W) = \Phi(W) \rho$.
+     - Bài toán tối ưu chính quy hóa Ridge:
+       $$\hat{\rho} = \left( \frac{1}{N} \Phi^T \Phi + \lambda I \right)^{-1} \hat{M}, \quad \text{với } \hat{M} = \frac{1}{N} \sum_{i=1}^N m(W_i, \Phi)$$
+  3. **Điểm số Trực giao Neyman & Phân vùng Chéo K-Fold Cross-Fitting:**
+     - Phân chia ngẫu nhiên tập mẫu thành $K$ phần độc lập $\{I_k\}_{k=1}^K$.
+     - Với mỗi fold $k$, huấn luyện hàm hồi quy kết quả $\hat{\gamma}_{-k}(W)$ và hàm biểu diễn Riesz $\hat{\alpha}_{-k}(W)$ trên tập ngoài $I_{-k}$.
+     - Điểm số trực giao Neyman trên fold kiểm định $I_k$:
+       $$\psi_i = m(W_i, \hat{\gamma}_{-k}) + \hat{\alpha}_{-k}(W_i) \left( Y_i - \hat{\gamma}_{-k}(W_i) \right)$$
+     - Ước lượng Auto-DML: $\hat{\theta}_{\text{AutoDML}} = \frac{1}{N} \sum_{i=1}^N \psi_i$.
+     - Sai số chuẩn tiệm cận: $\widehat{\text{SE}} = \sqrt{\frac{1}{N(N-1)} \sum_{i=1}^N (\psi_i - \hat{\theta})^2}$.
+     - Khử triệt để thiên lệch chính quy hóa của Machine Learning: $|\hat{\theta}_{\text{AutoDML}} - \hat{\theta}_{\text{Naive}}| = O_P(N^{-1/2})$.
+  4. **Chẩn đoán Trọng số Riesz & Kiểm định Ổn định:**
+     - Đánh giá phân bố trọng số $\alpha(W)$: độ lệch chuẩn $\sigma_\alpha$, giá trị cực trị $\max \alpha$, và tỷ số ổn định $\frac{\max \alpha}{\sigma_\alpha}$.
+     - Cảnh báo nếu xuất hiện trọng số cực trị phá vỡ điều kiện giả định hỗ trợ chung (overlap).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/auto-dml-riesz`
+  - **Payload:** `AutoDMLRieszRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `functional_type`, `shift_delta`, `n_splits`, `ridge_lambda`, `alpha_level`, `scope`).
+  - **Response:** `AutoDMLRieszOut` (`status`, `overall_summary`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `AUTO_DML_RIESZ_EVALUATED` vào chuỗi sổ cái SHA-256.

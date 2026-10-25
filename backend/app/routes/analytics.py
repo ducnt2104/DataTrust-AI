@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.auto_dml_riesz_engine import estimate_auto_dml_riesz
 from app.engine.nested_logit_engine import estimate_nested_logit
 from app.engine.factor_iv_engine import estimate_factor_iv
 from app.engine.twfe_decomposition_engine import estimate_twfe_decomposition
@@ -116,6 +117,8 @@ from app.schemas import (
     FactorIVOut,
     NestedLogitRequest,
     NestedLogitOut,
+    AutoDMLRieszRequest,
+    AutoDMLRieszOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15647,6 +15650,114 @@ def run_nested_logit_analysis(
                 "ll_nested": res.get("overall_summary", {}).get("log_likelihood_nested_logit"),
                 "lr_stat": res.get("overall_summary", {}).get("lr_test_iia_statistic"),
                 "iia_rejected": res.get("overall_summary", {}).get("iia_assumption_rejected"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/auto-dml-riesz", response_model=AutoDMLRieszOut)
+def run_auto_dml_riesz_analysis(
+    survey_id: str,
+    payload: AutoDMLRieszRequest
+):
+    """
+    Automatic Debiased Machine Learning via Riesz Representer Learning Engine.
+    Chernozhukov, V., Newey, W. K., & Singh, R. (2022). Econometrica.
+    Directly learns the Neyman-orthogonal Riesz representer alpha_0(W) from data by minimizing
+    empirical Riesz loss, bypassing manual influence function derivations or unstable propensity denominators.
+    Supports binary ATE, continuous policy shifts (D -> D + delta), and average marginal derivatives with cross-fitting.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.treatment_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    d_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                rec = {
+                    payload.outcome_question_id: y_val,
+                    payload.treatment_question_id: d_val
+                }
+
+                valid_covs = True
+                for c_id in payload.covariate_question_ids:
+                    if c_id in answers:
+                        try:
+                            rec[c_id] = float(answers[c_id])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                    else:
+                        valid_covs = False
+
+                if valid_covs:
+                    df_records.append(rec)
+
+        if len(df_records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 25 bản ghi hoàn chỉnh để thực hiện Auto-DML (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_auto_dml_riesz(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                covariate_cols=payload.covariate_question_ids,
+                functional_type=payload.functional_type,
+                shift_delta=payload.shift_delta,
+                n_splits=payload.n_splits,
+                ridge_lambda=payload.ridge_lambda,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Auto-DML Riesz: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="AUTO_DML_RIESZ_EVALUATED",
+            details={
+                "functional_type": payload.functional_type,
+                "theta_autodml": res.get("overall_summary", {}).get("theta_autodml"),
+                "se_autodml": res.get("overall_summary", {}).get("se_autodml"),
+                "p_value": res.get("overall_summary", {}).get("p_value"),
+                "debiasing_correction": res.get("overall_summary", {}).get("debiasing_correction_magnitude"),
                 "status": res.get("status")
             }
         )
