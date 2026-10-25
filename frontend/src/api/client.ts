@@ -295,7 +295,9 @@ import {
   FactorialConjointAMCERequest,
   FactorialConjointAMCEResult,
   ManyWeakIVJIVERequest,
-  ManyWeakIVJIVEResult
+  ManyWeakIVJIVEResult,
+  PartialAttritionBoundsRequest,
+  PartialAttritionBoundsResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -3001,5 +3003,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ManyWeakIVJIVEResult>(res);
+  },
+
+  async runPartialAttritionBounds(
+    surveyId: string,
+    payload: PartialAttritionBoundsRequest
+  ): Promise<PartialAttritionBoundsResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/partial-attrition-bounds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<PartialAttritionBoundsResult>(res);
   }
 };

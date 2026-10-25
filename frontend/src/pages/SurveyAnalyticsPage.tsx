@@ -169,6 +169,7 @@ import { AbadieComplierProfilingCard } from '../components/AbadieComplierProfili
 import { DiscreteRDHeapingCard } from '../components/DiscreteRDHeapingCard';
 import { FactorialConjointAMCECard } from '../components/FactorialConjointAMCECard';
 import { ManyWeakIVJIVECard } from '../components/ManyWeakIVJIVECard';
+import { PartialAttritionBoundsCard } from '../components/PartialAttritionBoundsCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1912,6 +1913,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Many-Weak-IV Robust JIVE, LIML & Fuller (1977) Engine (Angrist et al. 1999; DataTrust Iteration 191) */}
       <ManyWeakIVJIVECard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Partial Identification & Non-Random Attrition Bounds Engine (Horowitz & Manski 2000; Lee 2009; DataTrust Iteration 192) */}
+      <PartialAttritionBoundsCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

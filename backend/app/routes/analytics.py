@@ -1,3 +1,4 @@
+from app.engine.partial_attrition_bounds_engine import run_partial_attrition_bounds_analysis
 from app.engine.many_weak_iv_jive_engine import run_many_weak_iv_jive_analysis
 from app.engine.factorial_conjoint_amce_engine import run_factorial_conjoint_amce
 from app.engine.discrete_rd_heaping_engine import run_discrete_rd_heaping_analysis
@@ -224,6 +225,8 @@ from app.schemas import (
     FactorialConjointAMCEOut,
     ManyWeakIVJIVERequest,
     ManyWeakIVJIVEOut,
+    PartialAttritionBoundsRequest,
+    PartialAttritionBoundsOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -19003,6 +19006,91 @@ def run_many_weak_iv_jive_endpoint(
                         "instruments_count": res.get("instruments_count"),
                         "first_stage_f": res.get("first_stage_diagnostics", {}).get("f_statistic"),
                         "weak_instrument": res.get("first_stage_diagnostics", {}).get("weak_instrument"),
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/partial-attrition-bounds", response_model=PartialAttritionBoundsOut)
+def run_partial_attrition_bounds_endpoint(
+    survey_id: str,
+    payload: PartialAttritionBoundsRequest
+):
+    """
+    Partial Identification & Non-Random Attrition Bounds Engine
+    (Horowitz & Manski 2000; Lee 2009; Manski & Pepper 2000).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        all_qids = [payload.treatment_question_id, payload.outcome_question_id]
+        if payload.response_question_id:
+            all_qids.append(payload.response_question_id)
+
+        for r_id, ans in data_by_resp.items():
+            rec = {}
+            for qid in all_qids:
+                rec[qid] = ans.get(qid)
+            records.append(rec)
+
+        try:
+            res = run_partial_attrition_bounds_analysis(
+                records=records,
+                treatment_col=payload.treatment_question_id,
+                outcome_col=payload.outcome_question_id,
+                response_col=payload.response_question_id,
+                user_ymin=payload.user_ymin,
+                user_ymax=payload.user_ymax,
+                alpha=payload.alpha or 0.05,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi phân tích Partial Attrition Bounds: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="PARTIAL_ATTRITION_BOUNDS_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "sample_size": res.get("sample_size"),
+                        "overall_attrition_rate": res.get("overall_attrition_rate"),
+                        "manski_bounds": [
+                            res.get("manski_horowitz_bounds", {}).get("lower_bound"),
+                            res.get("manski_horowitz_bounds", {}).get("upper_bound")
+                        ],
+                        "lee_bounds": [
+                            res.get("lee_trimming_bounds", {}).get("lower_bound"),
+                            res.get("lee_trimming_bounds", {}).get("upper_bound")
+                        ]
                     }
                 )
             except Exception:

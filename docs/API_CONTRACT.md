@@ -6721,3 +6721,33 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** ManyWeakIVJIVERequest (	reatment_question_id, outcome_question_id, instrument_question_ids, covariate_question_ids, uller_a, scope).
   - **Response:** ManyWeakIVJIVEOut (status, sample_size, instruments_count, covariates_count, irst_stage_diagnostics, estimator_comparisons, overidentification_test, svg_visualization, pa_narrative).
 - **Niêm phong kiểm toán:** Ghi nhận MANY_WEAK_IV_JIVE_EVALUATED vào chuỗi sổ cái SHA-256.
+
+
+### 173. Partial Identification & Non-Random Attrition Bounds Engine (Horowitz & Manski 2000; Lee 2009; Manski & Pepper 2000; Imbens & Manski 2004)
+- **Mục tiêu:** Định danh và ước lượng khoảng chặn tác động nhân quả (Average Treatment Effect - ATE) khi khảo sát gặp hiện tượng mất dấu / bỏ dở không ngẫu nhiên (Non-Random Attrition, Selective Non-Response), loại bỏ hoàn toàn rủi ro sai lệch do giả định khuyết ngẫu nhiên (Missing At Random - MAR) bị vi phạm.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Thất Bại Của Giả Định Khuyết Ngẫu Nhiên (MAR Failure):**
+     - Cho biến can thiệp $D_i \in \{0, 1\}$ và chỉ báo quan sát $R_i \in \{0, 1\}$ ($R_i = 1$ nếu biến kết quả $Y_i$ được quan sát; $R_i = 0$ nếu mất dấu / từ chối trả lời).
+     - Ước lượng thông thường chỉ dựa trên mẫu quan sát (Complete-Case Analysis) giả định $Y \perp R \mid D$. Khi người bất mãn hoặc kiệt sức bỏ dở khảo sát nhiều hơn, ước lượng thông thường bị chệch nghiêm trọng.
+  2. **Khoảng Chặn Tồi Tệ Nhất Horowitz & Manski (2000 Worst-Case Bounds):**
+     - Với biến kết quả bị chặn $Y \in [y_{\\min}, y_{\\max}]$ và tỷ lệ phản hồi $p_d = P(R=1 \mid D=d)$, không cần bất kỳ giả định nào về cơ chế mất dấu, khoảng chặn ATE là:
+       $$\\Delta_L^{\\text{Manski}} = \\left( E[Y \\mid D=1, R=1] p_1 + y_{\\min} (1-p_1) \\right) - \\left( E[Y \\mid D=0, R=1] p_0 + y_{\\max} (1-p_0) \\right)$$
+       $$\\Delta_U^{\\text{Manski}} = \\left( E[Y \\mid D=1, R=1] p_1 + y_{\\max} (1-p_1) \\right) - \\left( E[Y \\mid D=0, R=1] p_0 + y_{\\min} (1-p_0) \\right)$$
+  3. **Khoảng Chặn Cắt Tỉa Đơn Điệu Lee (2009 Trimming Bounds):**
+     - Dưới giả định tính đơn điệu của việc phản hồi theo can thiệp ($R_i(1) \\ge R_i(0) \\forall i$), can thiệp chỉ thúc đẩy người trả lời hoàn thành hoặc bỏ dở theo một hướng duy nhất.
+     - Tỷ lệ phản hồi dư thừa trong nhóm can thiệp là $q = 1 - p_0 / p_1$. Lee (2009) thực hiện cắt tỉa phân vị $q$ ở hai đầu phân phối $Y \\mid D=1, R=1$:
+       $$\\Delta_L^{\\text{Lee}} = E[Y \\mid D=1, R=1, Y \\le y_{1-q}] - E[Y \\mid D=0, R=1]$$
+       $$\\Delta_U^{\\text{Lee}} = E[Y \\mid D=1, R=1, Y \\ge y_q] - E[Y \\mid D=0, R=1]$$
+     - Khoảng chặn Lee (2009) chặt chẽ hơn nhiều so với Manski và không phụ thuộc vào các ngưỡng cận $y_{\\min}, y_{\\max}$ tùy ý.
+  4. **Khoảng Chặn Lựa Chọn Can Thiệp Đơn Điệu (Manski & Pepper 2000 MTS Bounds):**
+     - Giả định nhóm tự lựa chọn can thiệp có kết quả tiềm năng không thua kém nhóm đối chứng ($E[Y(d) \\mid D=1] \\ge E[Y(d) \\mid D=0]$), giúp thắt chặt cận trên $\\Delta_U$.
+  5. **Khoảng Tin Cậy Tham Số Định Danh Một Phần Imbens & Manski (2004) / Stoye (2009):**
+     - Khắc phục nhược điểm của khoảng tin cậy truyền thống (vốn chỉ áp dụng cho ước lượng điểm) bằng cách hiệu chỉnh giá trị tới hạn $c_\\alpha$ theo độ rộng của khoảng định danh $\\hat{\\Delta}_U - \\hat{\\Delta}_L$:
+       $$\\text{CI}_{1-\\alpha} = [\\hat{\\Delta}_L - c_\\alpha \\hat{\\sigma}_L / \\sqrt{N}, \\hat{\\Delta}_U + c_\\alpha \\hat{\\sigma}_U / \\sqrt{N}]$$
+  6. **Trực Quan Hóa Vector Kép SVG & Phân Tích Độ Nhạy:**
+     - Panel A: Biểu đồ Forest so sánh Naive MAR vs Lee Trimming vs MTS vs Manski Worst-Case kèm khoảng tin cậy 95% Imbens-Manski và đường tham chiếu tác động 0.0.
+     - Panel B: Đường nhạy cảm biểu diễn tác động ATE suy ra tương ứng với kỳ vọng của nhóm mất dấu $\\mu_{\\text{attrited}} \\in [y_{\\min}, y_{\\max}]$.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/partial-attrition-bounds`
+  - **Payload:** `PartialAttritionBoundsRequest` (`treatment_question_id`, `outcome_question_id`, `response_question_id`, `user_ymin`, `user_ymax`, `alpha`, `scope`).
+  - **Response:** `PartialAttritionBoundsOut` (`status`, `sample_size`, `sample_treatment`, `sample_control`, `response_rate_treatment`, `response_rate_control`, `overall_attrition_rate`, `outcome_bounds`, `naive_complete_case`, `manski_horowitz_bounds`, `lee_trimming_bounds`, `mts_bounds`, `sensitivity_grid`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `PARTIAL_ATTRITION_BOUNDS_EVALUATED` vào chuỗi sổ cái SHA-256.

@@ -10540,3 +10540,66 @@ export interface FactorialConjointAMCEResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+
+// --- Partial Identification & Non-Random Attrition Bounds Types (Horowitz & Manski 2000; Lee 2009; DataTrust Iteration 192) ---
+export interface NaiveCompleteCaseATE {
+  ate: number;
+  std_error: number;
+  ci_95: [number, number];
+  p_value: number;
+  assumes_mar: boolean;
+}
+
+export interface ManskiHorowitzBounds {
+  lower_bound: number;
+  upper_bound: number;
+  interval_width: number;
+  imbens_manski_ci_95: [number, number];
+  straddles_zero: boolean;
+}
+
+export interface LeeTrimmingBounds {
+  lower_bound: number;
+  upper_bound: number;
+  interval_width: number;
+  trimming_ratio: number;
+  monotonicity_direction: string;
+  imbens_manski_ci_95: [number, number];
+  straddles_zero: boolean;
+}
+
+export interface MTSBounds {
+  lower_bound: number;
+  upper_bound: number;
+  interval_width: number;
+  imbens_manski_ci_95: [number, number];
+}
+
+export interface PartialAttritionBoundsRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  response_question_id?: string;
+  user_ymin?: number;
+  user_ymax?: number;
+  alpha?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface PartialAttritionBoundsResult {
+  status: string;
+  sample_size: number;
+  sample_treatment: number;
+  sample_control: number;
+  response_rate_treatment: number;
+  response_rate_control: number;
+  overall_attrition_rate: number;
+  outcome_bounds: { ymin: number; ymax: number };
+  naive_complete_case: NaiveCompleteCaseATE;
+  manski_horowitz_bounds: ManskiHorowitzBounds;
+  lee_trimming_bounds: LeeTrimmingBounds;
+  mts_bounds: MTSBounds;
+  sensitivity_grid: Array<{ mu_attrited: number; implied_ate: number }>;
+  svg_visualization: string;
+  apa_narrative: string;
+}
