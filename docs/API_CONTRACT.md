@@ -5609,3 +5609,30 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `AutoDMLRieszRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `functional_type`, `shift_delta`, `n_splits`, `ridge_lambda`, `alpha_level`, `scope`).
   - **Response:** `AutoDMLRieszOut` (`status`, `overall_summary`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `AUTO_DML_RIESZ_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 137. Local Instrumental Variables & Marginal Treatment Effects Engine (LIV / MTE; Heckman & Vytlacil 2005 Econometrica; Mogstad, Santos, & Torgovitsky 2018 Econometrica; Carneiro, Heckman, & Vytlacil 2011 AER)
+- **Mục tiêu:** Giải quyết triệt để vấn đề "Tính không đồng nhất thiết yếu" (Essential Heterogeneity) trong các mô hình lựa chọn Roy tổng quát của phân tích khảo sát can thiệp chính sách. Khi các đối tượng tham gia khảo sát tự lựa chọn tham gia can thiệp dựa trên lợi ích kỳ vọng cá nhân (Sorting on Unobserved Gains), các ước lượng hồi quy OLS hay biến công cụ 2SLS thông thường không còn tính đại diện toàn cục và chỉ đo lường được cục bộ cho nhóm tuân thủ (LATE). Động cơ ước lượng đường cong Hiệu ứng Can thiệp Biên $\text{MTE}(u) = \mathbb{E}[Y_1 - Y_0 \mid U_D = u]$ thông qua phương pháp Biến Công cụ Cục bộ (Local Instrumental Variables - LIV) vi phân hàm kỳ vọng có điều kiện $\frac{\partial \mathbb{E}[Y \mid P(Z)=p]}{\partial p}$, đồng thời tích phân đường cong MTE theo hệ thống hàm trọng số chính sách để khôi phục toàn vẹn và so sánh toàn bộ các tham số: ATE, ATT, ATU, LATE, và PRTE.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Mô hình Lựa chọn Roy & Biến Kháng cự Tiềm ẩn $U_D$:**
+     - Hành vi tham gia can thiệp: $D_i = \mathbf{1}\{ P(Z_i, X_i) \ge U_{D,i} \}$, trong đó $P(Z, X) = \Pr(D = 1 \mid Z, X)$ là điểm xu hướng (propensity score) và $U_D \sim \text{Uniform}(0, 1)$ là mức độ kháng cự không quan sát được đối với chính sách.
+     - $U_D \to 0$: Nhóm hào hứng, sẵn sàng tham gia ngay cả khi chính sách khuyến khích yếu ($P(Z)$ thấp).
+     - $U_D \to 1$: Nhóm ngoan cố / e ngại, chỉ tham gia khi có chính sách khuyến khích tối đa ($P(Z)$ cao).
+  2. **Định danh Biến Công cụ Cục bộ (LIV Identification; Heckman & Vytlacil 1999, 2005):**
+     - Mô hình bán tham số kỳ vọng kết quả theo đa thức linh hoạt: $\mathbb{E}[Y \mid P(Z)=p, X] = \alpha_0 + X \beta_x + \delta_1 p + \delta_2 p^2 + \delta_3 p^3$.
+     - Vi phân cục bộ theo xác suất xu hướng:
+       $$\text{MTE}(u) = \left. \frac{\partial \mathbb{E}[Y \mid P(Z)=p, X]}{\partial p} \right|_{p = u} = \delta_1 + 2 \delta_2 u + 3 \delta_3 u^2$$
+     - Ma trận hiệp phương sai của $\text{MTE}(u)$ thu được từ ma trận hiệp phương sai tiệm cận của hệ số hồi quy theo phương pháp Delta Method.
+  3. **Hợp nhất Toàn bộ Tham số Chính sách qua Tích phân Trọng số (Unified Policy Integration):**
+     - Bất kỳ tham số chính sách nào đều biểu diễn dưới dạng $\text{Parameter} = \int_0^1 \text{MTE}(u) \cdot \omega(u) \, du$:
+       - $\omega_{\text{ATE}}(u) = 1.0$.
+       - $\omega_{\text{ATT}}(u) = \frac{\int_u^1 f(p) dp}{\mathbb{E}[P]}$ (trọng số tập trung vào giá trị $U_D$ thấp).
+       - $\omega_{\text{ATU}}(u) = \frac{\int_0^u f(p) dp}{1 - \mathbb{E}[P]}$ (trọng số tập trung vào giá trị $U_D$ cao).
+       - $\omega_{\text{LATE}}(u) = \frac{\mathbf{1}\{p_0 \le u \le p_1\}}{p_1 - p_0}$ (trọng số của nhóm thay đổi hành vi giữa hai mức chính sách).
+  4. **Kiểm định Thống kê Tính Không đồng nhất Thiết yếu & Lựa chọn theo Lợi ích:**
+     - Kiểm định Wald kiểm tra $H_0: \delta_2 = 0 \text{ và } \delta_3 = 0$ (đường cong MTE phẳng, không có tương tác giữa $D$ và $U_D$).
+     - Chỉ số lựa chọn theo lợi ích (Sorting on Gains): $\Delta_{\text{sorting}} = \text{ATT} - \text{ATE}$. Nếu $\Delta_{\text{sorting}} > 0$, các cá nhân có lợi ích cá nhân cao hơn sẽ có xác suất tham gia can thiệp cao hơn.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/local-instrumental-variables`
+  - **Payload:** `LocalInstrumentalVariablesRequest` (`outcome_question_id`, `treatment_question_id`, `instrument_question_ids`, `covariate_question_ids`, `n_grid_points`, `trim_quantile`, `alpha_level`, `scope`).
+  - **Response:** `LocalInstrumentalVariablesOut` (`status`, `overall_summary`, `mte_curve`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `LOCAL_INSTRUMENTAL_VARIABLES_EVALUATED` vào chuỗi sổ cái SHA-256.

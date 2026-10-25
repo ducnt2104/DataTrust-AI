@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.local_instrumental_variables_engine import estimate_local_instrumental_variables
 from app.engine.auto_dml_riesz_engine import estimate_auto_dml_riesz
 from app.engine.nested_logit_engine import estimate_nested_logit
 from app.engine.factor_iv_engine import estimate_factor_iv
@@ -119,6 +120,8 @@ from app.schemas import (
     NestedLogitOut,
     AutoDMLRieszRequest,
     AutoDMLRieszOut,
+    LocalInstrumentalVariablesRequest,
+    LocalInstrumentalVariablesOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15758,6 +15761,130 @@ def run_auto_dml_riesz_analysis(
                 "se_autodml": res.get("overall_summary", {}).get("se_autodml"),
                 "p_value": res.get("overall_summary", {}).get("p_value"),
                 "debiasing_correction": res.get("overall_summary", {}).get("debiasing_correction_magnitude"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/local-instrumental-variables", response_model=LocalInstrumentalVariablesOut)
+def run_local_instrumental_variables_analysis(
+    survey_id: str,
+    payload: LocalInstrumentalVariablesRequest
+):
+    """
+    Local Instrumental Variables & Marginal Treatment Effects (LIV / MTE) Engine.
+    Heckman, J. J., & Vytlacil, E. (2005). Econometrica.
+    Mogstad, M., Santos, A., & Torgovitsky, A. (2018). Econometrica.
+    Estimates the structural MTE(u) curve over unobserved resistance distribution U_D,
+    integrates MTE against policy weights to recover ATE, ATT, ATU, LATE, and PRTE,
+    and conducts a Wald test for Essential Heterogeneity (selection on unobserved gains).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+        inst_ids = payload.instrument_question_ids
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.treatment_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    d_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                rec = {
+                    payload.outcome_question_id: y_val,
+                    payload.treatment_question_id: d_val
+                }
+
+                # Instruments
+                valid_insts = True
+                for i_id in inst_ids:
+                    if i_id in answers:
+                        try:
+                            rec[i_id] = float(answers[i_id])
+                        except (ValueError, TypeError):
+                            valid_insts = False
+                    else:
+                        valid_insts = False
+
+                # Covariates
+                valid_covs = True
+                for c_id in cov_ids:
+                    if c_id in answers:
+                        try:
+                            rec[c_id] = float(answers[c_id])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                    else:
+                        valid_covs = False
+
+                if valid_insts and valid_covs:
+                    df_records.append(rec)
+
+        if len(df_records) < 30:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 30 bản ghi hợp lệ để ước lượng LIV/MTE (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_local_instrumental_variables(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                instrument_cols=inst_ids,
+                covariate_cols=cov_ids,
+                n_grid_points=payload.n_grid_points,
+                trim_quantile=payload.trim_quantile,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng LIV/MTE: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="LOCAL_INSTRUMENTAL_VARIABLES_EVALUATED",
+            details={
+                "ate": res.get("overall_summary", {}).get("ate", {}).get("estimate"),
+                "att": res.get("overall_summary", {}).get("att", {}).get("estimate"),
+                "atu": res.get("overall_summary", {}).get("atu", {}).get("estimate"),
+                "late": res.get("overall_summary", {}).get("late", {}).get("estimate"),
+                "sorting_gain": res.get("overall_summary", {}).get("sorting_on_gains_att_minus_ate"),
+                "essential_heterogeneity": res.get("overall_summary", {}).get("essential_heterogeneity_present"),
                 "status": res.get("status")
             }
         )

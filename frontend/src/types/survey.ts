@@ -8403,3 +8403,61 @@ export interface AutoDMLRieszRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Local Instrumental Variables & Marginal Treatment Effects (Heckman & Vytlacil 2005) Types ---
+export interface MTECurvePoint {
+  u: number;
+  mte: number;
+  se: number;
+  ci_95: [number, number];
+}
+
+export interface CausalParameterItem {
+  estimate: number;
+  se: number;
+  ci_95?: [number, number];
+  label: string;
+}
+
+export interface LIVMTESummary {
+  sample_size: number;
+  n_instruments: number;
+  n_covariates: number;
+  propensity_support: [number, number];
+  propensity_mean: number;
+  mte_intercept_delta1: number;
+  mte_linear_slope_delta2: number;
+  mte_quadratic_delta3: number;
+  ate: CausalParameterItem;
+  att: CausalParameterItem;
+  atu: CausalParameterItem;
+  late: CausalParameterItem;
+  ols_benchmark: CausalParameterItem;
+  standard_2sls: CausalParameterItem;
+  sorting_on_gains_att_minus_ate: number;
+  wald_test_essential_heterogeneity: number;
+  wald_test_p_value: number;
+  essential_heterogeneity_present: boolean;
+  heterogeneity_verdict: string;
+}
+
+export interface LocalInstrumentalVariablesResult {
+  status: string;
+  message?: string;
+  overall_summary?: LIVMTESummary;
+  mte_curve?: MTECurvePoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface LocalInstrumentalVariablesRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  instrument_question_ids: string[];
+  covariate_question_ids?: string[];
+  n_grid_points?: number;
+  trim_quantile?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

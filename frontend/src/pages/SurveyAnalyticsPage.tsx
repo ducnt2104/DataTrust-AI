@@ -134,6 +134,7 @@ import { TWFEDecompositionCard } from '../components/TWFEDecompositionCard';
 import { FactorIVCard } from '../components/FactorIVCard';
 import { NestedLogitCard } from '../components/NestedLogitCard';
 import { AutoDMLRieszCard } from '../components/AutoDMLRieszCard';
+import { LocalInstrumentalVariablesCard } from '../components/LocalInstrumentalVariablesCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1534,6 +1535,17 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           question_type: q.question_type
         }))}
       />
+
+      {/* Local Instrumental Variables & Marginal Treatment Effects (Heckman & Vytlacil 2005 Econometrica) */}
+      <LocalInstrumentalVariablesCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
 
 
 

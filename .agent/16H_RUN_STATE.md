@@ -2224,3 +2224,35 @@ eq 0\}$
 ## 23. Planned Next Iteration: Iteration 156
 - **Feature**: Local Instrumental Variables & Marginal Treatment Effects Engine (LIV / MTE; Heckman & Vytlacil 2005 Econometrica; Mogstad, Santos, & Torgovitsky 2018 Econometrica).
 - **Scope**: Estimates policy-invariant Marginal Treatment Effects (MTE) over the distribution of unobserved resistance to treatment $U_D$, recovers Policy-Relevant Treatment Effects (PRTE), Average Treatment Effect on the Treated (ATT), and Local Average Treatment Effects (LATE) via integrating MTE with policy weight functions.
+
+
+---
+
+## 23. Iteration 156: Local Instrumental Variables & Marginal Treatment Effects Engine (LIV / MTE; Heckman & Vytlacil 2005 Econometrica; Mogstad et al. 2018)
+- **Timestamp**: 2026-10-25T13:17:00+07:00
+- **Scientific Foundation**:
+  - Implements the generalized Roy selection model with essential heterogeneity, where participation $D_i = \mathbf{1}\{ P(Z_i) \ge U_{D,i} \}$ is driven by unobserved reluctance / resistance to treatment $U_D \sim \text{Uniform}(0, 1)$.
+  - Local Instrumental Variables (LIV) Identification: Recovers the policy-invariant Marginal Treatment Effect curve $\text{MTE}(u) = \left. \frac{\partial \mathbb{E}[Y \mid P(Z)=p]}{\partial p} \right|_{p = u}$ via semi-parametric polynomial differentiation over the empirical common support $[\underline{p}, \bar{p}]$.
+  - Unified Policy Parameter Recovery: Integrates $\text{MTE}(u)$ against policy-specific weight functions $\omega(u)$ to simultaneously recover Average Treatment Effect (ATE), Treatment on the Treated (ATT), Treatment on Untreated (ATU), and Local Average Treatment Effects (LATE / Compliers).
+  - Selection on Unobserved Gains: Formally tests for essential heterogeneity via a Wald test on MTE slope parameters ($H_0: \delta_2 = \delta_3 = 0$) and computes the sorting margin $\Delta_{\text{sorting}} = \text{ATT} - \text{ATE}$.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/local_instrumental_variables_engine.py` (385 lines).
+  - Pydantic Schemas: `LocalInstrumentalVariablesRequest` and `LocalInstrumentalVariablesOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/local-instrumental-variables` with `LOCAL_INSTRUMENTAL_VARIABLES_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_local_instrumental_variables_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_local_instrumental_variables_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `MTECurvePoint`, `CausalParameterItem`, `LIVMTESummary`, `LocalInstrumentalVariablesResult`, `LocalInstrumentalVariablesRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runLocalInstrumentalVariables` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/LocalInstrumentalVariablesCard.tsx` (515 lines) with outcome, binary treatment, instrumental variables checklist, covariates checklist, MTE grid resolution selector, trimming quantile selector, KPI stat cards (ATT, LATE, Essential Heterogeneity Wald test, Common Support), unified causal parameters comparison table (ATT, ATE, ATU, LATE, Linear 2SLS, OLS), dual-panel SVG visualizer (MTE curve with 95% confidence band & policy parameters forest plot), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 2.07s** (24/24 cumulative passed in 15.80s).
+  - Frontend Production Build: **2,122 modules transformed, 0 errors in 1.94s**.
+  - Contract Documentation: Section 137 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 24. Planned Next Iteration: Iteration 157
+- **Feature**: Conformal Optimal Transport Counterfactual Distributional Alignment Engine (COT-CDA; Cuturi 2013; Courty et al. 2017; Chernozhukov et al. 2017).
+- **Scope**: Implements entropy-regularized Wasserstein optimal transport (Sinkhorn algorithm) to solve continuous counterfactual distribution alignment and individual transport maps $T(x)$, computing distribution Wasserstein barycenters, counterfactual quantile shifts, and conformal prediction coverage bands for survey policy evaluations.
