@@ -6585,3 +6585,39 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `RICLPMRequest` (`x_question_ids`, `y_question_ids`, `m_question_ids`, `var_x_name`, `var_y_name`, `var_m_name`, `wave_labels`, `n_bootstraps`, `scope`).
   - **Response:** `RICLPMOut` (`status`, `sample_size`, `waves_count`, `wave_labels`, `variables`, `between_person_traits`, `within_person_dynamics`, `longitudinal_mediation`, `goodness_of_fit`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `RICLPM_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 169. Abadie (2003) Kappa-Weighting Complier Profiling & Compliance Typology Engine (Abadie 2003 J. Econometrics; Angrist, Imbens, & Rubin 1996 JASA; Marbach & Hangartner 2020 APSR)
+- **Mục tiêu:** Định danh chân dung nhân khẩu học và phân rã cấu trúc tuân thủ (Compliance Typology Decomposition) trong các thiết kế biến công cụ khuyến khích (Encouragement Designs / IV), giải quyết câu hỏi trung tâm của suy luận nhân quả thực nghiệm: *"Nhóm đối tượng tuân thủ (Compliers) - những người tiếp nhận can thiệp nhờ khuyến khích - thực sự là ai trong tổng thể mẫu khảo sát?"*, sử dụng định lý trọng số $\kappa$ phi tham số của Abadie (2003) và tỷ số hợp lý tương đối (Relative Likelihood Ratios; Marbach & Hangartner 2020).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Phân Rã Phân Lớp Chủ Đạo (Principal Strata Decomposition) Dưới Giả Định Đơn Điệu (No-Defiers Monotonicity):**
+     - Theo khung Angrist, Imbens, & Rubin (1996), tổng thể được phân hoạch thành 3 phân lớp tiềm ẩn không quan sát trực tiếp:
+       - **Compliers ($C$):** $D(1) = 1, D(0) = 0$. Tỷ lệ: $P(C) = P(D=1 \mid Z=1) - P(D=1 \mid Z=0)$.
+       - **Always-Takers ($AT$):** $D(1) = 1, D(0) = 1$. Tỷ lệ: $P(AT) = P(D=1 \mid Z=0)$.
+       - **Never-Takers ($NT$):** $D(1) = 0, D(0) = 0$. Tỷ lệ: $P(NT) = 1 - P(D=1 \mid Z=1)$.
+     - Kiểm định tính đơn điệu (Monotonicity Check): Đảm bảo $P(D=1 \mid Z=1) \ge P(D=1 \mid Z=0)$ và kiểm định độ mạnh công cụ giai đoạn 1 (First-Stage Wald F-statistic $\ge 10.0$; Stock & Yogo 2005).
+  2. **Định Lý Trọng Số Kappa Phi Tham Số (Abadie 2003 Kappa Weighting Theorem):**
+     - Trọng số Abadie $\kappa_i$ gán cho mỗi quan sát $i$:
+       $$\kappa_i = 1 - \frac{D_i (1 - Z_i)}{1 - \pi(X_i)} - \frac{(1 - D_i) Z_i}{\pi(X_i)}$$
+       trong đó $\pi(X_i) = P(Z_i = 1 \mid X_i)$ là điểm số xu hướng tiếp nhận khuyến khích (Instrument Propensity Score), ước lượng qua hồi quy Logistic đa biến có kiểm soát.
+     - Kỳ vọng có trọng số $\kappa$ đồng nhất với kỳ vọng điều kiện trên tập hợp Compliers:
+       $$E[g(Y, X) \mid C] = \frac{E[\kappa_i \cdot g(Y_i, X_i)]}{E[\kappa_i]}$$
+  3. **Tỷ Số Hợp Lý Tương Đối & Phân Loại Mức Độ Đại Diện (Complier Relative Likelihood Ratios; Marbach & Hangartner 2020):**
+     - Với mỗi đặc trưng nhân khẩu học $X_k$, tỷ số đại diện tương đối:
+       $$\text{Ratio}_k = \frac{E[X_k \mid C]}{E[X_k]} = \frac{\mu_{C, k}}{\mu_{\text{Pop}, k}}$$
+     - $\text{Ratio}_k > 1.15$: Phân nhóm có xu hướng **vượt trội (Overrepresented)** trong nhóm Compliers.
+     - $\text{Ratio}_k < 0.85$: Phân nhóm có xu hướng **thiểu số / đại diện thấp (Underrepresented)** trong nhóm Compliers.
+     - $0.85 \le \text{Ratio}_k \le 1.15$: Phân nhóm đạt mức cân bằng đại diện tương đối (Parity).
+     - Khoảng tin cậy Bootstrap 95% CI và sai số chuẩn phi tham số qua $B \ge 150$ vòng tái lấy mẫu.
+  4. **Ước Lượng Phân Phối Tiềm Năng & LATE (Complier Potential Outcomes & LATE):**
+     - Xác định kỳ vọng đối chứng và can thiệp trên nhóm Compliers:
+       $$E[Y(1) \mid C] = \frac{\sum \kappa_i D_i Y_i}{\sum \kappa_i D_i}, \quad E[Y(0) \mid C] = \frac{\sum \kappa_i (1 - D_i) Y_i}{\sum \kappa_i (1 - D_i)}$$
+       $$\text{LATE} = \tau_{\text{LATE}} = E[Y(1) \mid C] - E[Y(0) \mid C]$$
+  5. **Trực Quan Hóa Vector Kép SVG & Tường Thuật APA 7th:**
+     - Panel A: Biểu đồ Donut 3 màu phân rã tỷ lệ Compliers, Always-Takers, Never-Takers kèm huy hiệu kiểm định Stock-Yogo Wald $F$.
+     - Panel B: Biểu đồ thanh ngang phân kỳ thể hiện Tỷ số Hợp lý Tương đối $\text{Ratio}_k$ so với đường chuẩn ngang giá $1.0\times$ Parity Reference Line (màu xanh lục cho Overrepresented, đỏ hồng cho Underrepresented).
+     - Báo cáo học thuật chuẩn APA 7th Edition trích xuất trực tiếp số liệu $N$, $F$, $P(C)$, các nhóm nhân khẩu học chiếm ưu thế và hiệu ứng LATE.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/abadie-complier-profiling`
+  - **Payload:** `AbadieComplierRequest` (`treatment_question_id`, `instrument_question_id`, `covariate_question_ids`, `outcome_question_id`, `estimate_instrument_propensity`, `n_bootstraps`, `scope`).
+  - **Response:** `AbadieComplierOut` (`status`, `sample_size`, `compliance_typology`, `feature_profiles`, `late_causal_effect`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `ABADIE_COMPLIER_PROFILING_EVALUATED` vào chuỗi sổ cái SHA-256.

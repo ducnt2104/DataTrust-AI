@@ -10289,3 +10289,55 @@ export interface RICLPMResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+// --- Abadie (2003) Kappa-Weighting Complier Profiling & Compliance Typology Types (Iteration 188) ---
+export interface AbadieComplianceTypology {
+  p_compliers: number;
+  p_always_takers: number;
+  p_never_takers: number;
+  complier_count_est: number;
+  always_taker_count_est: number;
+  never_taker_count_est: number;
+  first_stage_f: number;
+  weak_instrument: boolean;
+}
+
+export interface AbadieFeatureProfile {
+  feature_name: string;
+  population_mean: number;
+  complier_mean: number;
+  bootstrap_se: number;
+  ci_95: [number, number];
+  relative_likelihood_ratio: number;
+  representation: string;
+}
+
+export interface AbadieLATEEffect {
+  complier_treated_mean_ey1: number;
+  complier_control_mean_ey0: number;
+  late_estimate: number;
+  bootstrap_se: number;
+  ci_95: [number, number];
+  p_value: number;
+  is_significant: boolean;
+}
+
+export interface AbadieComplierRequest {
+  treatment_question_id: string;
+  instrument_question_id: string;
+  covariate_question_ids: string[];
+  outcome_question_id?: string;
+  estimate_instrument_propensity?: boolean;
+  n_bootstraps?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface AbadieComplierResult {
+  status: string;
+  sample_size: number;
+  compliance_typology: AbadieComplianceTypology;
+  feature_profiles: AbadieFeatureProfile[];
+  late_causal_effect?: AbadieLATEEffect | null;
+  svg_visualization: string;
+  apa_narrative: string;
+}

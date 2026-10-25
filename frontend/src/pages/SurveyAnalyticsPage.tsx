@@ -165,6 +165,7 @@ import { CBPSCard } from '../components/CBPSCard';
 import { EValueSensitivityCard } from '../components/EValueSensitivityCard';
 import { ControlFunction2SRICard } from '../components/ControlFunction2SRICard';
 import { RICLPMCard } from '../components/RICLPMCard';
+import { AbadieComplierProfilingCard } from '../components/AbadieComplierProfilingCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1868,6 +1869,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Random-Intercept Cross-Lagged Panel Model (RI-CLPM) & Structural Mediation Engine (Hamaker et al. 2015) */}
       <RICLPMCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Abadie (2003) Kappa-Weighting Complier Profiling & Compliance Typology Engine (DataTrust Iteration 188) */}
+      <AbadieComplierProfilingCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

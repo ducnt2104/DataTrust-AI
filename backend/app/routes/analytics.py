@@ -1,3 +1,4 @@
+from app.engine.abadie_complier_profiling_engine import run_abadie_complier_profiling
 from app.engine.riclpm_engine import run_riclpm_analysis
 from app.engine.control_function_2sri_engine import run_control_function_2sri
 from app.engine.e_value_causal_engine import run_e_value_sensitivity
@@ -212,6 +213,8 @@ from app.schemas import (
     ControlFunction2SRIOut,
     RICLPMRequest,
     RICLPMOut,
+    AbadieComplierRequest,
+    AbadieComplierOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -18672,6 +18675,86 @@ def run_riclpm_endpoint(
                         "cross_lag_yx": res.get("within_person_dynamics", {}).get("mean_cross_lag_y_to_x"),
                         "causal_direction": res.get("within_person_dynamics", {}).get("causal_direction"),
                         "cfi": res.get("goodness_of_fit", {}).get("cfi")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/abadie-complier-profiling", response_model=AbadieComplierOut)
+def run_abadie_complier_profiling_endpoint(
+    survey_id: str,
+    payload: AbadieComplierRequest
+):
+    """
+    Abadie (2003) Kappa-Weighting Complier Profiling and Compliance Typology Engine
+    (Abadie 2003 J. Econometrics; Angrist, Imbens, & Rubin 1996 JASA; Marbach & Hangartner 2020 APSR).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        all_qids = [payload.treatment_question_id, payload.instrument_question_id] + payload.covariate_question_ids
+        if payload.outcome_question_id:
+            all_qids.append(payload.outcome_question_id)
+
+        for r_id, ans in data_by_resp.items():
+            rec = {}
+            for qid in all_qids:
+                rec[qid] = ans.get(qid)
+            records.append(rec)
+
+        try:
+            res = run_abadie_complier_profiling(
+                records=records,
+                treatment_col=payload.treatment_question_id,
+                instrument_col=payload.instrument_question_id,
+                covariate_cols=payload.covariate_question_ids,
+                outcome_col=payload.outcome_question_id,
+                estimate_instrument_propensity=payload.estimate_instrument_propensity,
+                n_bootstraps=payload.n_bootstraps or 150,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi phân tích Complier Profiling: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="ABADIE_COMPLIER_PROFILING_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "sample_size": res.get("sample_size"),
+                        "p_compliers": res.get("compliance_typology", {}).get("p_compliers"),
+                        "first_stage_f": res.get("compliance_typology", {}).get("first_stage_f"),
+                        "weak_instrument": res.get("compliance_typology", {}).get("weak_instrument"),
+                        "late_estimate": res.get("late_causal_effect", {}).get("late_estimate") if res.get("late_causal_effect") else None,
                     }
                 )
             except Exception:

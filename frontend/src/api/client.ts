@@ -287,7 +287,9 @@ import {
   ControlFunction2SRIRequest,
   ControlFunction2SRIResult,
   RICLPMRequest,
-  RICLPMResult
+  RICLPMResult,
+  AbadieComplierRequest,
+  AbadieComplierResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2945,5 +2947,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<RICLPMResult>(res);
+  },
+
+  async runAbadieComplierProfiling(
+    surveyId: string,
+    payload: AbadieComplierRequest
+  ): Promise<AbadieComplierResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/abadie-complier-profiling`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<AbadieComplierResult>(res);
   }
 };

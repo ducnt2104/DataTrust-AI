@@ -3153,6 +3153,33 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 55. Planned Next Iteration: Iteration 188
+## 55. Iteration 188: Abadie (2003) Kappa-Weighting Complier Profiling & Compliance Typology Engine (Abadie 2003; Marbach & Hangartner 2020)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T18:02:00+07:00
+- **Scientific Foundation**:
+  - Principal Strata Compliance Decomposition: Partitions total survey respondent population into Compliers ($D(1)=1, D(0)=0$), Always-Takers ($D(1)=1, D(0)=1$), and Never-Takers ($D(1)=0, D(0)=0$) under monotonicity / no-defiers assumption (Angrist, Imbens, & Rubin 1996 JASA).
+  - Abadie Kappa Weighting Theorem: Uses nonparametric $\kappa_i = 1 - \frac{D_i(1-Z_i)}{1-\pi(X_i)} - \frac{(1-D_i)Z_i}{\pi(X_i)}$ where $\pi(X_i) = P(Z_i=1|X_i)$ to identify conditional distributions on the complier subpopulation without parametric distributional assumptions (Abadie 2003 J. Econometrics).
+  - Complier Relative Likelihood Ratio (Marbach & Hangartner 2020 APSR): Computes $\text{Ratio}_k = \mu_{C, k} / \mu_{\text{Pop}, k}$ with bootstrap confidence intervals to detect which demographic groups are overrepresented (Ratio > 1.15) vs underrepresented (Ratio < 0.85) among compliers.
+  - Complier Potential Outcomes & LATE: Identifies counterfactual means $E[Y(1)|C]$ and $E[Y(0)|C]$, estimating LATE $\tau = E[Y(1)|C] - E[Y(0)|C]$ with bootstrap standard errors and 95% CIs.
+  - Dual-Panel Responsive SVG Visualizer: Panel A renders a tri-color compliance typology donut chart (Compliers, Always-Takers, Never-Takers) with Stock-Yogo first-stage Wald F-statistic badge; Panel B renders diverging horizontal relative likelihood ratio bars anchored to the $1.0\times$ Parity reference line.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/abadie_complier_profiling_engine.py (551 lines).
+  - Schemas: AbadieComplierRequest, AbadieComplierOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/abadie-complier-profiling with ABADIE_COMPLIER_PROFILING_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_abadie_complier_profiling_engine.py (4/4 passed in 0.35s).
+  - Route Tests: backend/tests/test_abadie_complier_profiling_routes.py (2/2 passed in 1.42s).
+- **Frontend Components**:
+  - TypeScript Types: AbadieComplianceTypology, AbadieFeatureProfile, AbadieLATEEffect, AbadieComplierRequest, AbadieComplierResult in frontend/src/types/survey.ts.
+  - API Client Method: runAbadieComplierProfiling in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/AbadieComplierProfilingCard.tsx (540 lines) with Treatment D, Instrument Z, multi-select Covariates X, optional Outcome Y, 4 metric cards (Complier %, Always-Taker %, Never-Taker %, First-stage Wald F), LATE banner, dual-panel SVG visualizer, tabs for Typology Overview, Feature Profiles table, and APA 7th narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 6/6 passed (70/70 cumulative passed across Iterations 171-188).
+  - Frontend Production Build: 2,153 modules transformed, 0 errors in 1.68s.
+  - Contract Documentation: Section 169 appended to docs/API_CONTRACT.md.
+
+---
+
+## 56. Planned Next Iteration: Iteration 189
 - **Feature**: Nonparametric Sensitivity Bounds on Causal Mediation under Intermediate Confounder & Post-Treatment Selection (Imai, Keele, & Yamamoto 2010 JASA; Tchetgen Tchetgen & Phiri 2014 Biostatistics; VanderWeele & Chiba 2014 Epidemiology).
 - **Scope**: Implements sharp nonparametric partial identification bounds on Natural Direct Effects (NDE) and Natural Indirect Effects (NIE) when unobserved confounding violates sequential ignorability, computing sensitivity contours rho and R^2 bounding frontiers with dual-panel SVG visualizations.
