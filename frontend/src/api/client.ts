@@ -289,7 +289,9 @@ import {
   RICLPMRequest,
   RICLPMResult,
   AbadieComplierRequest,
-  AbadieComplierResult
+  AbadieComplierResult,
+  DiscreteRDHeapingRequest,
+  DiscreteRDHeapingResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2959,5 +2961,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<AbadieComplierResult>(res);
+  },
+
+  async runDiscreteRDHeaping(
+    surveyId: string,
+    payload: DiscreteRDHeapingRequest
+  ): Promise<DiscreteRDHeapingResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/discrete-rd-heaping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<DiscreteRDHeapingResult>(res);
   }
 };

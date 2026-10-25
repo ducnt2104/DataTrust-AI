@@ -6621,3 +6621,38 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `AbadieComplierRequest` (`treatment_question_id`, `instrument_question_id`, `covariate_question_ids`, `outcome_question_id`, `estimate_instrument_propensity`, `n_bootstraps`, `scope`).
   - **Response:** `AbadieComplierOut` (`status`, `sample_size`, `compliance_typology`, `feature_profiles`, `late_causal_effect`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `ABADIE_COMPLIER_PROFILING_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 170. Regression Discontinuity with Discrete Running Variables & Heaping Engine (Kolesár & Rothe 2018 AER; Cattaneo, Frandsen, & Titiunik 2015 J. Econometrics; Barreca et al. 2016)
+- **Mục tiêu:** Ước lượng hiệu ứng gián đoạn hồi quy (RDD) khi biến chạy (running variable $X$) có bản chất rời rạc (discrete support) hoặc bị làm tròn tập trung (heaping at focal round numbers như bội số của 5 hoặc 10), khắc phục hoàn toàn sự thất bại của các phương pháp sai số chuẩn gom cụm truyền thống (Lee & Card 2008 bị Kolesár & Rothe 2018 chứng minh là cho khoảng tin cậy dưới mức danh định) thông qua khoảng tin cậy Minimax Honest, chẩn đoán Donut-Hole và suy luận ngẫu nhiên hóa cục bộ mẫu hữu hạn (Cattaneo et al. 2015).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Chẩn Đoán Tính Rời Rạc & Tỷ Lệ Làm Tròn (Discreteness & Heaping Diagnostics):**
+     - Xác định số điểm hỗ trợ thực tế $G$, phát hiện khoảng cách giữa hai điểm hỗ trợ liền kề sát ngưỡng nhất: $\Delta = x_{(r)} - x_{(l)}$.
+     - Đo lường chỉ số Whipple / Tỷ lệ làm tròn (Heaping Ratio) tại các bội số tròn $M_{	ext{focal}}$:
+       $$\text{Heaping Ratio} = \frac{P(X \in \text{Focal Multiples})}{P_{\text{uniform}}(X \in \text{Focal Multiples})}$$
+       Phân loại mức độ nghiêm trọng: Severe Heaping ($> 1.5$), Moderate Heaping ($> 1.2$), Negligible Heaping ($\le 1.2$).
+  2. **Ước Lượng Điểm Cục Bộ Tuyến Tính (Local Linear RDD Estimation):**
+     - Tối thiểu hóa bình phương có trọng số hạt nhân (Triangular, Epanechnikov, hoặc Uniform):
+       $$\min_{\boldsymbol{\beta}} \sum_{i=1}^n K\left(\frac{X_i - c}{h}\right) \left( Y_i - \beta_0 - \tau D_i - \beta_1(X_i - c) - \beta_2 D_i(X_i - c) \right)^2$$
+       với $D_i = \mathbf{1}(X_i \ge c)$. Điểm ước lượng thông thường: $\hat{\tau} = \hat{\beta}_1$.
+  3. **Khoảng Tin Cậy Minimax Honest (Kolesár & Rothe 2018 AER):**
+     - Dưới giả định độ cong hàm hồi quy bị chặn bởi hằng số Lipschitz/Hölder $M$ ($|f''(x)| \le M$), sai số chệch xấp xỉ trong trường hợp xấu nhất (Worst-Case Approximation Bias):
+       $$\bar{B}(M) = \frac{M}{2} \sum_{i=1}^n |w_{\tau, i}| (X_i - c)^2$$
+       trong đó $w_{\tau, i}$ là trọng số nhân quả tương ứng với $\hat{\tau}$.
+     - Giá trị tới hạn chuẩn gập (Folded Normal Critical Value) giải phương trình:
+       $$\Phi(\text{cv} - b) - \Phi(-\text{cv} - b) = 1 - \alpha, \quad b = \frac{\bar{B}(M)}{\text{se}(\hat{\tau})}$$
+     - Khoảng tin cậy Minimax Honest $95\%$ bảo đảm xác suất bao phủ $\ge 95\%$ trên toàn bộ lớp hàm độ cong $M$:
+       $$\text{CI}_{\text{honest}, 95\%}(M) = [\hat{\tau} - \text{cv} \cdot \text{se}, \; \hat{\tau} + \text{cv} \cdot \text{se}]$$
+  4. **Tam Giác Hóa Donut-Hole RDD (Barreca, Lindo, & Waddell 2016):**
+     - Tái ước lượng mô hình sau khi loại bỏ hoàn toàn các quan sát tại ngưỡng $X = c$ hoặc tại các điểm làm tròn tập trung gần ngưỡng.
+     - So sánh $\Delta \hat{\tau} = \hat{\tau} - \hat{\tau}_{\text{donut}}$ để kiểm chứng xem bước nhảy nhân quả có bị thúc đẩy giả tạo bởi hành vi khai báo số tròn của người trả lời hay không.
+  5. **Suy Luận Ngẫu Nhiên Hóa Cục Bộ Mẫu Hữu Hạn (Cattaneo, Frandsen, & Titiunik 2015):**
+     - Trong cửa sổ hẹp nhất $W_0 = [x_{(l)}, x_{(r)}]$, coi việc rơi vào nhóm xử lý là ngẫu nhiên và tính toán p-value hoán vị Fisher chính xác (Exact Fisherian Permutation Test).
+  6. **Trực Quan Hóa Vector Kép SVG & Tường Thuật APA 7th:**
+     - Panel A: Đồ thị tán xạ các điểm trung bình rời rạc (kèm kích thước bong bóng theo số lượng mẫu), các đường hồi quy tuyến tính hai phía, đường đứt nét ngưỡng $c$ và huy hiệu bước nhảy $\hat{\tau}$.
+     - Panel B: Đồ thị đường cong độ nhạy sai số chệch Kolesár & Rothe (2018), biểu diễn các thanh sai số Honest 95% CI theo lưới độ cong $M$ so với đường chuẩn 0.0 (màu xanh lục khi giữ vững ý nghĩa, màu đỏ khi chứa 0).
+     - Diễn giải học thuật APA 7th Edition tóm tắt đầy đủ cỡ mẫu, số điểm rời rạc, bước nhảy thông thường, khoảng tin cậy honest và kiểm định donut-hole.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/discrete-rd-heaping`
+  - **Payload:** `DiscreteRDHeapingRequest` (`running_question_id`, `outcome_question_id`, `cutoff`, `bandwidth`, `kernel`, `focal_rounding_interval`, `n_permutations`, `scope`).
+  - **Response:** `DiscreteRDHeapingOut` (`status`, `sample_size`, `window_sample_size`, `cutoff`, `bandwidth`, `discreteness_diagnostics`, `conventional_rdd`, `kolesar_rothe_honest_bounds`, `donut_hole_diagnostics`, `local_randomization_inference`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `DISCRETE_RD_HEAPING_EVALUATED` vào chuỗi sổ cái SHA-256.

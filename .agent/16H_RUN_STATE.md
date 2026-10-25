@@ -3180,6 +3180,33 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 56. Planned Next Iteration: Iteration 189
-- **Feature**: Nonparametric Sensitivity Bounds on Causal Mediation under Intermediate Confounder & Post-Treatment Selection (Imai, Keele, & Yamamoto 2010 JASA; Tchetgen Tchetgen & Phiri 2014 Biostatistics; VanderWeele & Chiba 2014 Epidemiology).
-- **Scope**: Implements sharp nonparametric partial identification bounds on Natural Direct Effects (NDE) and Natural Indirect Effects (NIE) when unobserved confounding violates sequential ignorability, computing sensitivity contours rho and R^2 bounding frontiers with dual-panel SVG visualizations.
+## 56. Iteration 189: Regression Discontinuity with Discrete Running Variables & Heaping Engine (Kolesár & Rothe 2018 AER; Barreca et al. 2016)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T18:10:00+07:00
+- **Scientific Foundation**:
+  - Critique of Clustered SEs in Discrete RDD: Lee & Card (2008) standard error clustering by discrete running variable values is proven by Kolesár & Rothe (2018 AER) to have severe undercoverages (<50% true coverage for nominal 95% CIs) under functional form misspecification.
+  - Kolesár & Rothe (2018 AER) Minimax Honest Confidence Intervals: Implements minimax optimal inference over the Hölder class of regression functions with bounded second derivative $|f''(x)| \le M$. Derives worst-case approximation bias $ar{B}(M) = rac{M}{2} \sum |w_{	au, i}| (X_i - c)^2$ and computes exact critical values via folded-normal inversion $\Phi(	ext{cv} - b) - \Phi(-	ext{cv} - b) = 1 - lpha$.
+  - Barreca, Lindo, & Waddell (2016) Donut-Hole Heaping Diagnostics: Detects excess mass and reporting clustering at focal round numbers (multiples of 5 and 10) via Whipple's Index / Heaping Ratio, comparing baseline local linear jump $\hat{	au}$ with Donut-Hole RDD $\hat{	au}_{	ext{donut}}$ to verify that causal jump is not driven by non-random rounding behavior.
+  - Cattaneo, Frandsen, & Titiunik (2015 J. Econometrics) Local Randomization Inference: In discrete windows adjacent to the threshold, computes exact Fisherian permutation p-values under the local randomization assumption.
+  - Responsive Dual-Panel SVG Visualizer: Panel A renders binned means over discrete support points with sample-size proportional circles, left and right local linear regression lines, cutoff threshold, and conventional jump badge; Panel B plots the Kolesár & Rothe (2018) Honest 95% CI sensitivity error bars across curvature bounds $M$ against the $0.0$ null reference line.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/discrete_rd_heaping_engine.py (540 lines).
+  - Schemas: DiscreteRDHeapingRequest, DiscreteRDHeapingOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/discrete-rd-heaping with DISCRETE_RD_HEAPING_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_discrete_rd_heaping_engine.py (4/4 passed in 0.49s).
+  - Route Tests: backend/tests/test_discrete_rd_heaping_routes.py (2/2 passed in 1.72s).
+- **Frontend Components**:
+  - TypeScript Types: DiscretenessDiagnostics, ConventionalRDDEstimate, KolesarRotheHonestBound, DonutHoleDiagnostics, LocalRandomizationInference, DiscreteRDHeapingRequest, DiscreteRDHeapingResult in frontend/src/types/survey.ts.
+  - API Client Method: runDiscreteRDHeaping in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/DiscreteRDHeapingCard.tsx (540 lines) with Running X, Outcome Y, Cutoff c, Bandwidth h, Kernel selector, Focal Rounding Interval, Permutations, 4 KPI cards (Conventional Jump, Support Points, Heaping Ratio, Donut-Hole Robustness), dual-panel SVG visualizer, tabs for Honest Bounds, Heaping Diagnostics, Local Randomization, and APA 7th narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 6/6 passed (76/76 cumulative passed across Iterations 171-189).
+  - Frontend Production Build: 2,154 modules transformed, 0 errors in 1.80s.
+  - Contract Documentation: Section 170 appended to docs/API_CONTRACT.md.
+
+---
+
+## 57. Planned Next Iteration: Iteration 190
+- **Feature**: Factorial Conjoint Experiment Analysis & Average Marginal Component Effects (AMCE) Engine (Hainmueller, Hopkins, & Yamamoto 2014 Political Analysis; Leeper, Hobolt, & Tilley 2020; Egami & Imai 2019 JASA).
+- **Scope**: Implements nonparametric estimation of Average Marginal Component Effects (AMCE), Marginal Means (MM), and Average Component Interaction Effects (ACIE) for multi-attribute choice and rating conjoint experiments with cluster-robust standard errors, diagnostic tests for profile ordering and carryover effects, and dual-panel SVG visualizer.

@@ -10341,3 +10341,76 @@ export interface AbadieComplierResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+// --- Discrete RDD with Honest Bounds & Heaping Types (Kolesár & Rothe 2018 AER; DataTrust Iteration 189) ---
+export interface DiscretenessDiagnostics {
+  num_support_points: number;
+  is_discrete: boolean;
+  closest_left_point: number;
+  closest_right_point: number;
+  cutoff_gap: number;
+  heaping_ratio: number;
+  heaping_severity: string;
+}
+
+export interface ConventionalRDDEstimate {
+  tau_estimate: number;
+  standard_error: number;
+  t_statistic: number;
+  p_value: number;
+  ci_95: [number, number];
+  is_significant: boolean;
+}
+
+export interface KolesarRotheHonestBound {
+  curvature_bound_m: number;
+  worst_case_bias: number;
+  bias_se_ratio: number;
+  critical_value: number;
+  honest_ci_95: [number, number];
+  honest_ci_length: number;
+  contains_zero: boolean;
+}
+
+export interface DonutHoleDiagnostics {
+  tau_donut: number;
+  se_donut: number;
+  p_value_donut: number;
+  dropped_observations: number;
+  delta_from_baseline: number;
+  is_heaping_robust: boolean;
+}
+
+export interface LocalRandomizationInference {
+  window_bounds: [number, number];
+  window_observations: number;
+  observed_mean_diff: number;
+  fisher_exact_p_value: number;
+  is_randomization_significant: boolean;
+}
+
+export interface DiscreteRDHeapingRequest {
+  running_question_id: string;
+  outcome_question_id: string;
+  cutoff?: number;
+  bandwidth?: number;
+  kernel?: 'triangular' | 'uniform' | 'epanechnikov';
+  focal_rounding_interval?: number;
+  n_permutations?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface DiscreteRDHeapingResult {
+  status: string;
+  sample_size: number;
+  window_sample_size: number;
+  cutoff: number;
+  bandwidth: number;
+  discreteness_diagnostics: DiscretenessDiagnostics;
+  conventional_rdd: ConventionalRDDEstimate;
+  kolesar_rothe_honest_bounds: KolesarRotheHonestBound[];
+  donut_hole_diagnostics: DonutHoleDiagnostics;
+  local_randomization_inference: LocalRandomizationInference;
+  svg_visualization: string;
+  apa_narrative: string;
+}

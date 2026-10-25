@@ -1,3 +1,4 @@
+from app.engine.discrete_rd_heaping_engine import run_discrete_rd_heaping_analysis
 from app.engine.abadie_complier_profiling_engine import run_abadie_complier_profiling
 from app.engine.riclpm_engine import run_riclpm_analysis
 from app.engine.control_function_2sri_engine import run_control_function_2sri
@@ -215,6 +216,8 @@ from app.schemas import (
     RICLPMOut,
     AbadieComplierRequest,
     AbadieComplierOut,
+    DiscreteRDHeapingRequest,
+    DiscreteRDHeapingOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -18755,6 +18758,84 @@ def run_abadie_complier_profiling_endpoint(
                         "first_stage_f": res.get("compliance_typology", {}).get("first_stage_f"),
                         "weak_instrument": res.get("compliance_typology", {}).get("weak_instrument"),
                         "late_estimate": res.get("late_causal_effect", {}).get("late_estimate") if res.get("late_causal_effect") else None,
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/discrete-rd-heaping", response_model=DiscreteRDHeapingOut)
+def run_discrete_rd_heaping_endpoint(
+    survey_id: str,
+    payload: DiscreteRDHeapingRequest
+):
+    """
+    Regression Discontinuity with Discrete Running Variables & Heaping Engine
+    (Kolesár & Rothe 2018 AER; Cattaneo, Frandsen, & Titiunik 2015 J. Econometrics; Barreca et al. 2016).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                payload.running_question_id: ans.get(payload.running_question_id),
+                payload.outcome_question_id: ans.get(payload.outcome_question_id),
+            })
+
+        try:
+            res = run_discrete_rd_heaping_analysis(
+                records=records,
+                running_var_col=payload.running_question_id,
+                outcome_col=payload.outcome_question_id,
+                cutoff=payload.cutoff,
+                bandwidth=payload.bandwidth,
+                kernel=payload.kernel or "triangular",
+                focal_rounding_interval=payload.focal_rounding_interval or 5.0,
+                n_permutations=payload.n_permutations or 500,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi phân tích Discrete RDD: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="DISCRETE_RD_HEAPING_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "sample_size": res.get("sample_size"),
+                        "cutoff": res.get("cutoff"),
+                        "tau_estimate": res.get("conventional_rdd", {}).get("tau_estimate"),
+                        "p_value": res.get("conventional_rdd", {}).get("p_value"),
+                        "heaping_ratio": res.get("discreteness_diagnostics", {}).get("heaping_ratio"),
+                        "tau_donut": res.get("donut_hole_diagnostics", {}).get("tau_donut"),
                     }
                 )
             except Exception:
