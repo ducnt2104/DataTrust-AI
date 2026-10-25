@@ -121,6 +121,7 @@ import { DynamicPanelGMMCard } from '../components/DynamicPanelGMMCard';
 import { WeakIVRobustCard } from '../components/WeakIVRobustCard';
 import { SequentialMediationCard } from '../components/SequentialMediationCard';
 import { PostDoubleSelectionLassoCard } from '../components/PostDoubleSelectionLassoCard';
+import { LARFCard } from '../components/LARFCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1384,6 +1385,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Post-Double-Selection Lasso for High-Dimensional Confounders (Belloni, Chernozhukov, & Hansen 2014) */}
       <PostDoubleSelectionLassoCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Instrumental Variable Local Average Response Function (LARF; Abadie 2003 Econometrica) */}
+      <LARFCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

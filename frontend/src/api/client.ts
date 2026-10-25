@@ -199,7 +199,9 @@ import {
   SequentialMediationRequest,
   SequentialMediationResult,
   PostDoubleSelectionLassoRequest,
-  PostDoubleSelectionLassoResult
+  PostDoubleSelectionLassoResult,
+  LARFRequest,
+  LARFResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2356,5 +2358,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<PostDoubleSelectionLassoResult>(res);
+  },
+
+  async runLARF(
+    surveyId: string,
+    payload: LARFRequest
+  ): Promise<LARFResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/larf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<LARFResult>(res);
   }
 };

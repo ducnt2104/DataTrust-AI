@@ -1856,3 +1856,29 @@ eq 0\}$
   - Backend Unit & Route Tests: **4/4 passed in 2.00s**.
   - Frontend Production Build: **2,108 modules transformed, 0 errors in 1.26s**.
   - Contract Documentation: Section 123 appended to `docs/API_CONTRACT.md`.
+
+## 7. Iteration 143: Instrumental Variable Local Average Response Function (LARF; Abadie 2003 Econometrica; Frölich 2007)
+- **Timestamp**: 2026-10-25T11:34:00+07:00
+- **Scientific Foundation**:
+  - Semi-parametric causal identification for non-linear or bounded survey response outcomes ($Y \in \{0, 1\}$ or $[0, 1]$) under endogenous binary treatment $D$ and instrumental variable $Z$.
+  - Abadie Kappa weighting function: $\kappa = 1 - \frac{D(1-Z)}{1-e(X)} - \frac{(1-D)Z}{e(X)}$, where $e(X) = P(Z=1 \mid X)$ is the instrument propensity score.
+  - Identification of Local Average Treatment Effect (LATE on compliers): $E[g(Y, D, X) \mid \text{Compliers}] = E[\kappa \cdot g(Y, D, X)] / P(\text{Compliers})$.
+  - Weighted M-estimation / cross-entropy minimization with Logit link $\Lambda(D, X; \theta)$ and Linear link.
+  - Support for non-negative weight projection ($\kappa^+ = \max(0, \kappa)$) and Kish effective sample size $N_{\text{eff}} = (\sum \kappa_i)^2 / \sum \kappa_i^2$ (Frölich 2007).
+  - Non-parametric bootstrap inference (300 replications) accounting for first-stage propensity uncertainty.
+  - Comparative benchmark: LARF LATE (Compliers) vs ITT ($Z \to Y$) vs Naive Association ($D \to Y$).
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/larf_engine.py` (380 lines).
+  - Pydantic Schemas: `LARFRequest` and `LARFOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/larf` with `LARF_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_larf_engine.py` (5/5 passed).
+  - Route Tests: `backend/tests/test_larf_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `LARFEffectItem`, `LARFPotentialOutcomes`, `LARFModelCoefficient`, `LARFResult`, `LARFRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runLARF` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/LARFCard.tsx` (410 lines) with variable selectors, link function switch, bootstrap replication control, negative weight trimming toggle, metric highlights ($P(c)$, LATE, negative weight %, potential outcomes), comparative estimates table, scientific dual-panel SVG visualizer (Forest Plot & Kappa Density), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **6/6 passed in 3.11s**.
+  - Frontend Production Build: **2,109 modules transformed, 0 errors in 1.57s**.
+  - Contract Documentation: Section 124 appended to `docs/API_CONTRACT.md`.

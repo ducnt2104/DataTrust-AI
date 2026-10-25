@@ -1,3 +1,5 @@
+import pandas as pd
+from app.engine.larf_engine import estimate_larf
 from app.engine.post_double_selection_lasso_engine import PostDoubleSelectionLassoEngine
 from app.engine.sequential_mediation_engine import SequentialMediationEngine
 from app.engine.weak_iv_robust_engine import WeakIVRobustEngine
@@ -79,6 +81,8 @@ from app.schemas import (
     SequentialMediationOut,
     PostDoubleSelectionLassoRequest,
     PostDoubleSelectionLassoOut,
+    LARFRequest,
+    LARFOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -14252,6 +14256,97 @@ def run_post_double_selection_lasso_analysis(
                 "treatment_qid": payload.treatment_question_id,
                 "candidate_qids_count": len(cand_ids),
                 "union_selected_count": res.get("diagnostics", {}).get("union_selected_controls") if res.get("diagnostics") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/larf", response_model=LARFOut)
+def run_larf_analysis(
+    survey_id: str,
+    payload: LARFRequest
+):
+    """
+    Instrumental Variable Local Average Response Function (LARF; Abadie 2003 Econometrica).
+    Identifies semi-parametric causal effects for non-linear or bounded survey response outcomes
+    under endogenous binary treatment via Abadie's kappa weighting.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        df_records = []
+        cov_ids = payload.covariate_question_ids or []
+        all_req_qids = [payload.outcome_question_id, payload.treatment_question_id, payload.instrument_question_id] + cov_ids
+
+        for rid, answers in resp_dict.items():
+            if all(qid in answers for qid in all_req_qids):
+                record = {}
+                valid = True
+                for qid in all_req_qids:
+                    try:
+                        record[qid] = float(answers[qid])
+                    except (ValueError, TypeError):
+                        valid = False
+                        break
+                if valid:
+                    df_records.append(record)
+
+        if len(df_records) < 30:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng phản hồi có đầy đủ câu trả lời số hợp lệ (N={len(df_records)}) chưa đạt tối thiểu 30 mẫu."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        res = estimate_larf(
+            df=df,
+            outcome_col=payload.outcome_question_id,
+            treatment_col=payload.treatment_question_id,
+            instrument_col=payload.instrument_question_id,
+            covariate_cols=cov_ids,
+            model_type=payload.model_type,
+            alpha_level=payload.alpha_level,
+            n_bootstraps=payload.n_bootstraps,
+            trim_negative=payload.trim_negative
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="LARF_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "instrument_qid": payload.instrument_question_id,
+                "model_type": payload.model_type,
+                "late_estimate": res.get("effects", {}).get("late", {}).get("estimate") if res.get("effects") else None,
+                "complier_probability": res.get("complier_probability"),
                 "status": res.get("status")
             }
         )

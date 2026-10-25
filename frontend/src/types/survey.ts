@@ -7618,3 +7618,57 @@ export interface PostDoubleSelectionLassoRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+export interface LARFEffectItem {
+  estimate: number;
+  std_error: number;
+  z_stat: number;
+  p_value: number;
+  ci_lower: number;
+  ci_upper: number;
+  is_significant: boolean;
+}
+
+export interface LARFPotentialOutcomes {
+  e_y1_compliers: number;
+  e_y0_compliers: number;
+}
+
+export interface LARFModelCoefficient {
+  feature: string;
+  coefficient: number;
+}
+
+export interface LARFResult {
+  status: string;
+  message?: string;
+  model_type?: string;
+  sample_size?: number;
+  effective_sample_size?: number;
+  bootstrap_replications?: number;
+  complier_probability?: number;
+  complier_probability_se?: number;
+  pct_negative_weights?: number;
+  potential_outcomes_compliers?: LARFPotentialOutcomes;
+  effects?: {
+    late: LARFEffectItem;
+    naive: LARFEffectItem;
+    itt: LARFEffectItem;
+  };
+  model_coefficients?: LARFModelCoefficient[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface LARFRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  instrument_question_id: string;
+  covariate_question_ids?: string[];
+  model_type?: 'logit' | 'linear';
+  alpha_level?: number;
+  n_bootstraps?: number;
+  trim_negative?: boolean;
+  scope?: 'all' | 'verified_clean';
+}

@@ -5171,3 +5171,52 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG so sánh Forest Plot ước lượng can thiệp và phân bổ biến chọn lọc.
   - `apa_narrative`: Báo cáo học thuật chuẩn mực APA 7th Edition theo Belloni et al. (2014).
 - **Niêm phong kiểm toán:** Ghi nhận `POST_DOUBLE_SELECTION_LASSO_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 124. Instrumental Variable Local Average Response Function (LARF; Abadie 2003 Econometrica)
+- **Mục tiêu:** Nhận diện và ước lượng hàm phản ứng nhân quả bán tham số cho các kết quả khảo sát phi tuyến hoặc bị chặn (nhị phân $Y \in \{0, 1\}$, điểm hài lòng bị chặn $Y \in [0, 1]$, hoặc tỷ lệ phần trăm) dưới điều kiện biến can thiệp nội sinh $D \in \{0, 1\}$ có biến công cụ $Z \in \{0, 1\}$ mà không bị ép buộc vào các giả định tuyến tính sai lệch của 2SLS (vốn sinh ra giá trị dự báo vượt khỏi $[0, 1]$).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Định lý Nhận diện Trọng số Abadie Kappa (Abadie 2003 Econometrica):**
+     - Dưới giả định tính độc lập của công cụ $Z \perp (Y(1), Y(0), D(1), D(0)) \mid X$ và tính đơn điệu (Monotonicity / No-Defiers: $P(D(1) \ge D(0) \mid X) = 1$ theo Imbens & Angrist 1994), kỳ vọng của bất kỳ hàm đo lường được nào $g(Y, D, X)$ trên phân nhóm người tuân thủ (Compliers: $D(1) > D(0)$) được xác định bằng:
+       $$E[g(Y, D, X) \mid D(1) > D(0)] = \frac{E[\kappa \cdot g(Y, D, X)]}{P(D(1) > D(0))}$$
+     - Hàm trọng số Abadie $\kappa$ được định nghĩa:
+       $$\kappa = 1 - \frac{D(1 - Z)}{1 - P(Z=1 \mid X)} - \frac{(1 - D)Z}{P(Z=1 \mid X)}$$
+     - Xác suất tuân thủ trong quần thể khảo sát: $P(\text{Compliers}) = E[\kappa]$.
+  2. **Ước lượng Hàm Phản ứng Cục bộ (Local Average Response Function - LARF):**
+     - Xác suất công cụ $e(X) = P(Z=1 \mid X)$ được ước lượng thông qua hồi quy Logistic với chuẩn hóa L2.
+     - Hàm phản ứng được tối ưu hóa có trọng số $\kappa$:
+       $$\hat{\theta} = \arg\min_\theta \sum_{i=1}^N \kappa_i \ell(Y_i, \mu(D_i, X_i; \theta))$$
+       Trong đó $\mu(D, X; \theta)$ là hàm liên kết Logit $\Lambda(D, X; \theta)$ hoặc Linear $D\alpha + X'\beta$.
+     - Hiệu ứng can thiệp trung bình cục bộ trên nhóm tuân thủ (LATE on Compliers):
+       $$\text{LATE} = \frac{\sum_{i=1}^N \kappa_i [\mu(1, X_i; \hat{\theta}) - \mu(0, X_i; \hat{\theta})]}{\sum_{i=1}^N \kappa_i}$$
+  3. **Xử lý Trọng số Âm & Cỡ Mẫu Hữu Hiệu (Frölich 2007):**
+     - Do phương sai mẫu trong $\hat{e}(X)$, trọng số $\kappa_i$ có thể rơi vào vùng âm. Hệ thống hỗ trợ chế độ cắt trọng số $\kappa_i^+ = \max(0, \kappa_i)$ và báo cáo tỷ lệ trọng số âm $\%(\kappa < 0)$ cùng cỡ mẫu hữu hiệu Kish $N_{\text{eff}} = (\sum \kappa_i)^2 / \sum \kappa_i^2$.
+  4. **Suy diễn Thống kê Bootstrap Phi Tham số (Non-parametric Bootstrap):**
+     - Thực hiện tái chọn mẫu bootstrap $B$ lần (tái ước lượng đồng thời cả hàm xu hướng công cụ $\hat{e}(X)$ và mô hình kết quả $\hat{\theta}$) để cung cấp sai số chuẩn vững và khoảng tin cậy 95% chính xác.
+  5. **Đồ thị SVG Kép Khoa học:**
+     - Panel A: Forest Plot so sánh LATE (LARF Compliers) vs ITT ($Z \to Y$) vs Naive Association ($D \to Y$).
+     - Panel B: Phân bố mật độ trọng số Abadie Kappa với vùng phân tách $\kappa \ge 0$ và $\kappa < 0$.
+  6. **Báo cáo Học thuật APA 7th Edition:** Tự động biên soạn theo chuẩn Abadie (2003) và Imbens & Angrist (1994).
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/larf`
+- **Request Body (`LARFRequest`):**
+  - `outcome_question_id`: UUID biến kết quả khảo sát $Y$.
+  - `treatment_question_id`: UUID biến can thiệp nhị phân nội sinh $D$.
+  - `instrument_question_id`: UUID biến công cụ ngoại sinh $Z$.
+  - `covariate_question_ids`: Danh sách UUID các biến kiểm soát tiền can thiệp $X$.
+  - `model_type`: `"logit"` (mặc định) hoặc `"linear"`.
+  - `alpha_level`: Mức ý nghĩa thống kê (Mặc định 0.05).
+  - `n_bootstraps`: Số lần tái chọn mẫu bootstrap (Mặc định 300).
+  - `trim_negative`: Boolean tùy chọn cắt trọng số âm về 0.
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`LARFOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"ERROR"`.
+  - `model_type`: `"LARF_LOGIT_ABADIE_2003"` hoặc `"LARF_LINEAR_ABADIE_2003"`.
+  - `sample_size`: Cỡ mẫu phân tích $N$.
+  - `effective_sample_size`: Cỡ mẫu hữu hiệu $N_{\text{eff}}$.
+  - `complier_probability`: Tỷ lệ tuân thủ ước tính $P(\text{Compliers}) = E[\kappa]$ kèm sai số chuẩn `complier_probability_se`.
+  - `pct_negative_weights`: Tỷ lệ phần trăm mẫu mang trọng số $\kappa < 0$.
+  - `potential_outcomes_compliers`: Kỳ vọng phản ứng tiềm năng $E[Y(1) \mid c]$ và $E[Y(0) \mid c]$.
+  - `effects`: Chi tiết ước lượng, SE bootstrap, z-statistic, p-value, 95% CI cho: `late` (Compliers), `naive`, `itt`.
+  - `model_coefficients`: Danh sách hệ số mô hình hồi quy.
+  - `svg_visualization`: Đồ thị SVG trực quan hóa kép Forest Plot & Phân bổ Kappa.
+  - `apa_narrative`: Báo cáo học thuật chuẩn mực APA 7th Edition.
+- **Niêm phong kiểm toán:** Ghi nhận `LARF_EVALUATED` vào chuỗi sổ cái SHA-256.
