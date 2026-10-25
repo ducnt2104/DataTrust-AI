@@ -2678,6 +2678,35 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 39. Planned Next Iteration: Iteration 172
-- **Feature**: Synthetic Difference-in-Differences with Multi-Period Staggered Adoption & Regularized Unit-Time Weights (SDID-Staggered; Arkhangelsky et al. 2021 AER; Clarke et al. 2023).
-- **Scope**: Combines Synthetic Control unit weights omega_i and Difference-in-Differences time weights lambda_t with L2 regularization to estimate treatment effects under staggered policy rollout across survey cohorts.
+## 39. Iteration 172: Synthetic Difference-in-Differences Engine (SDID; Arkhangelsky, Athey, Hirshberg, Imbens, & Wager 2021 AER; Clarke et al. 2023)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T15:21:00+07:00
+- **Scientific Foundation**:
+  - Solves the parallel trends violation dilemma of standard Difference-in-Differences and the convex-hull limitations of Synthetic Control Methods (Arkhangelsky et al. 2021 AER).
+  - Regularized Unit Weights omega_i: Solves constrained quadratic programming with L2 penalty zeta^2 * T_pre * ||omega||_2^2 where zeta = (N_tr * T_post)^(1/4) * sigma_hat, avoiding single-donor overfitting.
+  - Time Weights lambda_t: Re-weights pre-treatment periods to balance post-treatment time shocks.
+  - Weighted Two-Way Fixed Effects Point Estimation: Recovers unbiased ATT tau_hat^sdid with analytical bias decomposition Delta = tau_hat^sdid - tau_hat^did.
+  - Unit Block Bootstrap Inference: Generates B = 100 block bootstrap resamples across units for robust SE, 95% CI, and z-test.
+  - Quality Diagnostics: Pre-treatment RMSE improvement (-% reduction in parallel trend bias) and effective donor sample size N_eff = 1 / sum omega_i^2.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays trajectory curves (Treated, Synthetic Control, Raw Control, intervention boundary, post-treatment shaded zone); Panel B displays donor weight distribution bar chart.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/synthetic_diff_in_diff_engine.py` (390 lines).
+  - Schemas: `SyntheticDiffInDiffRequest`, `SyntheticDiffInDiffOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/synthetic-diff-in-diff` with `SYNTHETIC_DIFF_IN_DIFF_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_synthetic_diff_in_diff_engine.py` (3/3 passed in 0.28s).
+  - Route Tests: `backend/tests/test_synthetic_diff_in_diff_routes.py` (1/1 passed in 1.47s).
+- **Frontend Components**:
+  - TypeScript Types: `SDIDDonorWeight`, `SDIDPeriodProfile`, `SDIDEstimates`, `SDIDDiagnostics`, `SyntheticDiffInDiffResult`, `SyntheticDiffInDiffRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runSyntheticDiffInDiff` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/SyntheticDiffInDiffCard.tsx` (510 lines) with unit, time, treatment, outcome selectors, L2 zeta regularizer, bootstrap reps, alpha level, scope toggle, 4 KPI cards (SDID ATT, DID comparison, Pre-RMSE reduction, Effective donors N_eff), dual-panel SVG visualizer, top donor table, trajectory table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed** (85/85 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,137 modules transformed, 0 errors in 1.19s**.
+  - Contract Documentation: Section 153 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 40. Planned Next Iteration: Iteration 173
+- **Feature**: Instrumental Variables Local Average Response Function with Endogenous Binary Choice & Non-monotonicity Diagnostics (LARF-IV; Abadie 2003 J. Econometrics; Frölich 2007).
+- **Scope**: Estimates complier causal response functions E[Y | D=d, X, Complier] under binary instrument without assuming constant treatment effects or linear index restrictions.

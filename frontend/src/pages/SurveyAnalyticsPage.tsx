@@ -149,6 +149,7 @@ import { TargetedMaximumLikelihoodCard } from '../components/TargetedMaximumLike
 import { CopulaEndogeneityCard } from '../components/CopulaEndogeneityCard';
 import { CausalSurvivalRMSTCard } from '../components/CausalSurvivalRMSTCard';
 import { DynamicDiscreteChoiceCard } from '../components/DynamicDiscreteChoiceCard';
+import { SyntheticDiffInDiffCard } from '../components/SyntheticDiffInDiffCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1692,6 +1693,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Dynamic Discrete Choice Structural Dynamic Programming Engine (Rust 1987 NFXP) */}
       <DynamicDiscreteChoiceCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Synthetic Difference-in-Differences Engine (Arkhangelsky et al. 2021 AER) */}
+      <SyntheticDiffInDiffCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

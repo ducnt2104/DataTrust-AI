@@ -6089,3 +6089,32 @@ um_discretized_states, counterfactual_subsidy_pct, lpha_level, scope).
   - **Response:** DynamicDiscreteChoiceOut (status, sample_size, 
 um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_thresholds, state_profiles, svg_visualization, pa_narrative).
 - **Niêm phong kiểm toán:** Ghi nhận DYNAMIC_DISCRETE_CHOICE_EVALUATED vào chuỗi sổ cái SHA-256.
+
+
+### 153. Synthetic Difference-in-Differences Engine (SDID; Arkhangelsky, Athey, Hirshberg, Imbens, & Wager 2021 AER; Clarke et al. 2023)
+- **Mục tiêu:** Ước lượng Hiệu ứng Can thiệp Trung bình trên nhóm được can thiệp (Average Treatment Effect on the Treated - ATT) đối với dữ liệu bảng (panel data) hoặc khảo sát lặp lại nhiều kỳ, giải quyết triệt để nguy cơ vi phạm giả định Xu hướng Song song (Parallel Trends Assumption) của mô hình DID truyền thống và khắc phục hạn chế không tương thích với hiệu ứng cố định đơn vị cộng hưởng (Additive Unit Fixed Effects) của phương pháp Đối chứng Tổng hợp cổ điển (SCM).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Tối Ưu Hóa Trọng Số Đơn Vị Đối Chứng (Unit Weights omega_i) Với Chính Quy Hóa L2:**
+     - Tìm bộ trọng số omega_0 và omega = (omega_1, ..., omega_{N_co}) trên nhóm đối chứng thỏa mãn omega_i >= 0, sum_{i in control} omega_i = 1:
+       min_{omega_0, omega} sum_{t in pre} ( omega_0 + sum_{i in control} omega_i Y_{it} - Y_bar_{tr, t} )^2 + zeta^2 * T_pre * ||omega||_2^2
+     - Tham số phạt L2 (zeta^2) đảm bảo tính phân tán và ổn định nghiệm, tránh dồn trọng số cực đoan vào 1 đơn vị duy nhất:
+       zeta = (N_tr * T_post)^(1/4) * sigma_hat
+       với sigma_hat là độ lệch chuẩn của sai phân bậc nhất trên nhóm đối chứng.
+  2. **Tối Ưu Hóa Trọng Số Thời Gian Tiền Can Thiệp (Time Weights lambda_t):**
+     - Tìm bộ trọng số lambda_0 và lambda = (lambda_1, ..., lambda_{T_pre}) thỏa mãn lambda_t >= 0, sum_{t in pre} lambda_t = 1:
+       min_{lambda_0, lambda} sum_{i in control} ( lambda_0 + sum_{t in pre} lambda_t Y_{it} - Y_bar_{i, post} )^2
+  3. **Ước Lượng Điểm SDID Hai Chiều Có Trọng Số (Weighted TWFE Estimator):**
+       tau_hat^sdid = ( Y_bar_{tr, post} - sum_{t in pre} lambda_hat_t * Y_bar_{tr, t} ) - sum_{i in control} omega_hat_i * ( Y_bar_{i, post} - sum_{t in pre} lambda_hat_t * Y_{it} )
+     - Hiệu chỉnh độ chệch so với DID chuẩn: Delta = tau_hat^sdid - tau_hat^did.
+  4. **Suy Luận Thống Kê Block Bootstrap & Chẩn Đoán:**
+     - Rút mẫu lặp lại B = 100 lần có hoàn lại theo khối đơn vị (Unit Block Bootstrap), tính toán sai số chuẩn vững SE(tau_hat^sdid), thống kê z, p-value hai phía và khoảng tin cậy 95%.
+     - Sai số khớp tiền can thiệp (Pre-treatment RMSE):
+       RMSE_sdid = sqrt( 1/T_pre * sum_{t in pre} ( Y_bar_{tr, t} - (omega_0 + sum omega_i Y_{it}) )^2 )
+     - Số lượng đơn vị đối chứng hiệu dụng: N_eff = 1 / sum_{i in control} omega_hat_i^2.
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị chuỗi thời gian so sánh Quỹ đạo nhóm can thiệp (Treated), Quỹ đạo đối chứng tổng hợp (Synthetic Control), và Quỹ đạo đối chứng gốc (Raw Control DID), kèm vạch ranh giới can thiệp và vùng phủ mờ giai đoạn Post.
+     - Panel B: Biểu đồ thanh ngang phân bổ trọng số omega_i của các đơn vị đối chứng hàng đầu và tỷ trọng đóng góp %.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/synthetic-diff-in-diff`
+  - **Payload:** `SyntheticDiffInDiffRequest` (`unit_question_id`, `time_question_id`, `treatment_question_id`, `outcome_question_id`, `l2_regularization_zeta`, `num_bootstrap_reps`, `alpha_level`, `scope`).
+  - **Response:** `SyntheticDiffInDiffOut` (`status`, `sample_size`, `num_units_total`, `num_treated_units`, `num_control_units`, `num_periods_total`, `num_pre_periods`, `num_post_periods`, `first_treated_period`, `estimates`, `diagnostics`, `top_donor_weights`, `period_profiles`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `SYNTHETIC_DIFF_IN_DIFF_EVALUATED` vào chuỗi sổ cái SHA-256.

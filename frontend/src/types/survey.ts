@@ -9249,3 +9249,71 @@ export interface DynamicDiscreteChoiceRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Synthetic Difference-in-Differences (SDID; Arkhangelsky et al. 2021 AER) Types ---
+export interface SDIDDonorWeight {
+  unit_id: string;
+  weight: number;
+  weight_pct: number;
+}
+
+export interface SDIDPeriodProfile {
+  period: string;
+  period_index: number;
+  is_post_treatment: boolean;
+  treated_mean: number;
+  synthetic_control_mean: number;
+  raw_control_mean: number;
+  time_weight: number;
+}
+
+export interface SDIDEstimates {
+  sdid_tau: number;
+  sdid_se: number;
+  sdid_ci_95: [number, number];
+  sdid_z_stat: number;
+  sdid_p_value: number;
+  is_significant: boolean;
+  did_tau: number;
+  scm_tau: number;
+  bias_correction_vs_did: number;
+}
+
+export interface SDIDDiagnostics {
+  rmse_sdid_pre: number;
+  rmse_did_pre: number;
+  rmse_reduction_pct: number;
+  effective_donors_n_eff: number;
+  l2_regularization_zeta: number;
+}
+
+export interface SyntheticDiffInDiffResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  num_units_total?: number;
+  num_treated_units?: number;
+  num_control_units?: number;
+  num_periods_total?: number;
+  num_pre_periods?: number;
+  num_post_periods?: number;
+  first_treated_period?: string;
+  estimates?: SDIDEstimates;
+  diagnostics?: SDIDDiagnostics;
+  top_donor_weights?: SDIDDonorWeight[];
+  period_profiles?: SDIDPeriodProfile[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface SyntheticDiffInDiffRequest {
+  unit_question_id: string;
+  time_question_id: string;
+  treatment_question_id: string;
+  outcome_question_id: string;
+  l2_regularization_zeta?: number;
+  num_bootstrap_reps?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}
