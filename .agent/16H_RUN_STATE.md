@@ -2514,6 +2514,33 @@ eq 0\}$
 
 ---
 
-## 33. Planned Next Iteration: Iteration 166
-- **Feature**: Nonparametric Boundary Kernel Deconvolution & Measurement Error Correction Engine (Delaigle & Meister 2008 JASA; Fan 1991 Ann. Statist.; Carroll et al. 2006).
-- **Scope**: Corrects attenuation bias and severe distortion in survey analytics caused by additive or multiplicative classical measurement errors in reported continuous metrics (e.g. self-reported income, working hours, subjective satisfaction scores $W_i = X_i + U_i$) using Fourier deconvolution kernel estimators and boundary correction filters.
+## 33. Iteration 166: Nonparametric Boundary Kernel Deconvolution & Measurement Error Correction Engine (Delaigle & Meister 2008 JASA; Fan 1991 Ann. Statist.; Carroll et al. 2006)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T14:31:00+07:00
+- **Scientific Foundation**:
+  - Inverts additive classical measurement error $W = X + U$ via Fourier transform inversion on the characteristic function ratio $\phi_W(t) / \phi_U(t)$ (Delaigle & Meister 2008 JASA; Fan 1991 Ann. Statist.).
+  - Restores true unattenuated latent distribution $f_X(x)$, removing artificial variance inflation ($\text{Var}(W) > \text{Var}(X)$) and restoring authentic population percentiles (P10..P90).
+  - De-Attenuation Slope Correction: Multiplies naive regression coefficients by $\lambda = 1/\rho$ to recover structural causal parameters unbiased by errors-in-variables attenuation.
+  - Boundary Reflection & Renormalization: Enforces physical support constraints ($X \ge \text{bound}$) preventing negative probability spillover on bounded economic variables (e.g. income, expenditure, duration).
+  - Responsive Dual-Density SVG: Visualizes contaminated observed density $f_W$ vs deconvoluted latent density $f_X$ with shaded credible area and mean markers.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/boundary_kernel_deconvolution_engine.py` (360 lines).
+  - Pydantic Schemas: `BoundaryKernelDeconvolutionRequest` and `BoundaryKernelDeconvolutionOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/boundary-kernel-deconvolution` with `BOUNDARY_KERNEL_DECONVOLUTION_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_boundary_kernel_deconvolution_engine.py` (2/2 passed in 0.23s).
+  - Route Tests: `backend/tests/test_boundary_kernel_deconvolution_routes.py` (1/1 passed in 1.33s).
+- **Frontend Components**:
+  - TypeScript Types: `DeconvolutionMoments`, `DeconvolutionDensityPoint`, `BoundaryKernelDeconvolutionResult`, `BoundaryKernelDeconvolutionRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runBoundaryKernelDeconvolution` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/BoundaryKernelDeconvolutionCard.tsx` (510 lines) with variable selector, reliability ratio slider, error distribution type dropdown, boundary constraint inputs, 4 KPI cards (De-Attenuation Factor, Noise Variance Removed %, True Latent SD, Bandwidth), dual-density SVG visualizer, moments comparison table, density grid table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed** (61/61 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,132 modules transformed, 0 errors in 1.72s**.
+  - Contract Documentation: Section 147 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 34. Planned Next Iteration: Iteration 167
+- **Feature**: Targeted Maximum Likelihood Estimation with Super Learner Ensembling Engine (TMLE; van der Laan & Rose 2011; Schuler & Rose 2017).
+- **Scope**: Implements semiparametric efficient estimation of Average Treatment Effects (ATE) using targeted fluctuation of initial outcome regressions via clever covariates constructed from propensity scores ($H(A, W) = \frac{A}{g(W)} - \frac{1-A}{1-g(W)}$), achieving optimal efficiency and asymptotic linearity with doubly robust influence curve inference.

@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.boundary_kernel_deconvolution_engine import run_boundary_kernel_deconvolution
 from app.engine.hierarchical_bayes_conjoint_engine import run_hierarchical_bayes_conjoint
 from app.engine.generalized_synthetic_control_engine import run_generalized_synthetic_control
 from app.engine.continuous_policy_shift_engine import run_continuous_policy_shift
@@ -149,6 +150,8 @@ from app.schemas import (
     GeneralizedSyntheticControlOut,
     HierarchicalBayesConjointRequest,
     HierarchicalBayesConjointOut,
+    BoundaryKernelDeconvolutionRequest,
+    BoundaryKernelDeconvolutionOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -16925,6 +16928,82 @@ def run_hierarchical_bayes_conjoint_endpoint(
                 "n_obs": res.get("sample_size"),
                 "n_respondents": res.get("n_respondents"),
                 "top_attribute": list(res.get("attribute_importance", {}).keys())[0] if res.get("attribute_importance") else None,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/boundary-kernel-deconvolution", response_model=BoundaryKernelDeconvolutionOut)
+def run_boundary_kernel_deconvolution_endpoint(
+    survey_id: str,
+    payload: BoundaryKernelDeconvolutionRequest
+):
+    """
+    Nonparametric Boundary Kernel Deconvolution & Measurement Error Correction Engine.
+    Delaigle, A., & Meister, A. (2008 JASA); Fan, J. (1991 Ann. Statist.); Carroll et al. (2006).
+    Deconvolves additive classical measurement noise W = X + U using Fourier transform inversion,
+    restores true unattenuated dispersion and quantiles, and applies boundary reflection for non-negative metrics.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? AND ra.question_id = ? {resp_filter}
+        """, (survey_id, payload.variable_question_id)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho biến khảo sát này."
+            }
+
+        records: List[Dict[str, Any]] = []
+        for r_id, q_id, a_val in rows:
+            records.append({
+                payload.variable_question_id: a_val
+            })
+
+        if len(records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 25 bản ghi hợp lệ để thực hiện Kernel Deconvolution (hiện có: {len(records)})."
+            }
+
+        try:
+            res = run_boundary_kernel_deconvolution(
+                records=records,
+                variable_col=payload.variable_question_id,
+                reliability_ratio=payload.reliability_ratio,
+                error_type=payload.error_type,
+                lower_bound=payload.lower_bound,
+                grid_points=payload.grid_points,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Kernel Deconvolution: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="BOUNDARY_KERNEL_DECONVOLUTION_EVALUATED",
+            details={
+                "n_obs": res.get("sample_size"),
+                "reliability_ratio": res.get("reliability_ratio"),
+                "error_structure": res.get("error_structure"),
+                "variance_reduction_percent": res.get("dispersion_metrics", {}).get("variance_reduction_percent"),
                 "status": res.get("status")
             }
         )

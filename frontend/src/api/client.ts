@@ -245,7 +245,9 @@ import {
   GeneralizedSyntheticControlRequest,
   GeneralizedSyntheticControlResult,
   HierarchicalBayesConjointRequest,
-  HierarchicalBayesConjointResult
+  HierarchicalBayesConjointResult,
+  BoundaryKernelDeconvolutionRequest,
+  BoundaryKernelDeconvolutionResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2663,5 +2665,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<HierarchicalBayesConjointResult>(res);
+  },
+  async runBoundaryKernelDeconvolution(
+    surveyId: string,
+    payload: BoundaryKernelDeconvolutionRequest
+  ): Promise<BoundaryKernelDeconvolutionResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/boundary-kernel-deconvolution`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<BoundaryKernelDeconvolutionResult>(res);
   }
 };

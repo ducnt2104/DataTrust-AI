@@ -8965,3 +8965,52 @@ export interface HierarchicalBayesConjointRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Nonparametric Boundary Kernel Deconvolution (Delaigle & Meister 2008) Types ---
+export interface DeconvolutionMoments {
+  mean: number;
+  std_dev: number;
+  skewness: number;
+  percentiles: number[];
+}
+
+export interface DeconvolutionDensityPoint {
+  x: number;
+  f_observed: number;
+  f_deconvoluted: number;
+}
+
+export interface BoundaryKernelDeconvolutionResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  variable_evaluated?: string;
+  reliability_ratio?: number;
+  error_structure?: string;
+  bandwidth?: number;
+  attenuation_correction_factor?: number;
+  dispersion_metrics?: {
+    observed_variance: number;
+    deconvoluted_variance: number;
+    variance_reduction_percent: number;
+    noise_standard_deviation: number;
+  };
+  moments_comparison?: {
+    observed: DeconvolutionMoments;
+    deconvoluted: DeconvolutionMoments;
+  };
+  density_profile?: DeconvolutionDensityPoint[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface BoundaryKernelDeconvolutionRequest {
+  variable_question_id: string;
+  reliability_ratio?: number;
+  error_type?: string;
+  lower_bound?: number;
+  grid_points?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

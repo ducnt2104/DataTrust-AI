@@ -144,6 +144,7 @@ import { DynamicSpatialPanelCard } from '../components/DynamicSpatialPanelCard';
 import { ContinuousPolicyShiftCard } from '../components/ContinuousPolicyShiftCard';
 import { GeneralizedSyntheticControlCard } from '../components/GeneralizedSyntheticControlCard';
 import { HierarchicalBayesConjointCard } from '../components/HierarchicalBayesConjointCard';
+import { BoundaryKernelDeconvolutionCard } from '../components/BoundaryKernelDeconvolutionCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1637,6 +1638,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Choice-Based Conjoint Hierarchical Bayes & Market Simulator (Rossi et al. 2005; Train 2009) */}
       <HierarchicalBayesConjointCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Nonparametric Boundary Kernel Deconvolution & Measurement Error Correction (Delaigle & Meister 2008 JASA; Fan 1991) */}
+      <BoundaryKernelDeconvolutionCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

@@ -5897,3 +5897,31 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `HierarchicalBayesConjointRequest` (`choice_question_id`, `respondent_question_id`, `attribute_question_ids`, `price_question_id`, `simulation_profiles`, `alpha_level`, `scope`).
   - **Response:** `HierarchicalBayesConjointOut` (`status`, `sample_size`, `n_respondents`, `attribute_importance`, `part_worth_utilities`, `wtp_estimates`, `market_simulation`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CONJOINT_HIERARCHICAL_BAYES_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 147. Nonparametric Boundary Kernel Deconvolution & Measurement Error Correction Engine (Delaigle & Meister 2008 JASA; Fan 1991 Ann. Statist.; Carroll et al. 2006)
+- **Mục tiêu:** Khắc phục triệt để hiện tượng sai số đo lường cổ điển (Classical Errors-in-Variables) trong dữ liệu khảo sát số liệu liên tục (như thu nhập tự báo cáo, số giờ làm việc, chi tiêu tiêu dùng, chỉ số mức độ hài lòng $W_i = X_i + U_i$). Sai số đo lường gây ra hai hậu quả nghiêm trọng: (1) Thổi phồng phương sai giả tạo $\text{Var}(W) = \text{Var}(X) + \sigma_U^2 > \text{Var}(X)$, làm biến dạng các phân vị phân phối và ước tính bất bình đẳng; (2) Thiên lệch suy giảm (Attenuation Bias), làm co cụm các hệ số hồi quy tác động về 0 theo tỷ số $\rho = \text{Var}(X)/\text{Var}(W) < 1$. Động cơ này áp dụng lý thuyết giải chập Fourier phi tham số (Fourier Deconvolution Kernel Estimators; Delaigle & Meister 2008 JASA; Fan 1991) kết hợp kỹ thuật phản chiếu biên (Boundary Reflection) bảo toàn miền giá trị vật lý không âm ($X \ge 0$).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Quan Hệ Hàm Đặc Trưng (Characteristic Function Inversion):**
+     $$\phi_W(t) = \phi_X(t) \cdot \phi_U(t) \implies \phi_X(t) = \frac{\phi_W(t)}{\phi_U(t)}$$
+     - Dạng phân phối nhiễu $\phi_U(t)$:
+       - Nhiễu Gauss (Gaussian): $\phi_U(t) = \exp(-\frac{1}{2} \sigma_U^2 t^2)$.
+       - Nhiễu Laplace (Heavy-Tailed): $\phi_U(t) = (1 + \frac{1}{2} \sigma_U^2 t^2)^{-1}$.
+  2. **Ước Lượng Nhân Giải Chập (Deconvolution Kernel Estimator):**
+     $$\hat{f}_X(x) = \frac{1}{2\pi} \int_{-\infty}^{\infty} e^{-itx} \frac{\hat{\phi}_W(t)}{\phi_U(t)} \phi_K(h t) dt$$
+     trong đó $\hat{\phi}_W(t) = \frac{1}{n} \sum_{j=1}^n e^{it W_j}$ là hàm đặc trưng thực nghiệm, và $h$ là băng thông tối ưu giải chập Delaigle & Gijbels (2004).
+  3. **Hiệu Chỉnh Phản Chiếu Biên (Boundary Reflection Filter):**
+     - Với các biến khảo sát có biên dưới $X \ge a$ (như thu nhập không thể âm), thực hiện phản chiếu mật độ:
+       $$\tilde{f}_X(x) = \frac{\hat{f}_X(x) + \hat{f}_X(2a - x)}{\int_a^\infty [\hat{f}_X(u) + \hat{f}_X(2a - u)] du} \cdot \mathbb{I}(x \ge a)$$
+       ngăn chặn rò rỉ xác suất vào miền không hợp lệ.
+  4. **Hệ Số Bù Trừ Thiên Lệch Suy Giảm (De-Attenuation Factor):**
+     - Tỷ số độ tin cậy $\rho = \frac{\sigma_X^2}{\sigma_W^2}$.
+     - Hệ số nhân bù suy giảm: $\lambda_{\text{atten}} = \frac{1}{\rho} > 1.0$.
+     - Khôi phục hệ số hồi quy thực: $\hat{\beta}_X = \frac{\hat{\beta}_W}{\rho}$.
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Đường mật độ quan sát bị nhiễu $f_W(w)$ (Nét đứt màu cam).
+     - Đường mật độ tiềm ẩn thực sau giải chập $f_X(x)$ (Nét liền màu xanh dương cùng diện tích phủ bóng và đường định vị trung bình).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/boundary-kernel-deconvolution`
+  - **Payload:** `BoundaryKernelDeconvolutionRequest` (`variable_question_id`, `reliability_ratio`, `error_type`, `lower_bound`, `grid_points`, `alpha_level`, `scope`).
+  - **Response:** `BoundaryKernelDeconvolutionOut` (`status`, `sample_size`, `variable_evaluated`, `reliability_ratio`, `error_structure`, `bandwidth`, `attenuation_correction_factor`, `dispersion_metrics`, `moments_comparison`, `density_profile`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `BOUNDARY_KERNEL_DECONVOLUTION_EVALUATED` vào chuỗi sổ cái SHA-256.
