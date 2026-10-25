@@ -126,6 +126,7 @@ import { MTECard } from '../components/MTECard';
 import { LeeBoundsCard } from '../components/LeeBoundsCard';
 import { SurrogateIndexCard } from '../components/SurrogateIndexCard';
 import { ConformalCounterfactualCard } from '../components/ConformalCounterfactualCard';
+import { CausalSensitivityBiasCard } from '../components/CausalSensitivityBiasCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1439,6 +1440,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Conformal Counterfactual Risk Inference (Chernozhukov et al. 2021; Lei & Candes 2021) */}
       <ConformalCounterfactualCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Causal Sensitivity Analysis & Omitted Variable Bias Contours (Cinelli & Hazlett 2020) */}
+      <CausalSensitivityBiasCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

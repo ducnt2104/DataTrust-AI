@@ -5394,3 +5394,30 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `ConformalCounterfactualRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `miscoverage_alpha`, `calibration_ratio`, `use_propensity_weighting`, `subgroup_question_id`, `scope`).
   - **Response:** `ConformalCounterfactualOut` (`status`, `overall_summary`, `calibration_diagnostics`, `subgroup_risk_profiles`, `individual_predictions_sample`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `CONFORMAL_COUNTERFACTUAL_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 129. Causal Sensitivity Analysis & Omitted Variable Bias Contour Engine (Cinelli & Hazlett 2020 JRSS-B)
+- **Mục tiêu:** Giải quyết câu hỏi phản biện nghiêm ngặt nhất trong nghiên cứu quan sát và phân tích khảo sát thực nghiệm: "Liệu một biến ẩn gây nhiễu chưa quan sát (Unobserved Confounder $Z$) có thể giải thích hoàn toàn và làm sụp đổ hiệu ứng nhân quả được ước lượng không?". Động cơ cung cấp công thức lượng hóa độ chệch dạng đóng phân bố tự do (distribution-free closed-form bias formulas), tính toán Giá trị Bền vững (Robustness Value $RV_q$, $RV_\alpha$), đối chuẩn với các biến kiểm soát quan sát được ($1\times, 2\times, 3\times$ multipliers), và vẽ bản đồ đẳng mức độ nhạy (Sensitivity Contours).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Đồng nhất thức Độ chệch Biến bỏ sót qua $R^2$ Riêng phần (Cinelli & Hazlett 2020):**
+     - Mô hình đầy đủ: $Y = \tau D + X \beta + \gamma Z + \varepsilon$.
+     - Mô hình giới hạn hồi quy: $Y = \hat{\tau}_{\text{rest}} D + X \hat{\beta}_{\text{rest}} + \hat{e}$ với bậc tự do phần dư $df = n - k - 1$ và sai số chuẩn $\widehat{\text{SE}}(\hat{\tau}_{\text{rest}})$.
+     - Gọi $R^2_{Y \sim Z \mid D, X}$ là tỷ lệ phương sai phần dư của $Y$ được giải thích bởi $Z$ (sau khi kiểm soát $D, X$), và $R^2_{D \sim Z \mid X}$ là tỷ lệ phương sai của $D$ được giải thích bởi $Z$ (sau khi kiểm soát $X$).
+     - Độ chệch chính xác:
+       $$\text{Bias}(\hat{\tau}) = \widehat{\text{SE}}(\hat{\tau}_{\text{rest}}) \sqrt{df} \sqrt{\frac{R^2_{Y \sim Z \mid D, X} \cdot R^2_{D \sim Z \mid X}}{1 - R^2_{D \sim Z \mid X}}}$$
+  2. **Ước lượng Hiệu chỉnh & Sai số Chuẩn Hiệu chỉnh:**
+     $$\hat{\tau}(R^2_{Y \sim Z \mid D, X}, R^2_{D \sim Z \mid X}) = \hat{\tau}_{\text{rest}} - \text{sign}(\hat{\tau}_{\text{rest}}) \times \text{Bias}$$
+     $$\widehat{\text{SE}}_{\text{adj}} = \widehat{\text{SE}}(\hat{\tau}_{\text{rest}}) \sqrt{\frac{1 - R^2_{Y \sim Z \mid D, X}}{1 - R^2_{D \sim Z \mid X}} \frac{df}{df - 1}}$$
+  3. **Giá trị Bền vững Điểm (Robustness Value $RV_q$):**
+     - Sức mạnh liên kết tối thiểu mà một biến ẩn cần đạt được đồng thời với cả can thiệp $D$ và kết quả $Y$ ($R^2_{D \sim Z \mid X} = R^2_{Y \sim Z \mid D, X} = RV_q$) để làm giảm ước lượng hiệu ứng đi $100q\%$ (mặc định $q = 1.0$, triệt tiêu hoàn toàn hiệu ứng về 0):
+       $$RV_q = \frac{1}{2} \left( \sqrt{f_q^4 + 4 f_q^2} - f_q^2 \right), \quad f_q = \frac{q |t_{\text{rest}}|}{\sqrt{df}}$$
+  4. **Giá trị Bền vững Ý nghĩa Thống kê ($RV_\alpha$):**
+     - Sức mạnh tối thiểu cần có để đưa khoảng tin cậy $1 - \alpha$ chạm mức 0 (mất ý nghĩa thống kê $p > \alpha$):
+       $$RV_\alpha = \frac{1}{2} \left( \sqrt{f_\alpha^4 + 4 f_\alpha^2} - f_\alpha^2 \right), \quad f_\alpha = \frac{|t_{\text{rest}}| - t_{\text{crit}}}{\sqrt{df}}$$
+  5. **Đối chuẩn Biến Quan sát (Covariate Benchmarking & Multipliers):**
+     - Đo lường $R^2_{D \sim X_j \mid X_{-j}}$ và $R^2_{Y \sim X_j \mid D, X_{-j}}$ cho từng biến kiểm soát nền $X_j$.
+     - Thử nghiệm độ bền vững trước các giả định biến ẩn có sức mạnh gấp $1\times, 2\times, 3\times$ các biến quan sát mạnh nhất.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/causal-sensitivity-bias`
+  - **Payload:** `CausalSensitivityBiasRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `q_reduction`, `alpha_level`, `benchmark_question_ids`, `benchmark_multipliers`, `scope`).
+  - **Response:** `CausalSensitivityBiasOut` (`status`, `overall_summary`, `covariate_benchmarks`, `benchmark_scenarios`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CAUSAL_SENSITIVITY_BIAS_EVALUATED` vào chuỗi sổ cái SHA-256.

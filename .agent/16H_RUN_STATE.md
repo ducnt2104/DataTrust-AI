@@ -1992,3 +1992,35 @@ eq 0\}$
 ## 12. Planned Next Iteration: Iteration 148
 - **Feature**: Causal Matrix Completion with Staggered Rollout & Nuclear Norm Regularization (Athey, Bayati, Doudchenko, Imbens, & Khosravi 2021 JASA).
 - **Scope**: Panel survey data with staggered adoption of interventions across units and time periods, completing unobserved counterfactual potential outcomes via low-rank matrix factorization (Singular Value Thresholding / Nuclear Norm minimization).
+
+
+## 13. Iteration 148: Causal Sensitivity Analysis & Omitted Variable Bias Contour Engine (Cinelli & Hazlett 2020 JRSS-B)
+- **Timestamp**: 2026-10-25T12:12:00+07:00
+- **Scientific Foundation**:
+  - Provides formal mathematical sensitivity quantification to address the universal vulnerability of observational and survey research: unobserved confounding $Z$.
+  - Exact, closed-form bias representation using partial $R^2$ metrics: $\text{Bias}(\hat{\tau}) = \widehat{\text{SE}}(\hat{\tau}) \sqrt{df} \sqrt{\frac{R^2_{Y \sim Z \mid D, X} R^2_{D \sim Z \mid X}}{1 - R^2_{D \sim Z \mid X}}}$.
+  - Computes the Robustness Value ($RV_q$): the minimum partial $R^2$ strength an omitted confounder must possess with both treatment $D$ and outcome $Y$ to reduce the causal estimate by $100q\%$ (default $q=1.0$, reducing to 0).
+  - Computes the Statistical Significance Robustness Value ($RV_\alpha$): the minimal confounding strength required to render the 95% confidence interval statistically insignificant ($p > 0.05$).
+  - Implements Covariate Benchmarking: calculates empirical partial $R^2$ for observed controls and stress-tests causal robustness against unobserved confounders $1\times, 2\times, 3\times$ as strong as key survey covariates.
+  - Generates dual-panel SVG Sensitivity Contour Maps with zero-effect curves and benchmark scatter coordinates.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/causal_sensitivity_bias_engine.py` (420 lines).
+  - Pydantic Schemas: `CausalSensitivityBiasRequest` and `CausalSensitivityBiasOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/causal-sensitivity-bias` with `CAUSAL_SENSITIVITY_BIAS_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_causal_sensitivity_bias_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_causal_sensitivity_bias_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `CausalSensitivityBenchmark`, `CausalSensitivityScenario`, `CausalSensitivityResult`, `CausalSensitivityRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runCausalSensitivityBias` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/CausalSensitivityBiasCard.tsx` (430 lines) with outcome, treatment, and covariate selectors, reduction target $q$, significance level $\alpha$, KPI stat cards ($RV_q$, $RV_\alpha$, Baseline $\hat{\tau}$, Partial $R^2$), dual-panel SVG Contour visualizer, benchmark multiplier stress-test table with `ROBUST` / `OVERTURNED` badges, and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 1.76s**.
+  - Frontend Production Build: **2,114 modules transformed, 0 errors in 1.48s**.
+  - Contract Documentation: Section 129 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 14. Planned Next Iteration: Iteration 149
+- **Feature**: Bayesian Causal Forest (BCF) & Heterogeneous Treatment Effects Engine (Hahn, Murray, & Carver 2020 Bayesian Analysis; Hill 2011 JCGS).
+- **Scope**: Resolves Regularization-Induced Confounding (RIC) in tree ensembles by separating prognostic baseline $\mu(X, \hat{\pi}(X))$ from treatment effect moderating trees $\tau(X)$, producing full posterior credible intervals for individual and subgroup CATE, discovering optimal targeted intervention sub-populations.

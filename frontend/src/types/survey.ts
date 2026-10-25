@@ -7928,3 +7928,59 @@ export interface ConformalCounterfactualRequest {
   subgroup_question_id?: string;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Causal Sensitivity Analysis & Omitted Variable Bias Types (Cinelli & Hazlett 2020) ---
+export interface CausalSensitivityBenchmark {
+  covariate: string;
+  r2_d_given_x: number;
+  r2_y_given_dx: number;
+}
+
+export interface CausalSensitivityScenario {
+  covariate: string;
+  multiplier: number;
+  r2_dz_x: number;
+  r2_yz_dx: number;
+  adjusted_estimate: number;
+  adjusted_se: number;
+  adjusted_t: number;
+  adjusted_ci: [number, number];
+  remains_significant: boolean;
+  is_overturned: boolean;
+}
+
+export interface CausalSensitivityResult {
+  status: string;
+  message?: string;
+  overall_summary?: {
+    sample_size: number;
+    residual_df: number;
+    baseline_estimate: number;
+    baseline_se: number;
+    baseline_t: number;
+    baseline_p_value: number;
+    baseline_ci: [number, number];
+    partial_r2_treatment: number;
+    robustness_value_q: number;
+    robustness_value_alpha: number;
+    target_reduction_q: number;
+    significance_alpha: number;
+    extreme_r2_dz_needed_to_zero: number;
+  };
+  covariate_benchmarks?: CausalSensitivityBenchmark[];
+  benchmark_scenarios?: CausalSensitivityScenario[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface CausalSensitivityRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids?: string[];
+  q_reduction?: number;
+  alpha_level?: number;
+  benchmark_question_ids?: string[];
+  benchmark_multipliers?: number[];
+  scope?: 'all' | 'verified_clean';
+}

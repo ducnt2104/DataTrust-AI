@@ -209,7 +209,9 @@ import {
   SurrogateIndexRequest,
   SurrogateIndexResult,
   ConformalCounterfactualRequest,
-  ConformalCounterfactualResult
+  ConformalCounterfactualResult,
+  CausalSensitivityRequest,
+  CausalSensitivityResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2426,5 +2428,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<ConformalCounterfactualResult>(res);
+  },
+
+  async runCausalSensitivityBias(
+    surveyId: string,
+    payload: CausalSensitivityRequest
+  ): Promise<CausalSensitivityResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/causal-sensitivity-bias`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<CausalSensitivityResult>(res);
   }
 };

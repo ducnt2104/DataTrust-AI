@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.causal_sensitivity_bias_engine import estimate_causal_sensitivity_bias
 from app.engine.conformal_counterfactual_engine import estimate_conformal_counterfactuals
 from app.engine.surrogate_index_engine import estimate_surrogate_index
 from app.engine.lee_bounds_engine import estimate_lee_bounds
@@ -95,6 +96,8 @@ from app.schemas import (
     SurrogateIndexOut,
     ConformalCounterfactualRequest,
     ConformalCounterfactualOut,
+    CausalSensitivityBiasRequest,
+    CausalSensitivityBiasOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -14794,6 +14797,116 @@ def run_conformal_counterfactual_analysis(
                 "estimated_ate": res.get("overall_summary", {}).get("estimated_ate"),
                 "downside_risk_rate": res.get("overall_summary", {}).get("downside_risk_rate"),
                 "strictly_beneficial_rate": res.get("overall_summary", {}).get("strictly_beneficial_rate"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/causal-sensitivity-bias", response_model=CausalSensitivityBiasOut)
+def run_causal_sensitivity_bias_analysis(
+    survey_id: str,
+    payload: CausalSensitivityBiasRequest
+):
+    """
+    Causal Sensitivity Analysis & Omitted Variable Bias (Cinelli & Hazlett 2020 JRSS-B).
+    Evaluates how strong unobserved confounders must be (in terms of partial R2) to explain away
+    the estimated causal treatment effect or render it statistically insignificant.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.treatment_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    d_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                record = {
+                    payload.outcome_question_id: y_val,
+                    payload.treatment_question_id: d_val
+                }
+
+                valid_covs = True
+                for cid in cov_ids:
+                    if cid in answers:
+                        try:
+                            record[cid] = float(answers[cid])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                            break
+                    else:
+                        valid_covs = False
+                        break
+
+                if valid_covs:
+                    df_records.append(record)
+
+        if len(df_records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Số lượng phản hồi (N={len(df_records)}) chưa đạt tối thiểu 25 mẫu cho phân tích Độ nhạy Nhân quả."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_causal_sensitivity_bias(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                covariate_cols=cov_ids,
+                q_reduction=payload.q_reduction,
+                alpha_level=payload.alpha_level,
+                benchmark_covariates=payload.benchmark_question_ids,
+                benchmark_multipliers=payload.benchmark_multipliers
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Độ nhạy Nhân quả: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="CAUSAL_SENSITIVITY_BIAS_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "baseline_estimate": res.get("overall_summary", {}).get("baseline_estimate"),
+                "robustness_value_q": res.get("overall_summary", {}).get("robustness_value_q"),
+                "robustness_value_alpha": res.get("overall_summary", {}).get("robustness_value_alpha"),
                 "status": res.get("status")
             }
         )
