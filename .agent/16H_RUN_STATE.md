@@ -2256,3 +2256,35 @@ eq 0\}$
 ## 24. Planned Next Iteration: Iteration 157
 - **Feature**: Conformal Optimal Transport Counterfactual Distributional Alignment Engine (COT-CDA; Cuturi 2013; Courty et al. 2017; Chernozhukov et al. 2017).
 - **Scope**: Implements entropy-regularized Wasserstein optimal transport (Sinkhorn algorithm) to solve continuous counterfactual distribution alignment and individual transport maps $T(x)$, computing distribution Wasserstein barycenters, counterfactual quantile shifts, and conformal prediction coverage bands for survey policy evaluations.
+
+
+---
+
+## 24. Iteration 157: Conformal Optimal Transport Counterfactual Distributional Alignment Engine (COT-CDA; Cuturi 2013 NeurIPS; Courty et al. 2017 TPAMI; Romano et al. 2019 NeurIPS)
+- **Timestamp**: 2026-10-25T13:22:00+07:00
+- **Scientific Foundation**:
+  - Implements entropy-regularized optimal transport (Sinkhorn-Knopp algorithm; Cuturi 2013) to solve continuous multidimensional counterfactual distribution alignment between treated and control survey populations.
+  - 2-Wasserstein Metric $\mathcal{W}_2$: Rigorously calculates the geometric transportation cost $\mathcal{W}_2 = \sqrt{\langle C, \Pi^* \rangle}$ combining outcome differences and covariate distances ($\kappa$ weight).
+  - Monge Barycentric Projection: Reconstructs individual counterfactual outcomes $\hat{Y}_{1,j}^{\text{cf}} = \sum_i (\Pi_{ij}^* / b_j) Y_{1,i}$ for control respondents, estimating distribution-wide Optimal Transport ATE, ATT, ATU, and quantile shifts $\Delta Q(q)$.
+  - Finite-Sample Conformal Prediction: Employs split-conformal calibration on treated units, providing a distribution-free $(1-\alpha)$ prediction interval $[Y_1^{\text{cf}} - q_{1-\alpha}, Y_1^{\text{cf}} + q_{1-\alpha}]$ guaranteeing finite-sample coverage unconditionally.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/conformal_optimal_transport_engine.py` (420 lines).
+  - Pydantic Schemas: `ConformalOptimalTransportRequest` and `ConformalOptimalTransportOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/conformal-optimal-transport` with `CONFORMAL_OPTIMAL_TRANSPORT_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_conformal_optimal_transport_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_conformal_optimal_transport_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `ConformalOptimalTransportSummary`, `ConformalOptimalTransportResult`, `ConformalOptimalTransportRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runConformalOptimalTransport` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/ConformalOptimalTransportCard.tsx` (500 lines) with outcome, binary treatment, covariates checklist, Sinkhorn regularization $\varepsilon$ selector, distance weight $\kappa$ selector, conformal confidence level selector, KPI stat cards (2-Wasserstein $\mathcal{W}_2$, OT-ATE & ATT, Conformal Prediction Band, Imputed Counterfactual Mean), quantile shifts comparison table (10%, 25%, 50%, 75%, 90%), dual-panel SVG visualizer (Sinkhorn coupling matrix heatmap & cumulative CDF alignment with conformal band), and APA 7th Edition narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 3.06s** (28/28 cumulative passed in 18.82s).
+  - Frontend Production Build: **2,123 modules transformed, 0 errors in 2.36s**.
+  - Contract Documentation: Section 138 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 25. Planned Next Iteration: Iteration 158
+- **Feature**: Bayesian Nonparametric Dirchlet Process Mixture Density Deconvolution Engine (DPM-DD; Ferguson 1973; Escobar & West 1995; Delaigle, Hall, & Meister 2008 JASA).
+- **Scope**: Implements Dirichlet Process Gaussian mixture deconvolution for survey measurement error and latent trait distributions without arbitrary parametric distribution assumptions, recovering unobserved true distributions $f_0(x)$ from contaminated survey observations $Y = X + \varepsilon$.

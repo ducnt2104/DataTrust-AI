@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.conformal_optimal_transport_engine import estimate_conformal_optimal_transport
 from app.engine.local_instrumental_variables_engine import estimate_local_instrumental_variables
 from app.engine.auto_dml_riesz_engine import estimate_auto_dml_riesz
 from app.engine.nested_logit_engine import estimate_nested_logit
@@ -122,6 +123,8 @@ from app.schemas import (
     AutoDMLRieszOut,
     LocalInstrumentalVariablesRequest,
     LocalInstrumentalVariablesOut,
+    ConformalOptimalTransportRequest,
+    ConformalOptimalTransportOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -15885,6 +15888,114 @@ def run_local_instrumental_variables_analysis(
                 "late": res.get("overall_summary", {}).get("late", {}).get("estimate"),
                 "sorting_gain": res.get("overall_summary", {}).get("sorting_on_gains_att_minus_ate"),
                 "essential_heterogeneity": res.get("overall_summary", {}).get("essential_heterogeneity_present"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+@router.post("/conformal-optimal-transport", response_model=ConformalOptimalTransportOut)
+def run_conformal_optimal_transport_analysis(
+    survey_id: str,
+    payload: ConformalOptimalTransportRequest
+):
+    """
+    Conformal Optimal Transport Counterfactual Distributional Alignment Engine (COT-CDA).
+    Cuturi, M. (2013). NeurIPS; Courty, N., et al. (2017). IEEE TPAMI; Romano, Y., et al. (2019). NeurIPS.
+    Entropy-regularized Wasserstein optimal transport (Sinkhorn algorithm) between treated and control
+    distributions, individual Monge transport map counterfactual imputation, 2-Wasserstein distance W_2,
+    and split-conformal prediction intervals with finite-sample coverage guarantees.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.treatment_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    d_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                rec = {
+                    payload.outcome_question_id: y_val,
+                    payload.treatment_question_id: d_val
+                }
+
+                # Covariates
+                valid_covs = True
+                for c_id in cov_ids:
+                    if c_id in answers:
+                        try:
+                            rec[c_id] = float(answers[c_id])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                    else:
+                        valid_covs = False
+
+                if valid_covs:
+                    df_records.append(rec)
+
+        if len(df_records) < 25:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 25 bản ghi hoàn chỉnh để thực hiện Optimal Transport (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = estimate_conformal_optimal_transport(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                covariate_cols=cov_ids,
+                reg_eps=payload.reg_eps,
+                covariate_weight_kappa=payload.covariate_weight_kappa,
+                conformal_alpha=payload.conformal_alpha
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình ước lượng Conformal Optimal Transport: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="CONFORMAL_OPTIMAL_TRANSPORT_EVALUATED",
+            details={
+                "w2_distance": res.get("overall_summary", {}).get("wasserstein_2_distance"),
+                "ate_ot": res.get("overall_summary", {}).get("optimal_transport_ate"),
+                "att_ot": res.get("overall_summary", {}).get("optimal_transport_att"),
+                "conformal_half_width": res.get("overall_summary", {}).get("conformal_half_width_delta"),
                 "status": res.get("status")
             }
         )

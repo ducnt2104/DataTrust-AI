@@ -8461,3 +8461,47 @@ export interface LocalInstrumentalVariablesRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Conformal Optimal Transport Counterfactual Distributional Alignment (Cuturi 2013; Courty 2017) Types ---
+export interface ConformalOptimalTransportSummary {
+  n_treated: number;
+  n_control: number;
+  n_covariates: number;
+  entropic_regularization_eps: number;
+  covariate_weight_kappa: number;
+  conformal_confidence_level: number;
+  wasserstein_2_distance: number;
+  mean_outcome_treated: number;
+  mean_outcome_control_observed: number;
+  mean_outcome_control_counterfactual: number;
+  optimal_transport_ate: number;
+  optimal_transport_att: number;
+  optimal_transport_atu: number;
+  conformal_half_width_delta: number;
+  conformal_coverage_guarantee_pct: number;
+  quantiles: number[];
+  treated_quantiles: number[];
+  control_observed_quantiles: number[];
+  control_counterfactual_quantiles: number[];
+  quantile_treatment_effects: number[];
+  counterfactual_quantile_shifts: number[];
+}
+
+export interface ConformalOptimalTransportResult {
+  status: string;
+  message?: string;
+  overall_summary?: ConformalOptimalTransportSummary;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface ConformalOptimalTransportRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  covariate_question_ids?: string[];
+  reg_eps?: number;
+  covariate_weight_kappa?: number;
+  conformal_alpha?: number;
+  scope?: 'all' | 'verified_clean';
+}

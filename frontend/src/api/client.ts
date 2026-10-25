@@ -227,7 +227,9 @@ import {
   AutoDMLRieszRequest,
   AutoDMLRieszResult,
   LocalInstrumentalVariablesRequest,
-  LocalInstrumentalVariablesResult
+  LocalInstrumentalVariablesResult,
+  ConformalOptimalTransportRequest,
+  ConformalOptimalTransportResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2546,5 +2548,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<LocalInstrumentalVariablesResult>(res);
+  },
+  async runConformalOptimalTransport(
+    surveyId: string,
+    payload: ConformalOptimalTransportRequest
+  ): Promise<ConformalOptimalTransportResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/conformal-optimal-transport`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ConformalOptimalTransportResult>(res);
   }
 };

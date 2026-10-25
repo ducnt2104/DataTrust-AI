@@ -5636,3 +5636,28 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `LocalInstrumentalVariablesRequest` (`outcome_question_id`, `treatment_question_id`, `instrument_question_ids`, `covariate_question_ids`, `n_grid_points`, `trim_quantile`, `alpha_level`, `scope`).
   - **Response:** `LocalInstrumentalVariablesOut` (`status`, `overall_summary`, `mte_curve`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `LOCAL_INSTRUMENTAL_VARIABLES_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 138. Conformal Optimal Transport Counterfactual Distributional Alignment Engine (COT-CDA; Cuturi 2013 NeurIPS; Courty et al. 2017 TPAMI; Romano et al. 2019 NeurIPS)
+- **Mục tiêu:** Cung cấp phương pháp phi tham số hiện đại dựa trên lý thuyết Vận chuyển Khối lượng Tối ưu (Optimal Transport - Monge 1781, Kantorovich 1942, Villani 2003) và Dự báo Conformal (Conformal Prediction - Shafer & Vovk 2008, Romano et al. 2019) để căn chỉnh toàn bộ hàm mật độ phân phối kết quả giữa nhóm can thiệp và đối chứng trong các khảo sát chính sách xã hội và hành vi tiêu dùng. Thay vì chỉ đo lường sự dịch chuyển giá trị kỳ vọng trung bình $\mathbb{E}[Y_1] - \mathbb{E}[Y_0]$, động cơ sử dụng thuật toán Sinkhorn-Knopp entropy-regularized giải bài toán vận chuyển khối lượng đa chiều, thiết lập ánh xạ Monge $T(x)$ để điền khuyết kết quả phản thực tế (counterfactual outcome) cho từng cá nhân, tính toán khoảng cách 2-Wasserstein $\mathcal{W}_2$, và thiết lập dải dự báo Conformal với độ tin cậy được chứng minh toán học hữu hạn mẫu mà không phụ thuộc vào bất kỳ giả định tham số nào về phân phối sai số.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Bài toán Vận chuyển Khối lượng Tối ưu Entropy-Regularized (Sinkhorn Algorithm; Cuturi 2013):**
+     - Đặt ma trận chi phí vận chuyển đa chiều $C_{ij} = \frac{(Y_{1,i} - Y_{0,j})^2}{\sigma_Y^2} + \kappa \frac{\|X_{1,i} - X_{0,j}\|^2}{\sigma_X^2}$ kết hợp khoảng cách kết quả và khoảng cách không gian đặc trưng confounding $X$.
+     - Tối thiểu hóa phiếm hàm chi phí entropy-regularized:
+       $$\min_{\Pi \in \mathcal{U}(a, b)} \sum_{i=1}^{N_1} \sum_{j=1}^{N_0} C_{ij} \Pi_{ij} + \varepsilon \sum_{i=1}^{N_1} \sum_{j=1}^{N_0} \Pi_{ij} (\ln \Pi_{ij} - 1)$$
+       với ràng buộc cận biên $\sum_j \Pi_{ij} = a_i = 1/N_1$ và $\sum_i \Pi_{ij} = b_j = 1/N_0$.
+     - Nghiệm đối ngẫu duy nhất có cấu trúc $\Pi^* = \text{diag}(u) K \text{diag}(v)$ với Gibbs kernel $K = \exp(-C / \varepsilon)$, giải qua phép lặp ma trận cân bằng Sinkhorn đạt độ phức tạp $O(N_1 N_0)$ cực nhanh.
+  2. **Khoảng cách 2-Wasserstein $\mathcal{W}_2$:**
+     - $\mathcal{W}_2(\mu, \nu) = \sqrt{\sum_{i,j} C_{ij} \Pi_{ij}^*}$, định lượng hình học khoảng cách thực tế giữa hai phân phối quần thể.
+  3. **Ánh xạ Vận chuyển Monge & Điền khuyết Phản thực tế (Barycentric Projection):**
+     - Với mỗi đơn vị đối chứng $j$, kết quả phản thực tế nếu được can thiệp: $\hat{Y}_{1,j}^{\text{cf}} = \sum_i \frac{\Pi_{ij}^*}{b_j} Y_{1,i}$.
+     - Hiệu ứng can thiệp cá thể (ITE): $\hat{\tau}_j = \hat{Y}_{1,j}^{\text{cf}} - Y_{0,j}$.
+     - Tính toán sự dịch chuyển phân vị phản thực tế $\Delta Q(q) = Q_q(Y_1^{\text{cf}}) - Q_q(Y_0)$.
+  4. **Hiệu chỉnh Phủ Hữu hạn Mẫu Conformal (Romano et al. 2019):**
+     - Điểm số không phù hợp $S_i = |Y_{1,i} - \hat{Y}_{1,i}^{\text{proj}}|$ trên nhóm mẫu calibration.
+     - Phân vị conformal $q_{1-\alpha}$ với hiệu chỉnh $(N_1+1)(1-\alpha)/N_1$.
+     - Dải khoảng dự báo phản thực tế hợp lệ: $C(X_j) = [\hat{Y}_{1,j}^{\text{cf}} - q_{1-\alpha}, \; \hat{Y}_{1,j}^{\text{cf}} + q_{1-\alpha}]$ bảo đảm $\Pr(Y_1 \in C(X)) \ge 1 - \alpha$.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/conformal-optimal-transport`
+  - **Payload:** `ConformalOptimalTransportRequest` (`outcome_question_id`, `treatment_question_id`, `covariate_question_ids`, `reg_eps`, `covariate_weight_kappa`, `conformal_alpha`, `scope`).
+  - **Response:** `ConformalOptimalTransportOut` (`status`, `overall_summary`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CONFORMAL_OPTIMAL_TRANSPORT_EVALUATED` vào chuỗi sổ cái SHA-256.

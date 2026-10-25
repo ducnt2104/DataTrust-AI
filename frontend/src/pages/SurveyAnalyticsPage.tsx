@@ -135,6 +135,7 @@ import { FactorIVCard } from '../components/FactorIVCard';
 import { NestedLogitCard } from '../components/NestedLogitCard';
 import { AutoDMLRieszCard } from '../components/AutoDMLRieszCard';
 import { LocalInstrumentalVariablesCard } from '../components/LocalInstrumentalVariablesCard';
+import { ConformalOptimalTransportCard } from '../components/ConformalOptimalTransportCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1545,6 +1546,17 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
           question_type: q.question_type
         }))}
       />
+
+      {/* Conformal Optimal Transport Counterfactual Distributional Alignment (Cuturi 2013 NeurIPS; Courty 2017) */}
+      <ConformalOptimalTransportCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
 
 
 
