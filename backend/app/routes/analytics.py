@@ -1,3 +1,4 @@
+from app.engine.rif_oaxaca_decomposition_engine import run_rif_oaxaca_decomposition
 from app.engine.synthetic_diff_in_diff_engine import compute_synthetic_diff_in_diff
 import pandas as pd
 from app.engine.targeted_maximum_likelihood_engine import run_targeted_maximum_likelihood_estimation
@@ -167,6 +168,8 @@ from app.schemas import (
     DynamicDiscreteChoiceOut,
     SyntheticDiffInDiffRequest,
     SyntheticDiffInDiffOut,
+    RIFOaxacaDecompositionRequest,
+    RIFOaxacaDecompositionOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -17438,6 +17441,82 @@ def run_synthetic_diff_in_diff_endpoint(
                         "sdid_tau": res.get("estimates", {}).get("sdid_tau"),
                         "n_treated": res.get("num_treated_units"),
                         "n_control": res.get("num_control_units")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+@router.post("/rif-oaxaca-decomposition", response_model=RIFOaxacaDecompositionOut)
+def run_rif_oaxaca_decomposition_endpoint(
+    survey_id: str,
+    payload: RIFOaxacaDecompositionRequest
+):
+    """
+    Distributional Oaxaca-Blinder & Recentered Influence Function (RIF) Decomposition
+    (Firpo, Fortin, & Lemieux 2009 Econometrica, 2018 Journal of Econometrics).
+    Decomposes distributional gaps (quantiles, median, mean) into explained endowments
+    and unexplained wage structure / valuation effects.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {
+                "status": "NO_DATA",
+                "message": "Không tìm thấy dữ liệu phản hồi cho khảo sát này."
+            }
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            records.append({
+                "group": ans.get(payload.group_question_id),
+                "outcome": ans.get(payload.outcome_question_id),
+                **{cq: ans.get(cq) for cq in payload.covariate_question_ids}
+            })
+
+        res = run_rif_oaxaca_decomposition(
+            records=records,
+            group_col="group",
+            outcome_col="outcome",
+            covariate_cols=payload.covariate_question_ids,
+            reference_group_val=payload.reference_group_val,
+            target_quantiles=payload.target_quantiles,
+            num_bootstrap_reps=payload.num_bootstrap_reps,
+            alpha_level=payload.alpha_level
+        )
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="RIF_OAXACA_DECOMPOSITION_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "total_median_gap": res.get("median_rif_estimates", {}).get("total_median_gap"),
+                        "explained_endowments": res.get("median_rif_estimates", {}).get("explained_endowments"),
+                        "unexplained_coefficients": res.get("median_rif_estimates", {}).get("unexplained_coefficients")
                     }
                 )
             except Exception:

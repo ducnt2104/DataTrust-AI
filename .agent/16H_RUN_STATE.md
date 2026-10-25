@@ -2707,6 +2707,34 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 40. Planned Next Iteration: Iteration 173
-- **Feature**: Instrumental Variables Local Average Response Function with Endogenous Binary Choice & Non-monotonicity Diagnostics (LARF-IV; Abadie 2003 J. Econometrics; Frölich 2007).
-- **Scope**: Estimates complier causal response functions E[Y | D=d, X, Complier] under binary instrument without assuming constant treatment effects or linear index restrictions.
+## 40. Iteration 173: Distributional Oaxaca-Blinder & Recentered Influence Function (RIF) Decomposition Engine (Firpo, Fortin, & Lemieux 2009 Econometrica, 2018 Journal of Econometrics)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T15:29:00+07:00
+- **Scientific Foundation**:
+  - Overcomes the limitation of mean-only classic Oaxaca-Blinder (1973) decompositions by projecting influence functions onto quantiles and inequality metrics (Firpo, Fortin, & Lemieux 2009 Econometrica, 2018).
+  - Unconditional Quantile Regression (UQR): Uses Recentered Influence Functions RIF(Y; q_tau) = q_tau + (tau - 1(Y <= q_tau)) / f_Y(q_tau) to preserve the Law of Iterated Expectations across quantiles.
+  - Detailed Two-Fold Distributional Decomposition: Isolates Endowment / Composition Effects (Delta_X = (X_bar_A - X_bar_B)^T * gamma_B) from Wage Structure / Valuation Effects (Delta_S = X_bar_A^T * (gamma_A - gamma_B)) at each quantile.
+  - Glass Ceiling & Sticky Floor Diagnostics: Evaluates Delta_90 - Delta_10 divergence to distinguish between ceiling barriers and floor traps.
+  - Paired Bootstrap Inference: Runs B = 100 paired bootstrap resamples for robust standard errors and 95% confidence intervals on both aggregate and covariate-specific decomposition components.
+  - Responsive Dual-Panel SVG Visualization: Panel A displays the quantile gap curve across percentiles p10 to p90 with Explained vs Unexplained ribbons; Panel B displays detailed covariate contribution bars.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/rif_oaxaca_decomposition_engine.py` (390 lines).
+  - Schemas: `RIFOaxacaDecompositionRequest`, `RIFOaxacaDecompositionOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/rif-oaxaca-decomposition` with `RIF_OAXACA_DECOMPOSITION_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_rif_oaxaca_decomposition_engine.py` (4/4 passed in 0.35s).
+  - Route Tests: `backend/tests/test_rif_oaxaca_decomposition_routes.py` (1/1 passed in 1.61s).
+- **Frontend Components**:
+  - TypeScript Types: `RIFCovariateContribution`, `RIFQuantilePoint`, `RIFOaxacaMeanDecomposition`, `RIFOaxacaMedianEstimates`, `RIFGlassCeilingDiagnostics`, `RIFOaxacaDecompositionResult`, `RIFOaxacaDecompositionRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runRIFOaxacaDecomposition` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/RIFOaxacaDecompositionCard.tsx` (520 lines) with group, outcome, covariates checklist, reference group value, bootstrap replicates, alpha level, scope selector, 4 KPI cards (Median Total Gap, Explained %, Unexplained %, Glass Ceiling diagnostic), dual-panel SVG visualizer, detailed covariate table, quantile profiles table, and APA narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **5/5 passed** (90/90 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,138 modules transformed, 0 errors in 1.23s**.
+  - Contract Documentation: Section 154 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 41. Planned Next Iteration: Iteration 174
+- **Feature**: Difference-in-Discontinuities Design with Partial Compliance & Pre-Existing Boundary Cutoff Controls (Diff-in-Disc / RD-DID; Grembi, Nannicini, & Troiano 2016 AER; Villa 2022).
+- **Scope**: Combines Regression Discontinuity Design (RDD) with Difference-in-Differences (DID) to identify causal policy impacts when baseline potential outcomes have a discontinuous jump or institutional confounder at the threshold prior to policy enactment.

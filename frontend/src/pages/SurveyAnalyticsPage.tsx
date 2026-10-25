@@ -150,6 +150,7 @@ import { CopulaEndogeneityCard } from '../components/CopulaEndogeneityCard';
 import { CausalSurvivalRMSTCard } from '../components/CausalSurvivalRMSTCard';
 import { DynamicDiscreteChoiceCard } from '../components/DynamicDiscreteChoiceCard';
 import { SyntheticDiffInDiffCard } from '../components/SyntheticDiffInDiffCard';
+import { RIFOaxacaDecompositionCard } from '../components/RIFOaxacaDecompositionCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1703,6 +1704,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Synthetic Difference-in-Differences Engine (Arkhangelsky et al. 2021 AER) */}
       <SyntheticDiffInDiffCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Distributional Oaxaca-Blinder & RIF Decomposition Engine (Firpo et al. 2009 Econometrica, 2018) */}
+      <RIFOaxacaDecompositionCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

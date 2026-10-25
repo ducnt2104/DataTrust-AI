@@ -257,7 +257,9 @@ import {
   DynamicDiscreteChoiceRequest,
   DynamicDiscreteChoiceResult,
   SyntheticDiffInDiffRequest,
-  SyntheticDiffInDiffResult
+  SyntheticDiffInDiffResult,
+  RIFOaxacaDecompositionRequest,
+  RIFOaxacaDecompositionResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2741,5 +2743,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<SyntheticDiffInDiffResult>(res);
+  },
+  async runRIFOaxacaDecomposition(
+    surveyId: string,
+    payload: RIFOaxacaDecompositionRequest
+  ): Promise<RIFOaxacaDecompositionResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/rif-oaxaca-decomposition`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<RIFOaxacaDecompositionResult>(res);
   }
 };

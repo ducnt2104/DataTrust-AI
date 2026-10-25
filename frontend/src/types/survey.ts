@@ -9317,3 +9317,87 @@ export interface SyntheticDiffInDiffRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- RIF Oaxaca-Blinder Decomposition (Firpo, Fortin, & Lemieux 2009, 2018) Types ---
+export interface RIFCovariateContribution {
+  variable_name: string;
+  mean_group_a: number;
+  mean_group_b: number;
+  mean_diff: number;
+  explained_effect: number;
+  unexplained_effect: number;
+  total_effect: number;
+}
+
+export interface RIFQuantilePoint {
+  quantile: number;
+  group_a_val: number;
+  group_b_val: number;
+  total_gap: number;
+  explained_gap: number;
+  unexplained_gap: number;
+  explained_pct: number;
+  unexplained_pct: number;
+  detailed_contributions?: RIFCovariateContribution[];
+}
+
+export interface RIFOaxacaMeanDecomposition {
+  group_a_mean: number;
+  group_b_mean: number;
+  total_mean_gap: number;
+  explained_endowments: number;
+  unexplained_coefficients: number;
+  explained_pct: number;
+  unexplained_pct: number;
+}
+
+export interface RIFOaxacaMedianEstimates {
+  total_median_gap: number;
+  explained_endowments: number;
+  unexplained_coefficients: number;
+  unexplained_se: number;
+  unexplained_ci_95: [number, number];
+  unexplained_z_stat: number;
+  unexplained_p_value: number;
+  is_significant: boolean;
+  explained_pct: number;
+  unexplained_pct: number;
+}
+
+export interface RIFGlassCeilingDiagnostics {
+  gap_p10: number;
+  gap_p90: number;
+  gap_p90_minus_p10: number;
+  diagnostic_label: string;
+}
+
+export interface RIFOaxacaDecompositionResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  group_a_label?: string;
+  group_b_label?: string;
+  sample_counts?: {
+    group_a_n: number;
+    group_b_n: number;
+  };
+  mean_decomposition?: RIFOaxacaMeanDecomposition;
+  median_rif_estimates?: RIFOaxacaMedianEstimates;
+  glass_ceiling_diagnostics?: RIFGlassCeilingDiagnostics;
+  quantile_decomposition_curve?: RIFQuantilePoint[];
+  detailed_covariates?: RIFCovariateContribution[];
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface RIFOaxacaDecompositionRequest {
+  group_question_id: string;
+  outcome_question_id: string;
+  covariate_question_ids: string[];
+  reference_group_val?: any;
+  target_quantiles?: number[];
+  num_bootstrap_reps?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

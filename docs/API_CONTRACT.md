@@ -6118,3 +6118,39 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `SyntheticDiffInDiffRequest` (`unit_question_id`, `time_question_id`, `treatment_question_id`, `outcome_question_id`, `l2_regularization_zeta`, `num_bootstrap_reps`, `alpha_level`, `scope`).
   - **Response:** `SyntheticDiffInDiffOut` (`status`, `sample_size`, `num_units_total`, `num_treated_units`, `num_control_units`, `num_periods_total`, `num_pre_periods`, `num_post_periods`, `first_treated_period`, `estimates`, `diagnostics`, `top_donor_weights`, `period_profiles`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `SYNTHETIC_DIFF_IN_DIFF_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 154. Distributional Oaxaca-Blinder & Recentered Influence Function (RIF) Decomposition Engine (Firpo, Fortin, & Lemieux 2009 Econometrica, 2018 Journal of Econometrics)
+- **Mục tiêu:** Bóc tách và định lượng chính xác nguyên nhân của sự chênh lệch phân phối (khoảng cách thu nhập, chỉ số hài lòng, điểm đánh giá hiệu quả) giữa hai nhóm nhân khẩu học hoặc nhóm can thiệp (ví dụ: Giới tính Nam/Nữ, Vùng miền Thành thị/Nông thôn, Khách hàng Trung thành/Rời bỏ) xuyên suốt toàn bộ phân phối (phân vị p10, p25, p50 trung vị, p75, p90) thay vì chỉ dừng lại ở giá trị trung bình đơn thuần như mô hình Oaxaca-Blinder cổ điển (1973).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Hàm Ảnh Hưởng Tái Định Tâm (Recentered Influence Function - RIF):**
+     - Với thống kê phân phối nu(F_Y) (phân vị tau-th q_tau):
+       RIF(Y; q_tau, F_Y) = q_tau + IF(Y; q_tau, F_Y) = q_tau + [tau - 1(Y <= q_tau)] / f_Y(q_tau)
+       với f_Y(q_tau) là hàm mật độ xác suất biên tại q_tau, ước lượng bằng hàm nhân Gaussian với độ rộng dải băng Silverman.
+     - Tính chất bảo toàn kỳ vọng toán học: E[RIF(Y; q_tau)] = q_tau, cho phép áp dụng định luật kỳ vọng lặp (Law of Iterated Expectations) vào hồi quy phân vị không điều kiện (Unconditional Quantile Regression).
+  2. **Hồi Quy RIF Không Điều Kiện (RIF Regression):**
+     - Ước lượng mô hình OLS tuyến tính:
+       RIF(Y_i; q_tau) = X_i^T * gamma_tau + epsilon_i
+       trong đó gamma_tau đại diện cho Hiệu ứng Biên Phân vị Không điều kiện (Unconditional Quantile Partial Effect - UQPE).
+  3. **Phân Rã Hai Thành Phần Oaxaca-Blinder Mở Rộng:**
+     - Tổng chênh lệch tại phân vị tau:
+       Delta_tau = q_tau^A - q_tau^B = Delta_X^tau + Delta_S^tau
+     - **Thành phần Giải thích được (Endowments / Composition Effect Delta_X):**
+       Delta_X^tau = (X_bar_A - X_bar_B)^T * gamma_B^tau
+       (Phần chênh lệch bắt nguồn từ sự khác biệt về các đặc điểm quan sát được như trình độ học vấn, số năm kinh nghiệm, năng lực).
+     - **Thành phần Chưa giải thích (Wage Structure / Coefficients Effect Delta_S):**
+       Delta_S^tau = X_bar_A^T * (gamma_A^tau - gamma_B^tau)
+       (Phần chênh lệch bắt nguồn từ việc cùng một đặc điểm nhưng được thị trường hoặc tổ chức định giá/trả thưởng khác nhau giữa hai nhóm).
+  4. **Chẩn Đoán Trần Kính & Sàn Dính (Glass Ceiling & Sticky Floor Diagnostics):**
+     - Đánh giá sự biến thiên của khoảng cách chênh lệch Delta_tau theo chiều phân vị:
+       Delta_90-10 = Delta_{p90} - Delta_{p10}
+     - Phân loại hình thái bất bình đẳng:
+       - Hiệu ứng Trần kính (Glass Ceiling): Khoảng cách nới rộng vượt bậc ở tầng đỉnh (p90), rào cản vô hình hạn chế thăng tiến lên cấp cao.
+       - Hiệu ứng Sàn dính (Sticky Floor): Khoảng cách tập trung nặng nề ở tầng đáy (p10), bẫy thu nhập thấp hoặc phân biệt đối xử ở nhóm gia nhập.
+  5. **Biểu Đồ Vector Kép SVG Tích Hợp:**
+     - Panel A: Đồ thị đường cong phân rã phân vị từ p10 đến p90 so sánh Tổng khoảng cách (Total Gap), Thành phần Đặc điểm (Explained), và Thành phần Hệ số định giá (Unexplained).
+     - Panel B: Biểu đồ thanh ngang phân rã chi tiết đóng góp của từng biến kiểm soát tại trung vị (Detailed Covariate Decomposition at Median).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/rif-oaxaca-decomposition`
+  - **Payload:** `RIFOaxacaDecompositionRequest` (`group_question_id`, `outcome_question_id`, `covariate_question_ids`, `reference_group_val`, `target_quantiles`, `num_bootstrap_reps`, `alpha_level`, `scope`).
+  - **Response:** `RIFOaxacaDecompositionOut` (`status`, `sample_size`, `group_a_label`, `group_b_label`, `sample_counts`, `mean_decomposition`, `median_rif_estimates`, `glass_ceiling_diagnostics`, `quantile_decomposition_curve`, `detailed_covariates`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `RIF_OAXACA_DECOMPOSITION_EVALUATED` vào chuỗi sổ cái SHA-256.
