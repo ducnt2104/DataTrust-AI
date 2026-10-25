@@ -197,7 +197,9 @@ import {
   WeakIVRobustRequest,
   WeakIVRobustResult,
   SequentialMediationRequest,
-  SequentialMediationResult
+  SequentialMediationResult,
+  PostDoubleSelectionLassoRequest,
+  PostDoubleSelectionLassoResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2341,5 +2343,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<SequentialMediationResult>(res);
+  },
+
+  // --- High-Dimensional Post-Double-Selection (PDS) Lasso (Belloni, Chernozhukov, & Hansen 2014) ---
+  async runPostDoubleSelectionLasso(
+    surveyId: string,
+    payload: PostDoubleSelectionLassoRequest
+  ): Promise<PostDoubleSelectionLassoResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/post-double-selection-lasso`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<PostDoubleSelectionLassoResult>(res);
   }
 };

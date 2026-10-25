@@ -1828,3 +1828,31 @@
   - All 15/15 tests across Iterations 139, 140, 141 passed cleanly.
   - Frontend Production Build: **2,107 modules transformed, 0 errors in 2.39s**.
   - Contract Documentation: Section 122 appended to `docs/API_CONTRACT.md`.
+
+## 6. Iteration 142: High-Dimensional Post-Double-Selection Lasso Engine (Belloni, Chernozhukov, & Hansen 2014 Restud)
+- **Timestamp**: 2026-10-25T11:23:00+07:00
+- **Scientific Foundation**:
+  - Overcomes standard Lasso single-step regularization bias ($O(1)$ omitted variable bias for moderate controls correlated with treatment) and inferential breakdown.
+  - Implements Neyman Orthogonal Post-Double-Selection:
+    1. Lasso outcome on candidate controls: $Y \sim X \implies I_1 = \{j: \hat{eta}_j 
+eq 0\}$
+    2. Lasso treatment on candidate controls: $D \sim X \implies I_2 = \{j: \hat{\gamma}_j 
+eq 0\}$
+    3. Union selection $I_{\text{union}} = I_1 \cup I_2$ followed by unpenalized Post-OLS with HC1 robust standard errors
+  - Dual penalty tuning: 5-Fold Cross-Validation (prediction error minimization) vs Theory-driven rigorous penalty ($\lambda_{\text{theory}} = 1.1 \times 2 \hat{\sigma} \sqrt{2 \ln(2p / \alpha_c)} / \sqrt{N}$).
+  - Comparative benchmark: Post-Double-Selection vs Naive Full OLS vs Simple No-Controls OLS.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/post_double_selection_lasso_engine.py` (420 lines).
+  - Pydantic Schemas: `PostDoubleSelectionLassoRequest` and `PostDoubleSelectionLassoOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/post-double-selection-lasso` with `POST_DOUBLE_SELECTION_LASSO_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_post_double_selection_lasso_engine.py` (3/3 passed).
+  - Route Tests: `backend/tests/test_post_double_selection_lasso_routes.py` (1/1 passed).
+- **Frontend Components**:
+  - TypeScript Types: `PostDoubleSelectionLassoDiagnostics`, `PostDoubleSelectionSelectedControl`, `PostDoubleSelectionEstimates`, `PostDoubleSelectionLassoResult`, `PostDoubleSelectionLassoRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runPostDoubleSelectionLasso` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/PostDoubleSelectionLassoCard.tsx` (360 lines) with candidate covariate checklist, penalty mode switch, model comparison table, selected controls breakdown, SVG Forest Plot visualizer, and APA 7th narrative.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **4/4 passed in 2.00s**.
+  - Frontend Production Build: **2,108 modules transformed, 0 errors in 1.26s**.
+  - Contract Documentation: Section 123 appended to `docs/API_CONTRACT.md`.

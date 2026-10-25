@@ -7535,3 +7535,86 @@ export interface SequentialMediationRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- High-Dimensional Post-Double-Selection (PDS) Lasso (Belloni, Chernozhukov, & Hansen 2014) ---
+export interface PostDoubleSelectionLassoDiagnostics {
+  sample_size: number;
+  total_candidate_controls: number;
+  selected_by_outcome_model: number;
+  selected_by_treatment_model: number;
+  union_selected_controls: number;
+  lambda_y_cross_validated: number;
+  lambda_d_cross_validated: number;
+  dimension_reduction_ratio: number;
+}
+
+export interface PostDoubleSelectionSelectedControl {
+  index: number;
+  name: string;
+  selected_in_outcome_model: boolean;
+  selected_in_treatment_model: boolean;
+  in_union_set: boolean;
+  coef_y_stage: number;
+  coef_d_stage: number;
+}
+
+export interface PostDoubleSelectionEstimates {
+  post_double_selection_lasso: {
+    estimate: number;
+    robust_se: number;
+    z_statistic: number;
+    p_value: number;
+    ci_lower: number;
+    ci_upper: number;
+    is_significant: boolean;
+  };
+  naive_single_selection_lasso: {
+    estimate: number;
+    robust_se: number;
+    z_statistic: number;
+    p_value: number;
+    ci_lower: number;
+    ci_upper: number;
+    is_significant: boolean;
+  };
+  unadjusted_base_ols: {
+    estimate: number;
+    robust_se: number;
+    z_statistic: number;
+    p_value: number;
+    ci_lower: number;
+    ci_upper: number;
+    is_significant: boolean;
+  };
+  saturated_full_ols: {
+    estimate?: number;
+    robust_se?: number;
+    z_statistic?: number;
+    p_value?: number;
+    ci_lower?: number;
+    ci_upper?: number;
+    is_significant?: boolean;
+    note?: string;
+  };
+}
+
+export interface PostDoubleSelectionLassoResult {
+  status: string;
+  model_type?: string;
+  message?: string;
+  diagnostics?: PostDoubleSelectionLassoDiagnostics;
+  selected_controls?: PostDoubleSelectionSelectedControl[];
+  estimates?: PostDoubleSelectionEstimates;
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface PostDoubleSelectionLassoRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  candidate_control_question_ids: string[];
+  cv_folds?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

@@ -5128,3 +5128,46 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - `svg_visualization`: Đồ thị SVG khoa học kép Structural Path DAG & Bootstrap Forest Plot.
   - `apa_narrative`: Thuyết minh học thuật chuẩn APA 7th Edition theo Hayes Model 6.
 - **Niêm phong kiểm toán:** Tự động ghi nhận `SEQUENTIAL_MEDIATION_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+### 123. Post-Double-Selection Lasso Engine for High-Dimensional Confounders (Belloni, Chernozhukov, & Hansen 2014 Restud)
+- **Mục tiêu:** Cung cấp động cơ ước lượng hiệu ứng nhân quả $D \to Y$ trong bối cảnh khảo sát nhiều chiều ($p \gg N$ hoặc số lượng biến kiểm soát tiềm năng rất lớn: nhân khẩu học chi tiết, hành vi kỹ thuật số, tương tác chéo). Giải quyết triệt để vấn đề chệch lựa chọn biến (variable selection bias) và hiện tượng sụp đổ suy diễn thống kê (inferential breakdown) của Lasso tiêu chuẩn một bước bằng cách thực hiện chọn lọc kép trực giao Neyman (Neyman Orthogonal Post-Double-Selection).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Khuyết tật của Lasso thông thường:** Khi áp dụng Lasso trực tiếp lên phương trình kết quả $Y = \alpha_0 + \alpha D + X'\beta + \varepsilon$, bất kỳ biến kiểm soát $X_j$ nào có tương quan mạnh với biến can thiệp $D$ nhưng có tương quan trung bình/yếu với kết quả $Y$ (hệ số $O(1/\sqrt{N})$) sẽ bị Lasso triệt tiêu về 0. Sự bỏ sót biến này gây chệch hệ số can thiệp $\hat{\alpha}$ cỡ $O(1)$ ngay cả khi cỡ mẫu $N \to \infty$.
+  2. **Quy trình Lựa chọn Kép (Belloni et al. 2014):**
+     - **Bước 1 (Lựa chọn dự báo kết quả):** Chạy Lasso phạt $L_1$ từ kết quả $Y$ lên toàn bộ tập covariates $X$:
+       $$\hat{\beta} = \arg\min_\beta \frac{1}{2N} \|Y - X\beta\|_2^2 + \lambda_y \sum_{j=1}^p \|\beta_j\|_1$$
+       Thu thập tập chỉ số biến kiểm soát được chọn: $I_1 = \{j: \hat{\beta}_j \neq 0\}$.
+     - **Bước 2 (Lựa chọn dự báo can thiệp):** Chạy Lasso phạt $L_1$ từ biến can thiệp $D$ lên toàn bộ tập covariates $X$:
+       $$\hat{\gamma} = \arg\min_\gamma \frac{1}{2N} \|D - X\gamma\|_2^2 + \lambda_d \sum_{j=1}^p \|\gamma_j\|_1$$
+       Thu thập tập chỉ số biến kiểm soát được chọn: $I_2 = \{j: \hat{\gamma}_j \neq 0\}$.
+     - **Bước 3 (Hợp nhất và Ước lượng Post-OLS Trực giao):** Lấy hợp tập biến $I_{\text{union}} = I_1 \cup I_2$. Ước lượng OLS không bị phạt trên mô hình:
+       $$Y_i = \alpha D_i + X_{i, I_{\text{union}}}' \beta_{I_{\text{union}}} + \varepsilon_i$$
+       Đảm bảo tính trực giao Neyman (Neyman Orthogonality), cho phép phân phối chuẩn tiệm cận chuẩn hóa $\sqrt{N}(\hat{\alpha} - \alpha) \stackrel{d}{\to} \mathcal{N}(0, V)$ với sai số chuẩn vững phương sai thay đổi White/Huber-White HC1.
+  3. **Lựa chọn Tham số Phạt Tối ưu (Penalization Tuning):**
+     - Hỗ trợ cả hai chế độ:
+       - **K-Fold Cross-Validation (K-Fold CV):** Lựa chọn $\lambda$ qua 5-Fold CV giảm thiểu sai số dự báo ngoài mẫu.
+       - **Lý thuyết Tiệm cận Belloni (Theory-Driven Rigorous Penalty):** $\lambda_{\text{theory}} = 1.1 \times 2 \hat{\sigma} \sqrt{2 \ln(2p / \alpha_c)} / \sqrt{N}$, bảo toàn sparsity tiệm cận.
+  4. **Chỉ số Chẩn đoán Trực giao & Đồ thị SVG Khoa học:**
+     - Tỷ lệ co cụm (Sparsity ratio) $|I_{\text{union}}| / p$.
+     - Ma trận phân loại biến: Được chọn bởi cả $Y$ và $D$, chỉ bởi $Y$, chỉ bởi $D$, hoặc bị loại bỏ.
+     - Forest Plot SVG so sánh trực quan ước lượng Post-Double-Selection OLS vs Naive OLS (toàn bộ $X$) vs Simple OLS (không có $X$), minh họa sai số và sự bảo toàn tính vững.
+- **Endpoint:** `POST /api/surveys/{survey_id}/analytics/post-double-selection-lasso`
+- **Request Body (`PostDoubleSelectionLassoRequest`):**
+  - `treatment_question_id`: UUID biến can thiệp/điều trị $D$.
+  - `outcome_question_id`: UUID biến kết quả khảo sát $Y$.
+  - `candidate_covariate_ids`: Danh sách UUID các biến kiểm soát tiềm năng $X$ (nhiều chiều).
+  - `alpha_level`: Mức ý nghĩa thống kê (Mặc định 0.05).
+  - `penalty_selection`: Phương pháp chọn $\lambda$ (`"cv"` hoặc `"theory"`).
+  - `scope`: `"all"` hoặc `"verified_clean"`.
+- **Response (`PostDoubleSelectionLassoOut`):**
+  - `status`: `"SUCCESS"`, `"INSUFFICIENT_SAMPLE"`, hoặc `"ERROR"`.
+  - `model_type`: `"POST_DOUBLE_SELECTION_LASSO_BELLONI_2014"`.
+  - `sample_size`: Cỡ mẫu phân tích $N$.
+  - `num_candidates`: Số lượng biến kiểm soát ứng viên $p$.
+  - `num_selected_union`: Số biến kiểm soát được chọn vào mô hình cuối $|I_{\text{union}}|$.
+  - `selected_controls`: Danh sách chi tiết từng biến được chọn (tên, nguồn chọn: $Y$, $D$, hoặc cả hai, hệ số hồi quy).
+  - `estimates`: Ước lượng hệ số can thiệp của 3 mô hình (Post-Double-Selection, Naive full controls, Simple no controls) với SE vững HC1, t-stat, p-value, 95% CI.
+  - `diagnostics`: $\lambda_y$, $\lambda_d$, $R^2$, F-stat, sparsity ratio.
+  - `svg_visualization`: Đồ thị SVG so sánh Forest Plot ước lượng can thiệp và phân bổ biến chọn lọc.
+  - `apa_narrative`: Báo cáo học thuật chuẩn mực APA 7th Edition theo Belloni et al. (2014).
+- **Niêm phong kiểm toán:** Ghi nhận `POST_DOUBLE_SELECTION_LASSO_EVALUATED` vào chuỗi sổ cái SHA-256.

@@ -1,3 +1,4 @@
+from app.engine.post_double_selection_lasso_engine import PostDoubleSelectionLassoEngine
 from app.engine.sequential_mediation_engine import SequentialMediationEngine
 from app.engine.weak_iv_robust_engine import WeakIVRobustEngine
 from app.engine.dynamic_panel_gmm_engine import DynamicPanelGMMEngine
@@ -76,6 +77,8 @@ from app.schemas import (
     WeakIVRobustOut,
     SequentialMediationRequest,
     SequentialMediationOut,
+    PostDoubleSelectionLassoRequest,
+    PostDoubleSelectionLassoOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -14146,6 +14149,109 @@ def run_sequential_mediation_analysis(
                 "outcome_qid": payload.outcome_question_id,
                 "n_samples": len(t_list),
                 "n_bootstraps": payload.n_bootstraps,
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/post-double-selection-lasso", response_model=PostDoubleSelectionLassoOut)
+def run_post_double_selection_lasso_analysis(
+    survey_id: str,
+    payload: PostDoubleSelectionLassoRequest
+):
+    """
+    High-Dimensional Post-Double-Selection (PDS) Lasso (Belloni, Chernozhukov, & Hansen 2014).
+    Selects control variables by taking the union of Lasso selection on Outcome Y and Treatment D,
+    guaranteeing Neyman orthogonality and uniform valid causal inference against omitted variable bias.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        q_rows = conn.execute(
+            "SELECT id, title FROM questions WHERE survey_id = ?", (survey_id,)
+        ).fetchall()
+        q_map = {row["id"]: row["title"] for row in q_rows}
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        resp_data: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_data:
+                resp_data[rid] = {}
+            resp_data[rid][row["question_id"]] = row["answer_value"]
+
+        cand_ids = payload.candidate_control_question_ids or []
+
+        y_list = []
+        d_list = []
+        x_matrix_rows = []
+
+        for resp_id, answers in resp_data.items():
+            if (payload.outcome_question_id not in answers or
+                payload.treatment_question_id not in answers):
+                continue
+
+            has_all_controls = True
+            c_vals = []
+            for cid in cand_ids:
+                if cid not in answers:
+                    has_all_controls = False
+                    break
+                try:
+                    c_vals.append(float(answers[cid]))
+                except (ValueError, TypeError):
+                    has_all_controls = False
+                    break
+
+            if not has_all_controls:
+                continue
+
+            try:
+                yv = float(answers[payload.outcome_question_id])
+                dv = float(answers[payload.treatment_question_id])
+
+                y_list.append(yv)
+                d_list.append(dv)
+                x_matrix_rows.append(c_vals)
+            except (ValueError, TypeError):
+                continue
+
+        ctrl_names = [q_map.get(cid, cid) for cid in cand_ids]
+
+        res = PostDoubleSelectionLassoEngine.estimate(
+            y=np.array(y_list, dtype=float),
+            treatment=np.array(d_list, dtype=float),
+            candidate_controls=np.array(x_matrix_rows, dtype=float),
+            control_names=ctrl_names,
+            cv_folds=payload.cv_folds,
+            alpha_level=payload.alpha_level,
+            outcome_label=q_map.get(payload.outcome_question_id, "Biến kết quả Y"),
+            treatment_label=q_map.get(payload.treatment_question_id, "Biến can thiệp D")
+        )
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="POST_DOUBLE_SELECTION_LASSO_EVALUATED",
+            details={
+                "outcome_qid": payload.outcome_question_id,
+                "treatment_qid": payload.treatment_question_id,
+                "candidate_qids_count": len(cand_ids),
+                "union_selected_count": res.get("diagnostics", {}).get("union_selected_controls") if res.get("diagnostics") else None,
                 "status": res.get("status")
             }
         )
