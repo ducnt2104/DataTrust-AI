@@ -283,7 +283,9 @@ import {
   CBPSRequest,
   CBPSResult,
   EValueRequest,
-  EValueResult
+  EValueResult,
+  ControlFunction2SRIRequest,
+  ControlFunction2SRIResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2917,5 +2919,17 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<EValueResult>(res);
+  },
+
+  async runControlFunction2SRI(
+    surveyId: string,
+    payload: ControlFunction2SRIRequest
+  ): Promise<ControlFunction2SRIResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/control-function-2sri`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<ControlFunction2SRIResult>(res);
   }
 };

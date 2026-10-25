@@ -10115,3 +10115,69 @@ export interface EValueResult {
   svg_visualization: string;
   apa_narrative: string;
 }
+
+
+// --- Two-Stage Residual Inclusion (2SRI) & Control Function Causal Engine (Terza et al. 2008) ---
+export interface ControlFunction2SRIFirstStage {
+  f_statistic: number;
+  p_value: number;
+  r_squared: number;
+  weak_instrument: boolean;
+  instrument_count: number;
+  instruments: string[];
+}
+
+export interface ControlFunction2SRIEndogeneityTest {
+  residual_coefficient_rho: number;
+  bootstrap_se: number;
+  z_statistic: number;
+  p_value: number;
+  is_endogenous: boolean;
+  interpretation: string;
+}
+
+export interface ControlFunction2SRIEffectItem {
+  estimate: number;
+  bootstrap_se: number;
+  ci_lower: number;
+  ci_upper: number;
+  p_value: number;
+}
+
+export interface ControlFunction2SRICausalEffects {
+  ate: ControlFunction2SRIEffectItem;
+  att: ControlFunction2SRIEffectItem;
+  structural_alpha: number;
+  structural_alpha_se: number;
+}
+
+export interface ControlFunction2SRIModelComparison {
+  model: string;
+  treatment_coefficient: number;
+  bias_risk: string;
+}
+
+export interface ControlFunction2SRIRequest {
+  treatment_question_id: string;
+  outcome_question_id: string;
+  instrument_question_ids: string[];
+  covariate_question_ids?: string[];
+  outcome_family?: 'logistic' | 'linear' | 'poisson';
+  n_bootstraps?: number;
+  scope?: 'all' | 'verified_clean';
+}
+
+export interface ControlFunction2SRIResult {
+  status: string;
+  sample_size: number;
+  treated_count: number;
+  control_count: number;
+  treatment_type: string;
+  outcome_family: string;
+  first_stage: ControlFunction2SRIFirstStage;
+  endogeneity_test: ControlFunction2SRIEndogeneityTest;
+  causal_effects: ControlFunction2SRICausalEffects;
+  model_comparison: ControlFunction2SRIModelComparison[];
+  svg_visualization: string;
+  apa_narrative: string;
+}

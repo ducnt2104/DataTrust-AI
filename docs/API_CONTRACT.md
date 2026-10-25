@@ -6518,3 +6518,36 @@ um_states, discount_factor, log_likelihood, structural_parameters, equilibrium_t
   - **Payload:** `EValueRequest` (`treatment_question_id`, `outcome_question_id`, `effect_measure`, `point_estimate`, `ci_lower`, `ci_upper`, `baseline_risk`, `unmeasured_confounding_bias`, `selection_bias`, `measurement_error`, `scope`).
   - **Response:** `EValueOut` (`status`, `effect_measure`, `point_estimate`, `ci_lower`, `ci_upper`, `e_value_point`, `e_value_ci`, `multi_bias_e_value`, `benchmarks`, `robustness_assessment`, `svg_visualization`, `apa_narrative`).
 - **Niêm phong kiểm toán:** Ghi nhận `E_VALUE_SENSITIVITY_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 167. Two-Stage Residual Inclusion (2SRI) & Control Function Causal Engine for Nonlinear Endogenous Survey Models (Terza, Basu, & Rathouz 2008 J. Health Econ; Wooldridge 2010 MIT Press)
+- **Mục tiêu:** Ước lượng tác động nhân quả không thiên lệch trong các mô hình khảo sát cấu trúc phi tuyến (nhị phân Logistic, liên tục OLS, đếm Poisson) khi biến can thiệp bị nội sinh do yếu tố gây nhiễu không quan sát được hoặc thiên lệch tự chọn mẫu, sử dụng hàm kiểm soát (control function) và phần dư giai đoạn một.
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Sự Thất Bại của Two-Stage Predictor Substitution (2SPS) trong Mô Hình Phi Tuyến:**
+     - Trong mô hình phi tuyến, việc thay thế $D$ bằng giá trị dự báo $\hat{D}$ từ hồi quy tuyến tính (2SPS / 2SLS chuẩn) là không nhất quán tiệm cận:
+       $$E[Y \mid X, D] \ne G(X'\beta + \alpha \hat{D})$$
+     - Điều này dẫn đến sai lệch hệ số nghiêm trọng và có thể đảo ngược dấu của hiệu ứng can thiệp (Terza et al. 2008).
+  2. **Phương Pháp Kiểm Soát Phần Dư Hai Giai Đoạn (2SRI / Control Function Consistency):**
+     - Giai đoạn 1: Hồi quy biến can thiệp nội sinh $D$ theo các biến công cụ ngoại sinh loại trừ $Z$ và biến kiểm soát $X$:
+       - Can thiệp nhị phân: Mô hình Probit $P(D=1 \mid Z, X) = \Phi(W'\gamma)$, tính phần dư tổng quát (Generalized Residuals; Chesher & Irish 1987; Vella 1993):
+         $$\hat{u}_i = \frac{D_i - \Phi(W_i'\hat{\gamma})}{\Phi(W_i'\hat{\gamma})(1 - \Phi(W_i'\hat{\gamma}))} \phi(W_i'\hat{\gamma})$$
+       - Can thiệp liên tục: Hồi quy OLS $D_i = W_i'\gamma + u_i \implies \hat{u}_i = D_i - \hat{D}_i$.
+     - Giai đoạn 2: Giữ nguyên $D$ quan sát được và đưa phần dư $\hat{u}_i$ trực tiếp vào mô hình cấu trúc phi tuyến:
+       $$E[Y_i \mid D_i, X_i, \hat{u}_i] = G(\alpha D_i + X_i'\beta + \rho \hat{u}_i)$$
+  3. **Kiểm Định Nội Sinh Chính Xác (Exact Hausman-Type Endogeneity Test):**
+     - Hệ số $\rho$ trên phần dư $\hat{u}_i$ đo lường tương quan giữa sai số can thiệp và sai số kết quả.
+     - Kiểm định giả thuyết $H_0: \rho = 0$: Nếu $p < 0.05$, biến can thiệp là nội sinh có ý nghĩa thống kê và các mô hình ngoại sinh chuẩn bị thiên lệch.
+  4. **Hàm Cấu Trúc Trung Bình (Average Structural Function - ASF; Blundell & Powell 2004):**
+     - Tích phân loại bỏ phân phối phần dư $\hat{u}$ để thu được phản hồi nhân quả phản thực tế không thiên lệch:
+       $$\text{ASF}(d) = \frac{1}{N} \sum_{i=1}^N G(\alpha \cdot d + X_i'\beta + \rho \hat{u}_i)$$
+     - $\text{ATE} = \text{ASF}(1) - \text{ASF}(0)$
+     - $\text{ATT} = \frac{1}{N_1} \sum_{i: D_i=1} [G(\alpha \cdot 1 + X_i'\beta + \rho \hat{u}_i) - G(\alpha \cdot 0 + X_i'\beta + \rho \hat{u}_i)]$
+  5. **Bộ Chỉ Số Chẩn Đoán & Biểu Đồ Vector Kép SVG:**
+     - Thống kê $F$ giai đoạn một và quy tắc kiểm tra công cụ yếu Stock-Yogo ($F \ge 10.0$).
+     - Sai số chuẩn bootstrap hiệu chỉnh biến hồi quy phát sinh (generated regressors).
+     - Panel A: Phân phối phần dư kiểm soát $\hat{u}$ theo nhóm can thiệp vs đối chứng kèm huy hiệu độ mạnh $F$.
+     - Panel B: Forest plot so sánh ATE giữa mô hình ngoại sinh ngây thơ (Naive GLM), mô hình thế dự báo (2SPS), và mô hình kiểm soát phần dư (2SRI).
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/control-function-2sri`
+  - **Payload:** `ControlFunction2SRIRequest` (`treatment_question_id`, `outcome_question_id`, `instrument_question_ids`, `covariate_question_ids`, `outcome_family`, `n_bootstraps`, `scope`).
+  - **Response:** `ControlFunction2SRIOut` (`status`, `sample_size`, `treated_count`, `control_count`, `treatment_type`, `outcome_family`, `first_stage`, `endogeneity_test`, `causal_effects`, `model_comparison`, `svg_visualization`, `apa_narrative`).
+- **Niêm phong kiểm toán:** Ghi nhận `CONTROL_FUNCTION_2SRI_EVALUATED` vào chuỗi sổ cái SHA-256.

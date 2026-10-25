@@ -163,6 +163,7 @@ import { SpatialDIDCard } from '../components/SpatialDIDCard';
 import { EntropyBalancingCard } from '../components/EntropyBalancingCard';
 import { CBPSCard } from '../components/CBPSCard';
 import { EValueSensitivityCard } from '../components/EValueSensitivityCard';
+import { ControlFunction2SRICard } from '../components/ControlFunction2SRICard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1846,6 +1847,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* Robust E-Values & Multi-Bias Causal Sensitivity Decomposition (VanderWeele & Ding 2017) */}
       <EValueSensitivityCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Two-Stage Residual Inclusion (2SRI) & Control Function Causal Engine (Terza et al. 2008, Wooldridge 2010) */}
+      <ControlFunction2SRICard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

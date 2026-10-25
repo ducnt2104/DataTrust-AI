@@ -1,3 +1,4 @@
+from app.engine.control_function_2sri_engine import run_control_function_2sri
 from app.engine.e_value_causal_engine import run_e_value_sensitivity
 from app.engine.cbps_engine import run_cbps_analysis
 from app.engine.entropy_balancing_engine import run_entropy_balancing
@@ -206,6 +207,8 @@ from app.schemas import (
     CBPSOut,
     EValueRequest,
     EValueOut,
+    ControlFunction2SRIRequest,
+    ControlFunction2SRIOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -18500,6 +18503,90 @@ def run_e_value_sensitivity_endpoint(
                         "e_value_estimate": res.get("e_value_results", {}).get("e_value_estimate"),
                         "e_value_ci": res.get("e_value_results", {}).get("e_value_ci"),
                         "rr_equivalent": res.get("e_value_results", {}).get("rr_equivalent"),
+                        "sample_size": res.get("sample_size")
+                    }
+                )
+            except Exception:
+                pass
+
+        return res
+
+
+
+@router.post("/control-function-2sri", response_model=ControlFunction2SRIOut)
+def run_control_function_2sri_endpoint(
+    survey_id: str,
+    payload: ControlFunction2SRIRequest
+):
+    """
+    Two-Stage Residual Inclusion (2SRI) & Control Function Causal Estimation Engine
+    (Terza, Basu, & Rathouz 2008 J. Health Economics; Wooldridge 2010 MIT Press).
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Khảo sát không tồn tại.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=400, detail="Không tìm thấy dữ liệu phản hồi hợp lệ cho khảo sát này.")
+
+        data_by_resp: Dict[str, Dict[str, Any]] = {}
+        for r_id, q_id, a_val in rows:
+            if r_id not in data_by_resp:
+                data_by_resp[r_id] = {}
+            data_by_resp[r_id][q_id] = a_val
+
+        records: List[Dict[str, Any]] = []
+        for r_id, ans in data_by_resp.items():
+            rec = {
+                payload.treatment_question_id: ans.get(payload.treatment_question_id),
+                payload.outcome_question_id: ans.get(payload.outcome_question_id),
+            }
+            for zid in payload.instrument_question_ids:
+                rec[zid] = ans.get(zid)
+            if payload.covariate_question_ids:
+                for cid in payload.covariate_question_ids:
+                    rec[cid] = ans.get(cid)
+            records.append(rec)
+
+        try:
+            res = run_control_function_2sri(
+                records=records,
+                treatment_col=payload.treatment_question_id,
+                outcome_col=payload.outcome_question_id,
+                instrument_cols=payload.instrument_question_ids,
+                covariate_cols=payload.covariate_question_ids,
+                outcome_family=payload.outcome_family,
+                n_bootstraps=payload.n_bootstraps or 100,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi khi thực thi phân tích 2SRI / Control Function: {str(e)}")
+
+        if res.get("status") == "success":
+            try:
+                record_audit_log(
+                    conn,
+                    entity_type="survey",
+                    entity_id=survey_id,
+                    action="CONTROL_FUNCTION_2SRI_EVALUATED",
+                    details={
+                        "status": res.get("status"),
+                        "ate": res.get("causal_effects", {}).get("ate", {}).get("estimate"),
+                        "att": res.get("causal_effects", {}).get("att", {}).get("estimate"),
+                        "f_stat": res.get("first_stage", {}).get("f_statistic"),
+                        "rho": res.get("endogeneity_test", {}).get("residual_coefficient_rho"),
+                        "is_endogenous": res.get("endogeneity_test", {}).get("is_endogenous"),
                         "sample_size": res.get("sample_size")
                     }
                 )

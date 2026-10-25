@@ -3098,6 +3098,33 @@ unTargetedMaximumLikelihood in rontend/src/api/client.ts.
 
 ---
 
-## 53. Planned Next Iteration: Iteration 186
-- **Feature**: Doubly Robust Targeted Maximum Likelihood Estimation (TMLE) & Cross-Validated Augmented Inverse Probability Weighting (AIPW) Engine (van der Laan & Rose 2011; Schuler & Rose 2017; Chernozhukov et al. 2018).
-- **Scope**: Implements semiparametric efficient estimation of ATE/ATT with cross-validated Super Learner ensembles (LASSO, Ridge, Random Forest, GLM), targeted clever covariate fluctuation epsilon solving the efficient influence curve P_n D^*(Q^*, g) = 0, semiparametric efficiency bound attainment, robust sandwich SE, and dual-panel diagnostic visualizations.
+## 53. Iteration 186: Two-Stage Residual Inclusion (2SRI) & Control Function Causal Engine (Terza, Basu, & Rathouz 2008 J. Health Econ; Wooldridge 2010 MIT Press)
+- **Status**: COMPLETED & VERIFIED
+- **Timestamp**: 2026-10-25T17:34:00+07:00
+- **Scientific Foundation**:
+  - Inconsistency of 2SPS in Nonlinear Models: Resolves the fundamental failure of standard 2SLS / Two-Stage Predictor Substitution (2SPS) in nonlinear survey models (Logistic, Linear, Poisson) where E[Y | X, D] != G(X'beta + alpha * D_hat).
+  - Control Function Consistency (2SRI): Recovers unconfounded causal parameters by retaining actual treatment D and including first-stage generalized residuals u_hat (Chesher & Irish 1987; Vella 1993 for probit; OLS for linear) into the second-stage structural specification E[Y | D, X, u_hat] = G(alpha * D + X'beta + rho * u_hat).
+  - Exact Hausman-Type Endogeneity Test: The coefficient rho on the control function residual provides an exact, powerful Wald/t-test for treatment endogeneity (H0: rho = 0).
+  - Average Structural Function (ASF): Integrates out the control function residual distribution (Blundell & Powell 2004) to obtain consistent Average Treatment Effects (ATE) and Average Treatment Effects on the Treated (ATT) with bootstrap-corrected standard errors for generated regressors.
+  - Responsive Dual-Panel SVG Visualizer: Panel A plots the first-stage control function residual distributions for treated vs control respondents with Stock-Yogo F-statistic badge; Panel B renders a forest plot comparing Naive GLM vs 2SPS vs 2SRI.
+- **Backend Components**:
+  - Core Engine: backend/app/engine/control_function_2sri_engine.py (450 lines).
+  - Schemas: ControlFunction2SRIRequest, ControlFunction2SRIOut in backend/app/schemas.py.
+  - Analytics Endpoint: POST /api/surveys/{survey_id}/analytics/control-function-2sri with CONTROL_FUNCTION_2SRI_EVALUATED audit logging in backend/app/routes/analytics.py.
+  - Unit Tests: backend/tests/test_control_function_2sri_engine.py (3/3 passed in 0.64s).
+  - Route Tests: backend/tests/test_control_function_2sri_routes.py (1/1 passed in 2.77s).
+- **Frontend Components**:
+  - TypeScript Types: ControlFunction2SRIFirstStage, ControlFunction2SRIEndogeneityTest, ControlFunction2SRIEffectItem, ControlFunction2SRICausalEffects, ControlFunction2SRIModelComparison, ControlFunction2SRIRequest, ControlFunction2SRIResult in frontend/src/types/survey.ts.
+  - API Client Method: runControlFunction2SRI in frontend/src/api/client.ts.
+  - UI Component: frontend/src/components/ControlFunction2SRICard.tsx (540 lines) with Treatment (D), Outcome (Y), Excluded Instruments (Z), and Covariates (X) selectors, Family selector (logistic, linear, poisson), Bootstrap iterations selector, 5 KPI cards (ATE, ATT, F-Stat, Endogeneity rho test, Sample distribution), dual-panel SVG visualizer, tabs for Causal Effects & ASF, First-Stage Strength, Model Comparison (Naive vs 2SPS vs 2SRI), Econometric Theory, and APA narrative.
+  - Page Mounting: Mounted inside frontend/src/pages/SurveyAnalyticsPage.tsx.
+- **Verification Status**:
+  - Backend Unit & Route Tests: 4/4 passed (60/60 cumulative passed across Iterations 171-186 in 30.17s).
+  - Frontend Production Build: 2,151 modules transformed, 0 errors in 2.14s.
+  - Contract Documentation: Section 167 appended to docs/API_CONTRACT.md.
+
+---
+
+## 54. Planned Next Iteration: Iteration 187
+- **Feature**: Longitudinal Cross-Lagged Panel Structural Mediation & Dynamic Autoregressive Causal Chains Engine (CLPM / RI-CLPM; Hamaker, Kuiper, & Grasman 2015 Psychological Methods; Cole & Maxwell 2003; Preacher 2015).
+- **Scope**: Implements random-intercept cross-lagged panel models (RI-CLPM) separating stable between-person trait variance from within-person dynamic cross-lagged causal mediation over multi-wave panel survey data, estimating direct, indirect, and reciprocal feedback causal trajectories with robust SEM goodness-of-fit and dual-panel path diagrams.
