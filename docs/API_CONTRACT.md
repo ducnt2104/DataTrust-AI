@@ -5736,3 +5736,33 @@ Tất cả các API trả về định dạng JSON chuẩn hoặc tệp nhị ph
   - **Payload:** `HighDimensionalMediationRequest` (`treatment_question_id`, `outcome_question_id`, `mediator_question_ids`, `confounder_question_ids`, `subgroup_question_id`, `n_boot`, `alpha_level`, `scope`).
   - **Response:** `HighDimensionalMediationOut` (`status`, `sample_size`, `n_mediators`, `total_effect`, `natural_direct_effect`, `natural_indirect_effect`, `proportion_mediated`, `sequential_ignorability_sensitivity`, `mediator_pathways`, `latent_path_invariance`, `svg_visualization`).
 - **Niêm phong kiểm toán:** Ghi nhận `HIGH_DIMENSIONAL_MEDIATION_EVALUATED` vào chuỗi sổ cái SHA-256.
+
+
+### 142. Causal Inference with Network Interference & Peer Spillover Effects Engine (Network SUTVA; Hudgens & Halloran 2008 JASA; Aronow & Samii 2017 Ann. Appl. Stat.; Basse & Feller 2018 Biometrika; Sävje et al. 2021 JRSS-B)
+- **Mục tiêu:** Giải quyết triệt để sự vi phạm giả định SUTVA (Stable Unit Treatment Value Assumption) phổ biến trong các khảo sát tổ chức doanh nghiệp, trường học, cộng đồng dân cư hoặc mạng lưới xã hội—nơi việc một cá nhân nhận can thiệp chính sách / đãi ngộ $Z_i=1$ không chỉ tác động lên bản thân họ mà còn lan truyền (spillover) sang thái độ, độ kiệt sức, động lực và niềm tin của các đồng nghiệp trong cùng cụm mạng lưới. Động cơ phân rã tác động nhân quả thành 3 cấu phần cốt lõi: Hiệu ứng trực tiếp trung bình (Average Direct Effect - ADE), Hiệu ứng lan truyền trung bình (Average Indirect / Spillover Effect - AIE), và Tổng tác động toàn phần (Overall Total Effect - OTE), đồng thời thực hiện kiểm định giả thuyết vi phạm SUTVA và mô hình hồi quy liều lượng can thiệp mạng lưới (Neighborhood Continuous Dosage Regression).
+- **Nguyên lý Toán học & Cấu trúc:**
+  1. **Mô hình Phơi nhiễm Causal Mạng Lưới (Network Causal Exposure Model; Aronow & Samii 2017):**
+     - Can thiệp cá thể: $Z_i \in \{0, 1\}$.
+     - Tỷ lệ phơi nhiễm mạng lưới đồng nghiệp trong cụm $g$: $S_i = \frac{\sum_{j \in g, j \ne i} Z_j}{N_g - 1} \in [0, 1]$.
+     - Không gian 4 trạng thái phơi nhiễm tiềm năng $C_i$:
+       - $(0, 0)$ Đối chứng Cô lập (Isolated Control): Cá nhân chưa được can thiệp và không có đồng nghiệp nào được can thiệp.
+       - $(1, 0)$ Chỉ Can thiệp Trực tiếp (Direct Only Treated): Cá nhân được can thiệp nhưng đồng nghiệp không được can thiệp.
+       - $(0, 1)$ Chỉ Hưởng Lan truyền (Spillover Only Treated): Cá nhân không được can thiệp nhưng có đồng nghiệp được can thiệp ($S_i > \tau_s$).
+       - $(1, 1)$ Can thiệp Toàn phần (Jointly Treated): Cả cá nhân và đồng nghiệp đều được can thiệp.
+  2. **Các Đại Lượng Đo lường Tác động Nhân quả (Causal Estimands):**
+     - Hiệu ứng Trực tiếp Trung bình (Average Direct Effect - ADE): $\tau_{\text{dir}} = \mathbb{E}[Y_i(1, 0) - Y_i(0, 0)]$.
+     - Hiệu ứng Lan truyền Trung bình (Average Indirect Effect - AIE): $\tau_{\text{spill}} = \mathbb{E}[Y_i(0, 1) - Y_i(0, 0)]$.
+     - Tổng Tác động Toàn phần (Overall Total Effect - OTE): $\tau_{\text{tot}} = \mathbb{E}[Y_i(1, 1) - Y_i(0, 0)]$.
+     - Tỷ trọng Lan truyền: $\text{Share}_{\text{spill}} = \frac{|\tau_{\text{spill}}|}{|\tau_{\text{dir}}| + |\tau_{\text{spill}}|} \times 100\%$.
+  3. **Kiểm định Thống kê Vi phạm Giả định SUTVA (Sharp Null Test):**
+     - Giả thuyết $H_0: \tau_{\text{spill}} = 0$ (Không có hiệu ứng lan truyền đồng nghiệp, SUTVA được bảo toàn).
+     - Kiểm định thống kê so sánh giữa nhóm $(0, 1)$ và $(0, 0)$: Giá trị $p < 0.05$ bác bỏ $H_0$, chứng minh sự tồn tại của hiệu ứng lan truyền mạng lưới có ý nghĩa thống kê.
+  4. **Hồi quy Liều lượng Phơi nhiễm Nhóm (Neighborhood Dosage Regression):**
+     - Mô hình: $Y_i = \beta_0 + \beta_{\text{dir}} Z_i + \beta_{\text{spill}} S_i + \gamma X_i + \varepsilon_i$.
+     - Hệ số $\beta_{\text{spill}}$ định lượng sự thay đổi của kết quả khi tỷ lệ đồng nghiệp được can thiệp trong nhóm tăng thêm 1 đơn vị (hoặc 10%).
+  5. **Sơ đồ Vector Cấu trúc Mạng Lưới SVG:**
+     - Trực quan hóa cấu trúc topo các cụm đội ngũ (cluster rings), phân loại nút theo 4 màu tương ứng với trạng thái phơi nhiễm, liên kết mạng lưới nội cụm và bảng thống kê ADE, AIE, OTE, SUTVA status.
+- **API Endpoint:** `POST /api/surveys/{survey_id}/analytics/network-spillover`
+  - **Payload:** `NetworkSpilloverRequest` (`outcome_question_id`, `treatment_question_id`, `cluster_question_id`, `covariate_question_ids`, `spillover_threshold`, `alpha_level`, `scope`).
+  - **Response:** `NetworkSpilloverOut` (`status`, `sample_size`, `n_clusters`, `exposure_sample_sizes`, `potential_outcome_means`, `average_direct_effect`, `average_spillover_effect`, `total_overall_effect`, `spillover_share_pct`, `sutva_test`, `dosage_regression`, `svg_visualization`).
+- **Niêm phong kiểm toán:** Ghi nhận `NETWORK_SPILLOVER_EVALUATED` vào chuỗi sổ cái SHA-256.

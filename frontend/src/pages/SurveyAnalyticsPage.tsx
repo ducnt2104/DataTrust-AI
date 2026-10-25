@@ -139,6 +139,7 @@ import { ConformalOptimalTransportCard } from '../components/ConformalOptimalTra
 import { DPMDeconvolutionCard } from '../components/DPMDeconvolutionCard';
 import { MultiCutoffRDCard } from '../components/MultiCutoffRDCard';
 import { HighDimensionalMediationCard } from '../components/HighDimensionalMediationCard';
+import { NetworkSpilloverCard } from '../components/NetworkSpilloverCard';
 import { NonParametricTestsCard } from '../components/NonParametricTestsCard';
 import { MissingDataCard } from '../components/MissingDataCard';
 import { ScaleEquatingCard } from '../components/ScaleEquatingCard';
@@ -1582,6 +1583,16 @@ export const SurveyAnalyticsPage: React.FC<Props> = ({ surveyId, onNavigate }) =
 
       {/* High-Dimensional Causal Mediation & Latent Path Invariance (Imai 2010; VanderWeele 2015; Zhao & Luo 2022) */}
       <HighDimensionalMediationCard
+        surveyId={surveyId}
+        questions={analytics.questions_analytics.map((q) => ({
+          id: q.question_id,
+          title: q.question_title,
+          question_type: q.question_type
+        }))}
+      />
+
+      {/* Causal Inference under Network Interference & Peer Spillover (Hudgens 2008; Aronow & Samii 2017) */}
+      <NetworkSpilloverCard
         surveyId={surveyId}
         questions={analytics.questions_analytics.map((q) => ({
           id: q.question_id,

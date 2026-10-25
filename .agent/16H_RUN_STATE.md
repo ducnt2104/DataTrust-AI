@@ -2376,6 +2376,33 @@ eq 0\}$
 
 ---
 
-## 28. Planned Next Iteration: Iteration 161
-- **Feature**: Panel Vector Autoregression & Survey Macro-Shock Impulse Response Engine (Panel VAR; Holtz-Eakin, Newey, & Rosen 1988 Econometrica; Love & Zicchino 2006).
-- **Scope**: Implements dynamic panel vector autoregression for multi-wave longitudinal surveys, using Helmert forward orthogonal transformations to eliminate individual fixed effects, estimating endogenous feedback loops between survey indicators, and tracing dynamic shock propagation via orthogonalized Impulse Response Functions (IRFs) and Forecast Error Variance Decompositions (FEVD).
+## 28. Iteration 161: Causal Inference with Network Interference & Peer Spillover Effects Engine (Network SUTVA; Hudgens & Halloran 2008 JASA; Aronow & Samii 2017 Ann. Appl. Stat.; Basse & Feller 2018 Biometrika; Sävje et al. 2021 JRSS-B)
+- **Timestamp**: 2026-10-25T13:51:00+07:00
+- **Scientific Foundation**:
+  - Overcomes the ubiquitous violation of the Stable Unit Treatment Value Assumption (SUTVA) in clustered, organizational, classroom, or social network surveys.
+  - Causal Exposure Model: Categorizes respondents into 4 potential exposure states: Isolated Control (0, 0), Direct-Only Treated (1, 0), Spillover-Only Treated (0, 1), and Jointly Treated (1, 1) based on personal treatment $Z_i$ and peer neighborhood saturation $S_i$.
+  - Causal Estimands: Decomposes causal effects into Average Direct Effect (ADE), Average Indirect/Spillover Effect (AIE), and Overall Total Effect (OTE).
+  - SUTVA Sharp Null Test: Conducts statistical hypothesis testing for the presence of peer contagion ($H_0: \tau_{\text{spill}} = 0$).
+  - Continuous Neighborhood Dosage: Fits multivariable regression estimating the marginal outcome shift per 10% increase in treated cluster peers.
+  - Interactive SVG Network Visualizer: Renders topology cluster rings, color-coded node states, intra-cluster ties, and KPI metrics.
+- **Backend Components**:
+  - Core Engine: `backend/app/engine/network_spillover_engine.py` (380 lines).
+  - Pydantic Schemas: `NetworkSpilloverRequest` and `NetworkSpilloverOut` in `backend/app/schemas.py`.
+  - Analytics Endpoint: `POST /api/surveys/{survey_id}/analytics/network-spillover` with `NETWORK_SPILLOVER_EVALUATED` audit logging in `backend/app/routes/analytics.py`.
+  - Unit Tests: `backend/tests/test_network_spillover_engine.py` (2/2 passed in 0.68s).
+  - Route Tests: `backend/tests/test_network_spillover_routes.py` (1/1 passed in 2.38s).
+- **Frontend Components**:
+  - TypeScript Types: `ExposureSampleSizes`, `PotentialOutcomeMeans`, `NetworkCausalEffect`, `NetworkSpilloverResult`, `NetworkSpilloverRequest` in `frontend/src/types/survey.ts`.
+  - API Client Method: `runNetworkSpillover` in `frontend/src/api/client.ts`.
+  - UI Component: `frontend/src/components/NetworkSpilloverCard.tsx` (516 lines) with outcome selector, treatment selector, cluster ID selector, confounders checklist, spillover threshold slider, KPI cards (ADE, AIE, OTE, Spillover Share %, SUTVA Status), interactive SVG topology diagram, 4-state exposure breakdown, and continuous peer dosage regression card.
+  - Page Mounting: Mounted inside `frontend/src/pages/SurveyAnalyticsPage.tsx`.
+- **Verification Status**:
+  - Backend Unit & Route Tests: **3/3 passed** (46/46 cumulative passed across recent iterations).
+  - Frontend Production Build: **2,127 modules transformed, 0 errors in 1.33s**.
+  - Contract Documentation: Section 142 appended to `docs/API_CONTRACT.md`.
+
+---
+
+## 29. Planned Next Iteration: Iteration 162
+- **Feature**: Dynamic Spatial Panel Econometrics & Spatio-Temporal Diffusion Engine (Dynamic Spatial Panel; Anselin 1988; Elhorst 2014; Lee & Yu 2010 Econometrica).
+- **Scope**: Implements dynamic spatial panel autoregression with simultaneous time lag, spatial lag, and spatio-temporal interaction ($Y_{it} = \gamma Y_{i,t-1} + \rho W Y_{it} + \eta W Y_{i,t-1} + X_{it} \beta + \mu_i + \varepsilon_{it}$), computing spatial multiplier matrices, short-run vs long-run direct, indirect, and total spatial impacts, and spatial diffusion half-life.

@@ -2192,6 +2192,37 @@ with open('backend/app/schemas.py', 'a', encoding='utf-8') as f:
     f.write('''
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -2606,6 +2637,37 @@ class BayesianNetworkOut(BaseModel):
     apa_narrative: Optional[str] = None
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -2668,6 +2730,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -2730,6 +2823,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3026,6 +3150,37 @@ class StochasticFrontierOut(BaseModel):
     apa_narrative: Optional[str] = None
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3088,6 +3243,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3150,6 +3336,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3212,6 +3429,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3274,6 +3522,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3358,6 +3637,37 @@ class StochasticDominanceOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3420,6 +3730,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3504,6 +3845,37 @@ class ManskiBoundsOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3566,6 +3938,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3628,6 +4031,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3690,6 +4124,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3773,6 +4238,37 @@ class DynamicTreatmentRegimesOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3835,6 +4331,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3897,6 +4424,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -3959,6 +4517,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4039,6 +4628,37 @@ class FiniteMixtureRaschOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4101,6 +4721,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4163,6 +4814,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4245,6 +4927,37 @@ class DoubleMachineLearningOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4307,6 +5020,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4369,6 +5113,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4431,6 +5206,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4493,6 +5299,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4577,6 +5414,37 @@ class RegressionKinkOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4639,6 +5507,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4701,6 +5600,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4763,6 +5693,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4825,6 +5786,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4887,6 +5879,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -4949,6 +5972,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5011,6 +6065,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5073,6 +6158,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5135,6 +6251,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5197,6 +6344,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5259,6 +6437,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5321,6 +6530,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5383,6 +6623,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5467,6 +6738,37 @@ class StaggeredDIDOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5529,6 +6831,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5591,6 +6924,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5653,6 +7017,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5715,6 +7110,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5798,6 +7224,37 @@ class MatrixCompletionCausalOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5860,6 +7317,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5922,6 +7410,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -5984,6 +7503,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6155,6 +7705,37 @@ class RDDLocalRandomizationOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6217,6 +7798,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6279,6 +7891,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6341,6 +7984,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6403,6 +8077,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6465,6 +8170,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6527,6 +8263,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6589,6 +8356,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6651,6 +8449,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6713,6 +8542,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6775,6 +8635,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6837,6 +8728,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6899,6 +8821,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -6961,6 +8914,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7023,6 +9007,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7085,6 +9100,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7147,6 +9193,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7209,6 +9286,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7271,6 +9379,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7333,6 +9472,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7395,6 +9565,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7457,6 +9658,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7519,6 +9751,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7581,6 +9844,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7643,6 +9937,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7705,6 +10030,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7767,6 +10123,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7829,6 +10216,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7891,6 +10309,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -7953,6 +10402,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8015,6 +10495,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8077,6 +10588,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8139,6 +10681,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8201,6 +10774,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8263,6 +10867,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8325,6 +10960,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8387,6 +11053,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8449,6 +11146,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8511,6 +11239,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8573,6 +11332,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8635,6 +11425,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8697,6 +11518,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8759,6 +11611,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8844,6 +11727,37 @@ class DynamicPanelGMMOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8906,6 +11820,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -8968,6 +11913,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9030,6 +12006,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9092,6 +12099,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9154,6 +12192,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9216,6 +12285,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9299,6 +12399,37 @@ class WeakIVRobustOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9361,6 +12492,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9423,6 +12585,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9485,6 +12678,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9572,6 +12796,37 @@ class SequentialMediationOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9634,6 +12889,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9696,6 +12982,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9758,6 +13075,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9841,6 +13189,37 @@ class PostDoubleSelectionLassoOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9903,6 +13282,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -9965,6 +13375,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10027,6 +13468,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10089,6 +13561,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10181,6 +13684,37 @@ class LARFOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10243,6 +13777,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10305,6 +13870,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10367,6 +13963,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10429,6 +14056,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10491,6 +14149,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10582,6 +14271,37 @@ class MTEOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10644,6 +14364,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10706,6 +14457,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10768,6 +14550,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10855,6 +14668,37 @@ class LeeBoundsOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10917,6 +14761,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -10979,6 +14854,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11068,6 +14974,37 @@ class SurrogateIndexOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11130,6 +15067,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11192,6 +15160,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11254,6 +15253,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11316,6 +15346,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11378,6 +15439,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11464,6 +15556,37 @@ class ConformalCounterfactualOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11526,6 +15649,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11588,6 +15742,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11650,6 +15835,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11712,6 +15928,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11774,6 +16021,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11859,6 +16137,37 @@ class CausalSensitivityBiasOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11921,6 +16230,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -11983,6 +16323,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12066,6 +16437,37 @@ class BCFOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12128,6 +16530,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12190,6 +16623,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12362,6 +16826,37 @@ class NestedLogitOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12424,6 +16919,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12486,6 +17012,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12548,6 +17105,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12610,6 +17198,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12672,6 +17291,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12734,6 +17384,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12796,6 +17477,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12858,6 +17570,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12920,6 +17663,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -12982,6 +17756,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13044,6 +17849,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13106,6 +17942,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13168,6 +18035,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13230,6 +18128,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13292,6 +18221,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13354,6 +18314,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13416,6 +18407,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13478,6 +18500,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13561,6 +18614,37 @@ class AutoDMLRieszOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13623,6 +18707,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13685,6 +18800,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13747,6 +18893,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13809,6 +18986,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13892,6 +19100,37 @@ class LocalInstrumentalVariablesOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -13954,6 +19193,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14016,6 +19286,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14078,6 +19379,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14159,6 +19491,37 @@ class ConformalOptimalTransportOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14221,6 +19584,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14283,6 +19677,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14364,6 +19789,37 @@ class DPMDeconvolutionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14426,6 +19882,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14488,6 +19975,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14603,6 +20121,37 @@ class HighDimensionalMediationOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14665,6 +20214,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14727,6 +20307,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14789,6 +20400,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14851,6 +20493,37 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str
@@ -14913,6 +20586,316 @@ class IVQuantileRegressionOut(BaseModel):
 
 
 # --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+class ExtremeBoundsAnalysisRequest(BaseModel):
+    focus_question_id: str
+    outcome_question_id: str
+    candidate_question_ids: List[str]
+    free_question_ids: Optional[List[str]] = None
+    max_controls_per_model: int = 4
+    scope: str = "all"
+
+
+class ExtremeBoundsAnalysisOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    specifications_sample: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Spatial Econometrics & Moran's I Models (Anselin 1988, LeSage & Pace 2009) Schemas ---
+class SpatialEconometricsRequest(BaseModel):
+    outcome_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    lat_field: str = "latitude"
+    lon_field: str = "longitude"
+    weights_type: str = "inverse_distance"
+    knn_k: int = 5
+    distance_power: float = 1.0
+    scope: str = "all"
+
+
+class SpatialEconometricsOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    morans_i: Optional[Dict[str, Any]] = None
+    lm_diagnostics: Optional[Dict[str, Any]] = None
+    baseline_ols: Optional[Dict[str, Any]] = None
+    spatial_lag_model: Optional[Dict[str, Any]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005) Schemas ---
+class IVQuantileRegressionRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    instrument_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    quantiles: Optional[List[float]] = [0.10, 0.25, 0.50, 0.75, 0.90]
+    grid_points: int = 80
+    scope: str = "all"
+
+
+class IVQuantileRegressionOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    quantile_estimates: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+class ExtremeBoundsAnalysisRequest(BaseModel):
+    focus_question_id: str
+    outcome_question_id: str
+    candidate_question_ids: List[str]
+    free_question_ids: Optional[List[str]] = None
+    max_controls_per_model: int = 4
+    scope: str = "all"
+
+
+class ExtremeBoundsAnalysisOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    specifications_sample: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Spatial Econometrics & Moran's I Models (Anselin 1988, LeSage & Pace 2009) Schemas ---
+class SpatialEconometricsRequest(BaseModel):
+    outcome_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    lat_field: str = "latitude"
+    lon_field: str = "longitude"
+    weights_type: str = "inverse_distance"
+    knn_k: int = 5
+    distance_power: float = 1.0
+    scope: str = "all"
+
+
+class SpatialEconometricsOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    morans_i: Optional[Dict[str, Any]] = None
+    lm_diagnostics: Optional[Dict[str, Any]] = None
+    baseline_ols: Optional[Dict[str, Any]] = None
+    spatial_lag_model: Optional[Dict[str, Any]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005) Schemas ---
+class IVQuantileRegressionRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    instrument_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    quantiles: Optional[List[float]] = [0.10, 0.25, 0.50, 0.75, 0.90]
+    grid_points: int = 80
+    scope: str = "all"
+
+
+class IVQuantileRegressionOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    quantile_estimates: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+class ExtremeBoundsAnalysisRequest(BaseModel):
+    focus_question_id: str
+    outcome_question_id: str
+    candidate_question_ids: List[str]
+    free_question_ids: Optional[List[str]] = None
+    max_controls_per_model: int = 4
+    scope: str = "all"
+
+
+class ExtremeBoundsAnalysisOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    specifications_sample: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Spatial Econometrics & Moran's I Models (Anselin 1988, LeSage & Pace 2009) Schemas ---
+class SpatialEconometricsRequest(BaseModel):
+    outcome_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    lat_field: str = "latitude"
+    lon_field: str = "longitude"
+    weights_type: str = "inverse_distance"
+    knn_k: int = 5
+    distance_power: float = 1.0
+    scope: str = "all"
+
+
+class SpatialEconometricsOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    morans_i: Optional[Dict[str, Any]] = None
+    lm_diagnostics: Optional[Dict[str, Any]] = None
+    baseline_ols: Optional[Dict[str, Any]] = None
+    spatial_lag_model: Optional[Dict[str, Any]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Instrumental Variable Quantile Regression (IV-QR; Chernozhukov & Hansen 2005) Schemas ---
+class IVQuantileRegressionRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    instrument_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    quantiles: Optional[List[float]] = [0.10, 0.25, 0.50, 0.75, 0.90]
+    grid_points: int = 80
+    scope: str = "all"
+
+
+class IVQuantileRegressionOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    summary: Optional[Dict[str, Any]] = None
+    quantile_estimates: Optional[List[Dict[str, Any]]] = None
+    svg_chart: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
+# --- Extreme Bound Analysis (EBA; Leamer 1983, Sala-i-Martin 1997) Schemas ---
+# --- Causal Inference under Network Interference & Spillover (Hudgens 2008, Aronow & Samii 2017) Schemas ---
+class NetworkSpilloverRequest(BaseModel):
+    outcome_question_id: str
+    treatment_question_id: str
+    cluster_question_id: str
+    covariate_question_ids: Optional[List[str]] = None
+    spillover_threshold: float = 0.0
+    alpha_level: float = 0.05
+    scope: str = "all"
+
+
+class NetworkSpilloverOut(BaseModel):
+    status: str
+    message: Optional[str] = None
+    sample_size: Optional[int] = None
+    n_clusters: Optional[int] = None
+    outcome_variable: Optional[str] = None
+    treatment_variable: Optional[str] = None
+    cluster_variable: Optional[str] = None
+    exposure_sample_sizes: Optional[Dict[str, int]] = None
+    potential_outcome_means: Optional[Dict[str, float]] = None
+    average_direct_effect: Optional[Dict[str, Any]] = None
+    average_spillover_effect: Optional[Dict[str, Any]] = None
+    total_overall_effect: Optional[Dict[str, Any]] = None
+    spillover_share_pct: Optional[float] = None
+    sutva_test: Optional[Dict[str, Any]] = None
+    dosage_regression: Optional[Dict[str, Any]] = None
+    svg_visualization: Optional[str] = None
+    apa_narrative: Optional[str] = None
+
+
 class ExtremeBoundsAnalysisRequest(BaseModel):
     focus_question_id: str
     outcome_question_id: str

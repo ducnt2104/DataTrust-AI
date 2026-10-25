@@ -8681,3 +8681,69 @@ export interface HighDimensionalMediationRequest {
   alpha_level?: number;
   scope?: 'all' | 'verified_clean';
 }
+
+
+// --- Causal Inference under Network Interference & Spillover Types ---
+export interface ExposureSampleSizes {
+  isolated_control: number;
+  direct_only: number;
+  spillover_only: number;
+  joint_treated: number;
+}
+
+export interface PotentialOutcomeMeans {
+  isolated_control: number;
+  direct_only: number;
+  spillover_only: number;
+  joint_treated: number;
+}
+
+export interface NetworkCausalEffect {
+  estimate: number;
+  se: number;
+  z_stat?: number;
+  p_value?: number;
+  ci_95: [number, number];
+}
+
+export interface NetworkSpilloverResult {
+  status: string;
+  message?: string;
+  sample_size?: number;
+  n_clusters?: number;
+  outcome_variable?: string;
+  treatment_variable?: string;
+  cluster_variable?: string;
+  exposure_sample_sizes?: ExposureSampleSizes;
+  potential_outcome_means?: PotentialOutcomeMeans;
+  average_direct_effect?: NetworkCausalEffect;
+  average_spillover_effect?: NetworkCausalEffect;
+  total_overall_effect?: NetworkCausalEffect;
+  spillover_share_pct?: number;
+  sutva_test?: {
+    is_violated: boolean;
+    p_value: number;
+    verdict: string;
+  };
+  dosage_regression?: {
+    direct_coefficient: number;
+    direct_se: number;
+    direct_pvalue: number;
+    peer_spillover_slope: number;
+    spillover_se: number;
+    spillover_pvalue: number;
+    interpretation: string;
+  };
+  svg_visualization?: string;
+  apa_narrative?: string;
+}
+
+export interface NetworkSpilloverRequest {
+  outcome_question_id: string;
+  treatment_question_id: string;
+  cluster_question_id: string;
+  covariate_question_ids?: string[];
+  spillover_threshold?: number;
+  alpha_level?: number;
+  scope?: 'all' | 'verified_clean';
+}

@@ -1,4 +1,5 @@
 import pandas as pd
+from app.engine.network_spillover_engine import run_network_spillover_analysis
 from app.engine.high_dimensional_mediation_engine import run_high_dimensional_mediation
 from app.engine.multi_cutoff_rd_engine import estimate_multi_cutoff_rd
 from app.engine.dpm_deconvolution_engine import estimate_dpm_deconvolution
@@ -134,6 +135,8 @@ from app.schemas import (
     MultiCutoffRDOut,
     HighDimensionalMediationRequest,
     HighDimensionalMediationOut,
+    NetworkSpilloverRequest,
+    NetworkSpilloverOut,
     MatrixCompletionCausalOut,
     StaggeredDIDOut,
     RegressionKinkOut,
@@ -16349,6 +16352,120 @@ def run_high_dimensional_mediation_analysis(
                 "nie": res.get("natural_indirect_effect", {}).get("estimate"),
                 "proportion_mediated": res.get("proportion_mediated", {}).get("percentage"),
                 "dominant_rho_crit": res.get("sequential_ignorability_sensitivity", {}).get("dominant_rho_critical"),
+                "status": res.get("status")
+            }
+        )
+
+        return res
+
+
+
+@router.post("/network-spillover", response_model=NetworkSpilloverOut)
+def run_network_spillover_analysis_endpoint(
+    survey_id: str,
+    payload: NetworkSpilloverRequest
+):
+    """
+    Causal Inference under Network Interference & Peer Spillover Effects Engine (Network SUTVA).
+    Hudgens, M. G., & Halloran, M. E. (2008); Aronow, P. M., & Samii, C. (2017).
+    Decomposes causal impacts into Average Direct Effect (ADE), Average Spillover Effect (AIE),
+    and Overall Total Effect (OTE). Tests SUTVA sharp null hypothesis and computes peer dosage regressions.
+    """
+    with get_db() as conn:
+        s_row = conn.execute("SELECT id FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+        if not s_row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy khảo sát.")
+
+        resp_filter = "AND r.review_status NOT IN ('verified_fraud', 'quota_screened_out')" if payload.scope == "verified_clean" else ""
+
+        rows = conn.execute(f"""
+            SELECT r.id as resp_id, ra.question_id, ra.answer_value
+            FROM responses r
+            JOIN response_answers ra ON r.id = ra.response_id
+            WHERE r.survey_id = ? {resp_filter}
+        """, (survey_id,)).fetchall()
+
+        if not rows:
+            return {"status": "INSUFFICIENT_SAMPLE", "message": "Chưa có phản hồi khảo sát hợp lệ."}
+
+        # Pivot responses
+        resp_dict = {}
+        for row in rows:
+            rid = row["resp_id"]
+            if rid not in resp_dict:
+                resp_dict[rid] = {}
+            resp_dict[rid][row["question_id"]] = row["answer_value"]
+
+        cov_ids = payload.covariate_question_ids or []
+
+        df_records = []
+        for rid, answers in resp_dict.items():
+            if payload.outcome_question_id in answers and payload.treatment_question_id in answers and payload.cluster_question_id in answers:
+                try:
+                    y_val = float(answers[payload.outcome_question_id])
+                    z_val = float(answers[payload.treatment_question_id])
+                except (ValueError, TypeError):
+                    continue
+
+                cluster_val = str(answers[payload.cluster_question_id]).strip()
+                if not cluster_val:
+                    continue
+
+                rec = {
+                    payload.outcome_question_id: y_val,
+                    payload.treatment_question_id: z_val,
+                    payload.cluster_question_id: cluster_val
+                }
+
+                valid_covs = True
+                for c_id in cov_ids:
+                    if c_id in answers:
+                        try:
+                            rec[c_id] = float(answers[c_id])
+                        except (ValueError, TypeError):
+                            valid_covs = False
+                    else:
+                        valid_covs = False
+
+                if valid_covs:
+                    df_records.append(rec)
+
+        if len(df_records) < 20:
+            return {
+                "status": "INSUFFICIENT_SAMPLE",
+                "message": f"Cần tối thiểu 20 bản ghi hợp lệ để phân tích Network Spillover & SUTVA (hiện có: {len(df_records)})."
+            }
+
+        df = pd.DataFrame(df_records)
+
+        try:
+            res = run_network_spillover_analysis(
+                df=df,
+                outcome_col=payload.outcome_question_id,
+                treatment_col=payload.treatment_question_id,
+                cluster_col=payload.cluster_question_id,
+                covariate_cols=cov_ids if cov_ids else None,
+                spillover_threshold=payload.spillover_threshold,
+                alpha_level=payload.alpha_level
+            )
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Lỗi trong quá trình phân tích Network Spillover: {str(e)}"
+            }
+
+        record_audit_log(
+            conn,
+            entity_type="survey",
+            entity_id=survey_id,
+            action="NETWORK_SPILLOVER_EVALUATED",
+            details={
+                "n_clusters": res.get("n_clusters"),
+                "ade": res.get("average_direct_effect", {}).get("estimate"),
+                "aie": res.get("average_spillover_effect", {}).get("estimate"),
+                "ote": res.get("total_overall_effect", {}).get("estimate"),
+                "is_sutva_violated": res.get("sutva_test", {}).get("is_violated"),
+                "spillover_share": res.get("spillover_share_pct"),
                 "status": res.get("status")
             }
         )

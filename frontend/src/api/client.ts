@@ -235,7 +235,9 @@ import {
   MultiCutoffRDRequest,
   MultiCutoffRDResult,
   HighDimensionalMediationRequest,
-  HighDimensionalMediationResult
+  HighDimensionalMediationResult,
+  NetworkSpilloverRequest,
+  NetworkSpilloverResult
 } from '../types/survey';
 
 const BASE_URL = '/api';
@@ -2598,5 +2600,16 @@ export const api = {
       body: JSON.stringify(payload)
     });
     return handleResponse<HighDimensionalMediationResult>(res);
+  },
+  async runNetworkSpillover(
+    surveyId: string,
+    payload: NetworkSpilloverRequest
+  ): Promise<NetworkSpilloverResult> {
+    const res = await fetch(`${BASE_URL}/surveys/${surveyId}/analytics/network-spillover`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleResponse<NetworkSpilloverResult>(res);
   }
 };
